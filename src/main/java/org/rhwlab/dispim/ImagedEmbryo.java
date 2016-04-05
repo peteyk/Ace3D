@@ -42,7 +42,7 @@ public class ImagedEmbryo {
     public void setNucleusFile(NucleusFile file){
         nucFile = file;
     }
-    static int cacheSize = 5;
+    static int cacheSize = 10;
     NucleusFile nucFile;
     ImageSource source;
     LinkedList<TimePointImage> timePointCache = new LinkedList<TimePointImage>();

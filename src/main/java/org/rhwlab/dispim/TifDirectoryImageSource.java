@@ -15,6 +15,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.scijava.Context;
 import spim.process.fusion.FusionHelper;
 
 /**
@@ -40,7 +41,7 @@ public class TifDirectoryImageSource implements ImageSource {
 
     @Override
     public TimePointImage getImage(int time) {
-        ImgOpener opener = new ImgOpener();
+        ImgOpener opener = new ImgOpener(new Context());
         try {
  
             List<SCIFIOImgPlus<?>> list = opener.openImgs(fileNames.get(time));

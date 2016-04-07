@@ -57,7 +57,9 @@ public class PrettyWriter {
         }
     }
     public void writeString(JsonString jsonString){
+        builder.append('"');
         builder.append(jsonString.getString());
+        builder.append('"');
     }
     public void writeNumber(JsonNumber jsonNumber){
         builder.append(Double.toString(jsonNumber.doubleValue()));
@@ -70,16 +72,19 @@ public class PrettyWriter {
         for (String key : jsonObject.keySet()){
             ++i;
             JsonValue jsonValue = jsonObject.get(key);
+            builder.append('"');
             builder.append(key);
+            builder.append('"');
             builder.append(':');
             if (jsonValue instanceof JsonStructure){
                 builder.append("\n");
                 write(jsonValue,indent+inc);
             }else {
                 write(jsonValue,0);
-                if (i != n){
-                    builder.append(",");
-                }
+
+            }
+            if (i != n){
+                builder.append(",");
             }
         }
         builder.append("}");        

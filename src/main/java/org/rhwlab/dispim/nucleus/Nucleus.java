@@ -9,6 +9,7 @@ import java.io.PrintStream;
 import java.util.Date;
 import java.util.Random;
 import javax.json.Json;
+import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import org.rhwlab.starrynite.TimePointNucleus;
 
@@ -16,7 +17,15 @@ import org.rhwlab.starrynite.TimePointNucleus;
  *
  * @author gevirl
  */
-public class Nucleus {
+public class Nucleus implements Comparable {
+    public Nucleus(JsonObject jsonObj){
+        this.time = jsonObj.getInt("Time");
+        this.name = jsonObj.getString("Name");
+        this.radius = jsonObj.getJsonNumber("Radius").doubleValue();
+        this.x = jsonObj.getJsonNumber("X").longValue();
+        this.y = jsonObj.getJsonNumber("Y").longValue();
+        this.z = jsonObj.getJsonNumber("Z").longValue();
+    }
     public Nucleus(TimePointNucleus data){
         this.time = data.getTime();
         this.name = data.getName();
@@ -113,6 +122,16 @@ public class Nucleus {
         }
         return builder;
     }
+    public void setCell(Cell cell){
+        this.cell = cell;
+    }
+    public Cell getCell(){
+        return this.cell;
+    }
+    @Override
+    public int compareTo(Object o) {
+        return this.name.compareTo(((Nucleus)o).name);
+    }    
     int time;
     String name;
     long x;
@@ -123,4 +142,6 @@ public class Nucleus {
     
     boolean selected=false;
     static Random rnd;
+
+
 }

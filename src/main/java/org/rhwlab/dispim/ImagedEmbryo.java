@@ -7,6 +7,7 @@ package org.rhwlab.dispim;
 
 import org.rhwlab.dispim.nucleus.Nucleus;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 import org.rhwlab.dispim.nucleus.NucleusFile;
 
@@ -41,6 +42,27 @@ public class ImagedEmbryo {
     }
     public void setNucleusFile(NucleusFile file){
         nucFile = file;
+    }
+    public Nucleus selectedNucleus(int time){
+        Set<Nucleus> nucs = nucFile.getNuclei(time);
+        for (Nucleus nuc : nucs){
+            if (nuc.getSelected()){
+                return nuc;
+            }
+        }
+        return null;
+    }
+    public List<Nucleus> nextNuclei(Nucleus source){
+        return nucFile.linkedForward(source);
+    }
+    public void clearSelected(int time){
+        Set<Nucleus> nucs = nucFile.getNuclei(time);
+        for (Nucleus nuc : nucs){
+            nuc.setSelected(false);
+        }        
+    }
+    public NucleusFile getNucleusFile(){
+        return nucFile;
     }
     static int cacheSize = 10;
     NucleusFile nucFile;

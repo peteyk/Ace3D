@@ -6,6 +6,7 @@
 package org.rhwlab.dispim.nucleus;
 
 import java.io.File;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -18,4 +19,6 @@ public interface NucleusFile {
     public void saveAs(File file) throws Exception ;
     public Set<Nucleus> getNuclei(int time);
     public File getFile();
+    public List<Nucleus> linkedForward(Nucleus nuc);
+    public Nucleus sister(Nucleus nuc);
 }

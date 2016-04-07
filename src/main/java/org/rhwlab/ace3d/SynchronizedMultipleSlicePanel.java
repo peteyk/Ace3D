@@ -6,6 +6,7 @@
 package org.rhwlab.ace3d;
 
 import java.awt.BorderLayout;
+import java.util.List;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JPanel;
@@ -16,6 +17,7 @@ import javax.swing.event.ChangeListener;
 import net.imglib2.RandomAccessibleInterval;
 import org.rhwlab.dispim.ImagedEmbryo;
 import org.rhwlab.dispim.TimePointImage;
+import org.rhwlab.dispim.nucleus.Nucleus;
 
 /**
  *
@@ -58,6 +60,12 @@ public class SynchronizedMultipleSlicePanel extends JPanel {
     }
     public void incrementTime(){
         if (time < slider.getMaximum()){
+            Nucleus selected = this.embryo.selectedNucleus(time);
+            if (selected!= null){
+                List<Nucleus> next = this.embryo.nextNuclei(selected);
+                next.get(0).setSelected(true);
+                this.changePosition(next.get(0).getCenter());
+            }
             slider.setValue(time+1);
         }
     }
@@ -111,6 +119,9 @@ public class SynchronizedMultipleSlicePanel extends JPanel {
     }
     public long[] getPosition(){
         return this.position;
+    }
+    public ImagedEmbryo getEmbryo(){
+        return embryo;
     }
     int nDims;
     JSlider slider;

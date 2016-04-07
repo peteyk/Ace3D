@@ -20,7 +20,9 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Ellipse2D;
 import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
+import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeMap;
 import javax.swing.BorderFactory;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
@@ -31,6 +33,7 @@ import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.view.IntervalView;
 import org.rhwlab.dispim.nucleus.Nucleus;
 import org.rhwlab.dispim.TimePointImage;
+import org.rhwlab.dispim.nucleus.NucleusFile;
 
 /**
  *
@@ -123,6 +126,7 @@ public class SingleSlicePanel extends JPanel {
                             g2.draw(ellipse);
                         }
                    }
+                   drawSisters(g2);
                    g2.setColor(save);
                 }
             }
@@ -237,6 +241,27 @@ public class SingleSlicePanel extends JPanel {
         slider.setValue((int)pos[dim]);
         this.repaint();
     }
+    // return the screen x coordinate given image coordinates
+    public int screenX(long[] p){
+        if (dim==0){
+            return (int)(p[1]*scale);
+        } else {
+            return (int)(p[0]*scale);
+        }
+    }
+    public int screenY(long[] p){
+        if (dim==2){
+            return (int)(p[1]*scale);
+        } else {
+            return (int)(p[2]*scale);
+        }
+    } 
+    private boolean visible(Nucleus nuc){
+        long[] center = nuc.getCenter();  // image corrdinates
+        double r = nuc.getRadius();   // image corrdinates
+        double delta = Math.abs(slice-center[dim]);   // image corrdinates
+        return delta <= r;       
+    }
     final private void setSlice(long p){
         slice = p;
 
@@ -267,6 +292,28 @@ public class SingleSlicePanel extends JPanel {
             return "y";
         }
         return "z";
+    }
+    private void drawSisters(Graphics g2){
+        NucleusFile nucFile = parent.getEmbryo().getNucleusFile();
+        
+        TreeMap<Nucleus,Nucleus> sisterPairs = new TreeMap<>();
+        Set<Nucleus> nucs = timePointImage.getNuclei();
+        for (Nucleus nuc : nucs){
+           Nucleus sisterNuc = nucFile.sister(nuc);
+           if (sisterNuc != null){
+               if (sisterPairs.get(sisterNuc)==null){
+                   sisterPairs.put(nuc,sisterNuc);
+               }
+           }
+        } 
+        
+        for (Entry<Nucleus,Nucleus> entry : sisterPairs.entrySet()){
+            Nucleus nuc1 = entry.getKey();
+            Nucleus nuc2 = entry.getValue();
+            if (visible(nuc1)||visible(nuc2)){
+                g2.drawLine(screenX(nuc1.getCenter()),screenY(nuc1.getCenter()),screenX(nuc2.getCenter()),screenY(nuc2.getCenter()));
+            }
+        }
     }
     SynchronizedMultipleSlicePanel parent;
     JPanel slicePanel;

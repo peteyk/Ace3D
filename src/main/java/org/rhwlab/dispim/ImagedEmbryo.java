@@ -55,16 +55,25 @@ public class ImagedEmbryo {
     public List<Nucleus> nextNuclei(Nucleus source){
         return nucFile.linkedForward(source);
     }
+    public Nucleus previousNucleus(Nucleus source){
+        return nucFile.linkedBack(source);
+    }
     public void clearSelected(int time){
         Set<Nucleus> nucs = nucFile.getNuclei(time);
         for (Nucleus nuc : nucs){
             nuc.setSelected(false);
         }        
     }
+    public void clearLabeled(int time){
+        Set<Nucleus> nucs = nucFile.getNuclei(time);
+        for (Nucleus nuc : nucs){
+            nuc.setLabeled(false);
+        }        
+    }    
     public NucleusFile getNucleusFile(){
         return nucFile;
     }
-    static int cacheSize = 10;
+    static int cacheSize = 20;
     NucleusFile nucFile;
     ImageSource source;
     LinkedList<TimePointImage> timePointCache = new LinkedList<TimePointImage>();

@@ -20,5 +20,6 @@ public interface NucleusFile {
     public Set<Nucleus> getNuclei(int time);
     public File getFile();
     public List<Nucleus> linkedForward(Nucleus nuc);
+    public Nucleus linkedBack(Nucleus nuc);
     public Nucleus sister(Nucleus nuc);
 }

@@ -127,6 +127,7 @@ public class SingleSlicePanel extends JPanel {
                         }
                    }
                    drawSisters(g2);
+                   labelNuclei(g2);
                    g2.setColor(save);
                 }
             }
@@ -137,19 +138,41 @@ public class SingleSlicePanel extends JPanel {
             @Override
             public void keyPressed(KeyEvent e){
                 char k = e.getKeyChar();
-                if (k == 'w'){
-                    long[] pos = parent.getPosition();
-                    pos[dim] = pos[dim] + 1;
-                    setPosition(pos);
-                } else if (k == 's'){
-                    long[] pos = parent.getPosition();
-                    pos[dim] = pos[dim] - 1;
-                    setPosition(pos);                    
-                } else if (k == 'a'){
-                    parent.decrementTime();
-                }else if (k == 'd'){
-                    parent.incrementTime();
-                }
+//                int mask = KeyEvent.SHIFT_DOWN_MASK;
+//                int modifier = e.getModifiersEx();
+ //               if ((modifier&mask) == mask){
+                    long pos[];
+                    switch (k)    {
+                    case 'A':
+                        parent.moveSelectedNucleus(imageXDirection(), -1);
+                        break;
+                    case 'D':
+                        parent.moveSelectedNucleus(imageXDirection(), 1);
+                        break;
+                    case 'S':
+                        parent.moveSelectedNucleus(imageYDirection(), 1);
+                        break;
+                    case 'W':
+                        parent.moveSelectedNucleus(imageYDirection(), -1);
+                        break;
+                    case 'w':
+                        pos = parent.getPosition();
+                        pos[dim] = pos[dim] + 1;
+                        setPosition(pos);
+                        break;  
+                    case 's':
+                        pos = parent.getPosition();
+                        pos[dim] = pos[dim] - 1;
+                        setPosition(pos);
+                        break; 
+                    case 'a':
+                        parent.decrementTime();
+                        break;
+                    case 'd':
+                        parent.incrementTime();
+                        break;
+                    }
+                
             }
         });
         this.addMouseWheelListener(new MouseAdapter(){
@@ -249,6 +272,13 @@ public class SingleSlicePanel extends JPanel {
             return (int)(p[0]*scale);
         }
     }
+    public int imageXDirection(){
+        if (dim==0){
+            return 1;
+        }
+        return 0;
+    }
+
     public int screenY(long[] p){
         if (dim==2){
             return (int)(p[1]*scale);
@@ -256,6 +286,12 @@ public class SingleSlicePanel extends JPanel {
             return (int)(p[2]*scale);
         }
     } 
+    public int imageYDirection(){
+        if (dim==2){
+            return 1;
+        }
+        return 2;
+    }    
     private boolean visible(Nucleus nuc){
         long[] center = nuc.getCenter();  // image corrdinates
         double r = nuc.getRadius();   // image corrdinates
@@ -293,7 +329,7 @@ public class SingleSlicePanel extends JPanel {
         }
         return "z";
     }
-    private void drawSisters(Graphics g2){
+    private void drawSisters(Graphics2D g2){
         NucleusFile nucFile = parent.getEmbryo().getNucleusFile();
         
         TreeMap<Nucleus,Nucleus> sisterPairs = new TreeMap<>();
@@ -314,6 +350,15 @@ public class SingleSlicePanel extends JPanel {
                 g2.drawLine(screenX(nuc1.getCenter()),screenY(nuc1.getCenter()),screenX(nuc2.getCenter()),screenY(nuc2.getCenter()));
             }
         }
+    }
+    private void labelNuclei(Graphics2D g2){
+        Set<Nucleus> nucs = timePointImage.getNuclei();
+        for (Nucleus nuc : nucs){
+            if (nuc.getLabeled()){
+                g2.drawString(nuc.getName(),screenX(nuc.getCenter()),screenY(nuc.getCenter()));
+            }
+        }
+        
     }
     SynchronizedMultipleSlicePanel parent;
     JPanel slicePanel;

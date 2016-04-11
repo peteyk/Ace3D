@@ -87,6 +87,11 @@ public class Nucleus implements Comparable {
         center[2] = z;
         return center;
     }
+    public void setCenter(long[] c){
+        x = c[0];
+        y = c[1];
+        z = c[2];
+    }
     public String getName(){
         if (name == null){
             return this.toString();
@@ -131,7 +136,13 @@ public class Nucleus implements Comparable {
     @Override
     public int compareTo(Object o) {
         return this.name.compareTo(((Nucleus)o).name);
-    }    
+    }  
+    public boolean getLabeled(){
+        return this.labeled;
+    }
+    public void setLabeled(boolean lab){
+        this.labeled = lab;
+    }
     int time;
     String name;
     long x;
@@ -140,7 +151,8 @@ public class Nucleus implements Comparable {
     double radius;
     Cell cell;  // the cell to which this nucleus belongs - can be null
     
-    boolean selected=false;
+    boolean selected = false;
+    boolean labeled = false;
     static Random rnd;
 
 

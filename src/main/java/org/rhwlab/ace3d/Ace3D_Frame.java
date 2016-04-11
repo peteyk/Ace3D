@@ -11,6 +11,7 @@ import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
@@ -134,6 +135,15 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
         });
         fileMenu.add(nucSaveAs);  
         fileMenu.addSeparator();
+
+        JMenuItem exit = new JMenuItem("Exit");
+        exit.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                System.exit(0);
+            }
+        });
+        fileMenu.add(exit);
         
         JMenu navigate = new JMenu("Navigate");
         JMenuItem toTime = new JMenuItem("To Time Point");
@@ -146,14 +156,19 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
         navigate.add(toTime);
         menuBar.add(navigate);
         
-        JMenuItem exit = new JMenuItem("Exit");
-        exit.addActionListener(new ActionListener(){
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                System.exit(0);
-            }
-        });
-        fileMenu.add(exit);
+        JMenu view = new JMenu("View");
+        menuBar.add(view);
+        sisters = new JCheckBoxMenuItem("Sister indicator");
+        sisters.setSelected(true);
+        view.add(sisters);
+        
+        selectedLabeled = new JCheckBoxMenuItem("Label the Selected Nucleus");
+        selectedLabeled.setSelected(false);
+        view.add(selectedLabeled);
+        
+        nucleiLabeled = new JCheckBoxMenuItem("Label All the Nuclei");
+        nucleiLabeled.setSelected(false);
+        view.add(nucleiLabeled);
         
         this.setJMenuBar(menuBar);        
     }
@@ -211,11 +226,23 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
             }
         }        
     }
+    public boolean labelNuclei(){
+        return this.nucleiLabeled.getState();
+    }
+    public boolean labelSelectedNucleus(){
+        return this.selectedLabeled.getState();
+    }
+    public boolean sistersIndicated(){
+        return this.sisters.getState();
+    }
     ImageSource source;
     NucleusFile nucFile;
     ImagedEmbryo imagedEmbryo;
     SynchronizedMultipleSlicePanel panel;
     JFileChooser nucChooser;
+    JCheckBoxMenuItem sisters;
+    JCheckBoxMenuItem nucleiLabeled;
+    JCheckBoxMenuItem selectedLabeled;
     
     static public void main(String[] args) {
         EventQueue.invokeLater(new Runnable(){

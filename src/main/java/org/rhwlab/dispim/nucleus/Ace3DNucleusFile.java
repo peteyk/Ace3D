@@ -15,15 +15,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.TreeSet;
 import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonReader;
-import javax.json.JsonValue;
-import javax.json.stream.JsonGenerator;
 
 /**
  *
@@ -238,6 +235,23 @@ public class Ace3DNucleusFile implements NucleusFile {
         }
         return ret;
     }  
+    @Override
+    public Nucleus linkedBack(Nucleus nuc) {
+        Nucleus ret = null;
+        Cell cell = cellMap.get(nuc.cell.getName());
+        if (cell != null){
+            Nucleus nextNuc = cell.getNucleus(nuc.getTime()-1);
+            if (nextNuc != null){
+                ret = nextNuc;
+            } else {
+                Cell parent = cell.getParent();
+                if (parent != null){
+                    ret = parent.getNucleus(nuc.getTime()-1);
+                }
+            }
+        }        
+        return ret;
+    }    
     // return the sister nucleus of the given nucleus
     // returns null if nucleus is not in a cell or is in a root cell
     public Nucleus sister(Nucleus nuc){
@@ -256,6 +270,8 @@ public class Ace3DNucleusFile implements NucleusFile {
     TreeMap<String,Cell> cellMap = new TreeMap<String,Cell>();  // map of the all the cells
     TreeMap<Integer,Set<Nucleus>> byTime = new TreeMap<Integer,Set<Nucleus>>();  // all the nuclei present at a given time
     TreeMap<String,Map<Integer,Nucleus>> byName = new TreeMap<String,Map<Integer,Nucleus>>();  // map of nuclei indexed by name, map indexed by time
+
+
 
 
 }

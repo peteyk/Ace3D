@@ -66,7 +66,7 @@ public class Nucleus implements Comparable {
         if (rnd == null){
             rnd = new Random();
         }
-        return String.format("Nuc_%d_%d",(new Date()).getTime(),rnd.nextInt());
+        return String.format("Nuc_%d",(new Date()).getTime());
     }
     static public void saveHeadings(PrintStream stream){
         stream.println("Time,Name,X,Y,Z,Radius,Child1,Child2");
@@ -79,6 +79,9 @@ public class Nucleus implements Comparable {
     }
     public double getRadius(){
         return radius;
+    }
+    public void setRadius(double r){
+        this.radius = r;
     }
     public long[] getCenter(){
         long[] center = new long[3];

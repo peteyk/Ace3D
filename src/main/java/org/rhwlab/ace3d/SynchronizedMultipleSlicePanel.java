@@ -101,6 +101,14 @@ public class SynchronizedMultipleSlicePanel extends JPanel {
             repaintPanels();
         }        
     }
+    public void changeRadiusSelectedNucleus(int value){
+        Nucleus selected = this.embryo.selectedNucleus(time);
+        if (selected!= null){
+            double v = selected.getRadius() + value;
+            selected.setRadius(v);
+            repaintPanels();
+        }        
+    }
     public void repaintPanels(){
         for (SingleSlicePanel p : panels){
             p.repaint();

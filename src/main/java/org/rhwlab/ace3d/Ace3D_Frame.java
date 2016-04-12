@@ -158,16 +158,45 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
         
         JMenu view = new JMenu("View");
         menuBar.add(view);
+        
+        segmentedNuclei = new JCheckBoxMenuItem("Nuclei indicator");
+        segmentedNuclei.setSelected(true);
+        segmentedNuclei.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                panel.repaint();
+            }
+        });
+        view.add(segmentedNuclei);
+        
         sisters = new JCheckBoxMenuItem("Sister indicator");
         sisters.setSelected(true);
+        sisters.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                panel.repaint();
+            }
+        });        
         view.add(sisters);
         
         selectedLabeled = new JCheckBoxMenuItem("Label the Selected Nucleus");
         selectedLabeled.setSelected(false);
+        selectedLabeled.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                panel.repaint();
+            }
+        });        
         view.add(selectedLabeled);
         
         nucleiLabeled = new JCheckBoxMenuItem("Label All the Nuclei");
         nucleiLabeled.setSelected(false);
+        nucleiLabeled.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                panel.repaint();
+            }
+        });        
         view.add(nucleiLabeled);
         
         this.setJMenuBar(menuBar);        
@@ -226,23 +255,28 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
             }
         }        
     }
-    public boolean labelNuclei(){
-        return this.nucleiLabeled.getState();
+    static public boolean labelNuclei(){
+        return nucleiLabeled.getState();
     }
-    public boolean labelSelectedNucleus(){
-        return this.selectedLabeled.getState();
+    static public boolean labelSelectedNucleus(){
+        return selectedLabeled.getState();
     }
-    public boolean sistersIndicated(){
-        return this.sisters.getState();
+    static public boolean sistersIndicated(){
+        return sisters.getState();
+    }
+    static public boolean nucleiIndicated(){
+        return segmentedNuclei.getState();
     }
     ImageSource source;
     NucleusFile nucFile;
     ImagedEmbryo imagedEmbryo;
     SynchronizedMultipleSlicePanel panel;
     JFileChooser nucChooser;
-    JCheckBoxMenuItem sisters;
-    JCheckBoxMenuItem nucleiLabeled;
-    JCheckBoxMenuItem selectedLabeled;
+    
+    static JCheckBoxMenuItem segmentedNuclei;
+    static JCheckBoxMenuItem sisters;
+    static JCheckBoxMenuItem nucleiLabeled;
+    static JCheckBoxMenuItem selectedLabeled;
     
     static public void main(String[] args) {
         EventQueue.invokeLater(new Runnable(){

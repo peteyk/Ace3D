@@ -11,6 +11,12 @@ import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.TreeMap;
+import javax.swing.ButtonGroup;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -19,6 +25,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.WindowConstants;
+import org.rhwlab.dispim.DataSetDesc;
 import org.rhwlab.dispim.Hdf5ImageSource;
 import org.rhwlab.dispim.ImageSource;
 import org.rhwlab.dispim.ImagedEmbryo;
@@ -58,6 +65,8 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
             @Override
             public void actionPerformed(ActionEvent e) {
                 source = new Hdf5ImageSource(null);
+                buildDataSetMenu();
+                buildContrastMenu();
                 imagedEmbryo = new ImagedEmbryo(source);
                 imagedEmbryo.setNucleusFile(nucFile);
                 panel.setEmbryo(imagedEmbryo);
@@ -145,6 +154,9 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
         });
         fileMenu.add(exit);
         
+        dataset = new JMenu("DataSet");
+        menuBar.add(dataset);
+        
         JMenu navigate = new JMenu("Navigate");
         JMenuItem toTime = new JMenuItem("To Time Point");
         toTime.addActionListener(new ActionListener(){
@@ -199,6 +211,11 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
         });        
         view.add(nucleiLabeled);
         
+        JMenu imageMenu = new JMenu("Image");
+        menuBar.add(imageMenu);
+        contrast = new JMenu("Contrast");
+        imageMenu.add(contrast);
+
         this.setJMenuBar(menuBar);        
     }
    
@@ -255,6 +272,45 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
             }
         }        
     }
+    private void buildDataSetMenu(){
+        dataset.removeAll();
+        ButtonGroup buttonGroup = new ButtonGroup();
+        Iterator<DataSetDesc> iter = source.getDataSets().iterator();
+        
+        datasetChoices = new JCheckBoxMenuItem[source.getDataSets().size()];
+        int i=0;
+        while(iter.hasNext()){
+            datasetChoices[i] = new JCheckBoxMenuItem(iter.next().getName());
+            datasetChoices[i].addActionListener(new ActionListener(){
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    panel.showCurrentImage();
+                }
+            });
+            dataset.add(datasetChoices[i]);
+            buttonGroup.add(datasetChoices[i]);
+            ++i;
+        }
+        datasetChoices[2].setState(true);
+    }
+    private void buildContrastMenu(){
+        contrast.removeAll();;
+        Iterator<DataSetDesc> iter = source.getDataSets().iterator();
+        contrastDialogs.clear();
+        while(iter.hasNext()){
+            String datasetName = iter.next().getName();
+            ContrastDialog cd = new ContrastDialog(this,panel,String.format("Contrast for Dataset: %s",datasetName),0,Short.MAX_VALUE);
+            contrastDialogs.put(datasetName,cd);
+            JMenuItem channelContrast = new JMenuItem(datasetName);
+            contrast.add(channelContrast);
+            channelContrast.addActionListener(new ActionListener(){
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    cd.setVisible(true);
+                }
+            });
+        }
+    }
     static public boolean labelNuclei(){
         return nucleiLabeled.getState();
     }
@@ -267,16 +323,30 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
     static public boolean nucleiIndicated(){
         return segmentedNuclei.getState();
     }
+
+    static List<String> datasetsSelected(){
+        ArrayList<String> ret = new ArrayList<>();
+        for (JCheckBoxMenuItem item : datasetChoices){
+            if (item.isSelected()){
+                ret.add(item.getText());
+            }
+        }
+        return ret;
+    }
+    JMenu dataset;
+    JMenu contrast;
     ImageSource source;
     NucleusFile nucFile;
     ImagedEmbryo imagedEmbryo;
     SynchronizedMultipleSlicePanel panel;
     JFileChooser nucChooser;
+    TreeMap<String,ContrastDialog> contrastDialogs = new TreeMap<>();
     
     static JCheckBoxMenuItem segmentedNuclei;
     static JCheckBoxMenuItem sisters;
     static JCheckBoxMenuItem nucleiLabeled;
     static JCheckBoxMenuItem selectedLabeled;
+    static JCheckBoxMenuItem[] datasetChoices;
     
     static public void main(String[] args) {
         EventQueue.invokeLater(new Runnable(){

@@ -66,7 +66,11 @@ public class SingleSlicePanel extends JPanel {
                 if (timePointImage != null){
                     IntervalView iv = timePointImage.getImage(dim, slice);
                     imagePlus = ImageJFunctions.wrap(iv, title);
-                    imagePlus.setDisplayRange(timePointImage.getMin(),timePointImage.getMax());
+                    if (autoContrast){
+                        minContrast = timePointImage.getMin();
+                        maxContrast = timePointImage.getMax();
+                    }
+                    imagePlus.setDisplayRange(minContrast,maxContrast);
                     Graphics2D g2 = (Graphics2D) g;
 
                     // clear the panel
@@ -408,6 +412,12 @@ public class SingleSlicePanel extends JPanel {
     private void labelNucleus(Graphics g2,Nucleus nuc){
         g2.drawString(nuc.getName(),screenX(nuc.getCenter()),screenY(nuc.getCenter()));
     }
+    public void changeContrast(boolean auto,float min,float max){
+        this.autoContrast = auto;
+        this.maxContrast = max;
+        this.minContrast = min;
+        this.repaint();
+    }
     SynchronizedMultipleSlicePanel parent;
     JPanel slicePanel;
     double scale=1.0;
@@ -419,5 +429,8 @@ public class SingleSlicePanel extends JPanel {
     final String title;
     TimePointImage timePointImage;
     ImagePlus imagePlus;
+    boolean autoContrast=true;
+    float minContrast;
+    float maxContrast;
     
 }

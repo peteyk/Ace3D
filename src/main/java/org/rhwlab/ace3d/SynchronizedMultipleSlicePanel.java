@@ -42,17 +42,18 @@ public class SynchronizedMultipleSlicePanel extends JPanel {
         slider.addChangeListener(new ChangeListener(){
             @Override
             public void stateChanged(ChangeEvent e) {
-                
                 time = slider.getValue();
-                TimePointImage timePointImage = embryo.getImage(time); 
-                for (SingleSlicePanel panel : panels){
-                    panel.setImage(timePointImage, position);
-                }  
-                updateBorder();
+                showCurrentImage();
             }
         });
         this.add(slider,BorderLayout.SOUTH);
-
+    }
+    public void showCurrentImage(){
+        TimePointImage timePointImage = embryo.getImage(Ace3D_Frame.datasetsSelected().get(0),time); 
+        for (SingleSlicePanel panel : panels){
+            panel.setImage(timePointImage, position);
+        }  
+        updateBorder();        
     }
     public void changeTime(int time){
         slider.setValue(time);
@@ -140,10 +141,9 @@ public class SynchronizedMultipleSlicePanel extends JPanel {
     }
     public void setEmbryo(ImagedEmbryo emb){
         this.embryo = emb;
-//        time = emb.getTimes()/2;
-        time = 210;
+        time = emb.getTimes()/2;
         
-        TimePointImage timePointImage = emb.getImage(time);
+        TimePointImage timePointImage = emb.getImage(Ace3D_Frame.datasetsSelected().get(0),time);
         double[] xformDims = timePointImage.getDims();
         for (int d=0 ; d<position.length ; ++d){
             position[d] = (long)xformDims[d]/2;
@@ -155,13 +155,18 @@ public class SynchronizedMultipleSlicePanel extends JPanel {
         }
         slider.setMinimum(0);
         slider.setMaximum(emb.getTimes());
-        slider.setValue( 210);
+        slider.setValue( emb.getTimes()/2);
     }
     public long[] getPosition(){
         return this.position;
     }
     public ImagedEmbryo getEmbryo(){
         return embryo;
+    }
+    public void changeContrast(boolean auto,float min,float max){
+        for (SingleSlicePanel panel : panels){
+            panel.changeContrast(auto,min,max);
+        }
     }
     int nDims;
     JSlider slider;

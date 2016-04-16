@@ -5,7 +5,10 @@
  */
 package org.rhwlab.dispim;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.TreeMap;
 import mpicbg.spim.data.registration.ViewRegistration;
 import mpicbg.spim.data.registration.ViewRegistrations;
 import mpicbg.spim.data.registration.ViewTransform;
@@ -17,6 +20,7 @@ import mpicbg.spim.data.sequence.SequenceDescription;
 import mpicbg.spim.data.sequence.SetupImgLoader;
 import mpicbg.spim.data.sequence.ViewDescription;
 import mpicbg.spim.data.sequence.ViewId;
+import mpicbg.spim.data.sequence.ViewSetup;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccessible;
@@ -40,6 +44,12 @@ public class  Hdf5ImageSource implements ImageSource {
             result = new LoadParseQueryXML();
             result.queryXML( "editing", false, false, false, false );
         }
+        ArrayList<ViewSetup> setups = result.getViewSetupsToProcess();
+        for (ViewSetup setup : setups){
+            Hdf5DataSetDesc desc = new Hdf5DataSetDesc(setup);
+            this.dataSetMap.put(desc.getName(), desc);
+        }
+        
         timepoints = result.getTimePointsToProcess();
         angles = result.getData().getSequenceDescription().getAllAnglesOrdered();
         channels = result.getData().getSequenceDescription().getAllChannelsOrdered();  
@@ -47,10 +57,13 @@ public class  Hdf5ImageSource implements ImageSource {
         spimData = result.getData();        
     }
     @Override
-    public TimePointImage getImage(int time){
-        return getImage(time,this.angle,this.channel,this.illum);
+    public TimePointImage getImage(String dataset,int time) {
+        Hdf5DataSetDesc desc = (Hdf5DataSetDesc)this.dataSetMap.get(dataset);
+        return getImage(dataset,time,desc.getAngleId(),desc.getChannelId(),desc.getIllumninationId());
     }
-    public  TimePointImage getImage(int time,int angle,int channel,int illum) {
+    
+    public  TimePointImage getImage(String dataset,int time,int angle,int channel,int illum) {
+
         final ViewId viewId = SpimData2.getViewId( 
                 spimData.getSequenceDescription(),timepoints.get(time),channels.get(channel),angles.get(angle),illuminations.get(illum) );
         ViewRegistrations viewRegs = spimData.getViewRegistrations();
@@ -66,6 +79,7 @@ public class  Hdf5ImageSource implements ImageSource {
         }
         SequenceDescription seqDesc = spimData.getSequenceDescription();
         ViewDescription viewDesc = seqDesc.getViewDescription(viewId);
+
         ImgLoader imgLoader = seqDesc.getImgLoader();
         SetupImgLoader setupImgLoader = imgLoader.getSetupImgLoader(viewId.getViewSetupId());
         
@@ -92,7 +106,7 @@ public class  Hdf5ImageSource implements ImageSource {
         float[] minmax = FusionHelper.minMax(img);  
 	RealRandomAccessible< UnsignedShortType > realview = RealViews.affineReal( interpolated, affine );
         RandomAccessibleInterval< UnsignedShortType > view = Views.interval( Views.raster( realview ),min,max);
-        return new TimePointImage(view,minmax,time,xformDims);
+        return new TimePointImage(view,minmax,time,xformDims,dataset);
     }
     public void setAngle(int a){
         this.angle = a;
@@ -110,7 +124,10 @@ public class  Hdf5ImageSource implements ImageSource {
     public String getFile(){
         return result.getXMLFileName();
     }
+
+   
     LoadParseQueryXML result;
+    TreeMap<String,DataSetDesc> dataSetMap = new TreeMap<>();
     int angle;
     int channel;
     int illum;
@@ -119,6 +136,14 @@ public class  Hdf5ImageSource implements ImageSource {
     final List< Channel > channels;
     final List< Illumination > illuminations;
     SpimData2 spimData;
+
+    @Override
+    public Collection<DataSetDesc> getDataSets() {
+        return this.dataSetMap.values();
+    }
+
+
+
 
 
 }

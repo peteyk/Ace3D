@@ -20,17 +20,18 @@ import net.imglib2.view.Views;
  */
 public class TimePointImage{
 
-    public TimePointImage(RandomAccessibleInterval img,float[] mm,int time,double[] dims){
+    public TimePointImage(RandomAccessibleInterval img,float[] mm,int time,double[] dims,String dataset){
         this.image = img;
         this.minmax = mm;
         this.time = time;
         this.dims = dims;
+        this.dataset = dataset;
     }
     ImagePlus getSlice(int dim,int slice){
         
         IntervalView iv = Views.hyperSlice(image, dim, slice);
         ImagePlus imagePlus = ImageJFunctions.wrap(iv,String.format("(%d,%d,%d)", time,dim,slice));
-        imagePlus.setDisplayRange(minmax[0],minmax[1]);
+
         return imagePlus;
     }
     public int getTime(){
@@ -60,6 +61,21 @@ public class TimePointImage{
     public Set<Nucleus> getNuclei(){
         return nuclei;
     }
+    public boolean equals(Object obj){
+        if (obj instanceof TimePointImage){
+            TimePointImage other = (TimePointImage)obj;
+            if (this.time == other.time){
+                if (this.dataset.equals(other.dataset)){
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    public String getDataset(){
+        return this.dataset;
+    }
+    String dataset;
     int time;
     Set<Nucleus> nuclei = new HashSet<Nucleus>();
     RandomAccessibleInterval image;

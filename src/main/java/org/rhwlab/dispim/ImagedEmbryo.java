@@ -20,15 +20,15 @@ public class ImagedEmbryo {
     public ImagedEmbryo(ImageSource src){
         this.source=src;
     }
-    public TimePointImage getImage(int time){
+    public TimePointImage getImage(String dataset,int time){
         for (TimePointImage image : timePointCache){
-            if (image.getTime()==time){
+            if (image.getTime()==time && image.getDataset().equals(dataset)){
                 Set<Nucleus> nuclei = nucFile.getNuclei(time);
                 image.setNuclei(nuclei);
                 return image;
             }
         }
-        TimePointImage image = source.getImage(time);
+        TimePointImage image = source.getImage(dataset,time);
         Set<Nucleus> nuclei = nucFile.getNuclei(time);
         image.setNuclei(nuclei);
         if (timePointCache.size()==cacheSize){

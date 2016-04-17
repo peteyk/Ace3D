@@ -55,16 +55,25 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
     }
     
 
-    final private void buildMenu(){
+    final void buildMenu(){
         JMenuBar menuBar = new JMenuBar();
         JMenu fileMenu = new JMenu("File");
         menuBar.add(fileMenu);
         
-        JMenuItem open = new JMenuItem("Open Images from HDF5");
+        JMenuItem open;
+        open = new JMenuItem("Open Images from HDF5");
         open.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
                 source = new Hdf5ImageSource(null);
+                
+                // set up the dataset properties map
+                dataSetProperties.clear();
+                Iterator<DataSetDesc> iter = source.getDataSets().iterator();
+                while (iter.hasNext()){
+                    dataSetProperties.put(iter.next().getName(),new DataSetProperties());
+                }
+                
                 buildDataSetMenu();
                 buildContrastMenu();
                 imagedEmbryo = new ImagedEmbryo(source);
@@ -157,6 +166,13 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
         dataset = new JMenu("DataSet");
         menuBar.add(dataset);
         
+        JMenu imageMenu = new JMenu("Image");
+        menuBar.add(imageMenu);
+        contrast = new JMenu("Contrast");
+        imageMenu.add(contrast); 
+        lutMenu = new JMenu("LUT");
+        imageMenu.add(lutMenu);
+        
         JMenu navigate = new JMenu("Navigate");
         JMenuItem toTime = new JMenuItem("To Time Point");
         toTime.addActionListener(new ActionListener(){
@@ -168,7 +184,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
         navigate.add(toTime);
         menuBar.add(navigate);
         
-        JMenu view = new JMenu("View");
+        JMenu view = new JMenu("Annotations");
         menuBar.add(view);
         
         segmentedNuclei = new JCheckBoxMenuItem("Nuclei indicator");
@@ -211,10 +227,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
         });        
         view.add(nucleiLabeled);
         
-        JMenu imageMenu = new JMenu("Image");
-        menuBar.add(imageMenu);
-        contrast = new JMenu("Contrast");
-        imageMenu.add(contrast);
+
 
         this.setJMenuBar(menuBar);        
     }
@@ -299,7 +312,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
         contrastDialogs.clear();
         while(iter.hasNext()){
             String datasetName = iter.next().getName();
-            ContrastDialog cd = new ContrastDialog(this,panel,String.format("Contrast for Dataset: %s",datasetName),0,Short.MAX_VALUE);
+            ContrastDialog cd = new ContrastDialog(this,dataSetProperties.get(datasetName),String.format("Contrast for Dataset: %s",datasetName),0,Short.MAX_VALUE);
             contrastDialogs.put(datasetName,cd);
             JMenuItem channelContrast = new JMenuItem(datasetName);
             contrast.add(channelContrast);
@@ -310,6 +323,9 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
                 }
             });
         }
+    }
+    public void refreshImage(){
+        panel.repaint();
     }
     static public boolean labelNuclei(){
         return nucleiLabeled.getState();
@@ -333,8 +349,13 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
         }
         return ret;
     }
+    static DataSetProperties getProperties(String dataSet){
+        return dataSetProperties.get(dataSet);
+    }
+    
     JMenu dataset;
     JMenu contrast;
+    JMenu lutMenu;
     ImageSource source;
     NucleusFile nucFile;
     ImagedEmbryo imagedEmbryo;
@@ -347,6 +368,8 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
     static JCheckBoxMenuItem nucleiLabeled;
     static JCheckBoxMenuItem selectedLabeled;
     static JCheckBoxMenuItem[] datasetChoices;
+    
+    static TreeMap<String,DataSetProperties> dataSetProperties = new TreeMap<>();
     
     static public void main(String[] args) {
         EventQueue.invokeLater(new Runnable(){

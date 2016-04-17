@@ -163,11 +163,7 @@ public class SynchronizedMultipleSlicePanel extends JPanel {
     public ImagedEmbryo getEmbryo(){
         return embryo;
     }
-    public void changeContrast(boolean auto,float min,float max){
-        for (SingleSlicePanel panel : panels){
-            panel.changeContrast(auto,min,max);
-        }
-    }
+
     int nDims;
     JSlider slider;
     int time;

@@ -27,19 +27,23 @@ import javax.swing.event.ChangeListener;
  * @author gevirl
  */
 public class ContrastDialog extends JDialog {
-    public ContrastDialog(JFrame owner,SynchronizedMultipleSlicePanel listen,String title,int sliderMin,int sliderMax){
+    public ContrastDialog(JFrame owner,DataSetProperties props,String title,int sliderMin,int sliderMax){
         super(owner,title,false);
-        this.listen = listen;
+        this.frame = (Ace3D_Frame)owner;
+        this.props = props;
         this.setSize(300,125);
         this.setLocationRelativeTo(owner);
         
         JPanel centerPanel = new JPanel();
-        centerPanel.setLayout(new GridLayout(2,3));
+        centerPanel.setLayout(new GridLayout(4,1));
         this.add(centerPanel,BorderLayout.CENTER);
         
-        centerPanel.add(new JLabel("Minimum"));
+        JPanel minPanel = new JPanel();
+        minPanel.setLayout(new BoxLayout(minPanel,BoxLayout.X_AXIS));
+        minPanel.add(new JLabel("Minimum"));
         minField = new JTextField(Integer.toString(sliderMin));
-        centerPanel.add(minField);
+        minPanel.add(minField);
+        
         minSlider = new JSlider(sliderMin,sliderMax,sliderMin);
         minSlider.addChangeListener(new ChangeListener(){
             @Override
@@ -56,11 +60,14 @@ public class ContrastDialog extends JDialog {
                 
             }
         });
+        centerPanel.add(minPanel);
         centerPanel.add(minSlider);
         
-        centerPanel.add(new JLabel("Maximum"));
+        JPanel maxPanel = new JPanel();
+        maxPanel.setLayout(new BoxLayout(maxPanel,BoxLayout.X_AXIS));
+        maxPanel.add(new JLabel("Maximum"));
         maxField = new JTextField(Integer.toString(sliderMax));
-        centerPanel.add(maxField);
+        maxPanel.add(maxField);
         maxSlider = new JSlider(sliderMin,sliderMax,sliderMax);
         maxSlider.addChangeListener(new ChangeListener(){
             @Override
@@ -76,6 +83,7 @@ public class ContrastDialog extends JDialog {
                 }                
             }
         });
+        centerPanel.add(maxPanel);
         centerPanel.add(maxSlider);        
         setAllEnabled(false);
         
@@ -88,7 +96,8 @@ public class ContrastDialog extends JDialog {
         JButton cancelButton = new JButton("Cancel");
         buttonPanel.add(cancelButton);        
         buttonPanel.add(Box.createHorizontalGlue());
-        this.add(buttonPanel,BorderLayout.SOUTH);
+        
+//        this.add(buttonPanel,BorderLayout.SOUTH);
         
         autoButton = new JRadioButton("Auto");
         autoButton.setSelected(true);
@@ -127,14 +136,17 @@ public class ContrastDialog extends JDialog {
         return max;
     }
     public void notifyContrastChanged(){
-       
-        listen.changeContrast(autoButton.isSelected(),(float)minSlider.getValue(),(float)maxSlider.getValue());
+        props.autoContrast = autoButton.isSelected();
+        props.min = (float)minSlider.getValue();
+        props.max = (float)maxSlider.getValue();
+        frame.refreshImage();
     }
     boolean auto;
     int min;
     int max;
     
-    SynchronizedMultipleSlicePanel listen;
+    Ace3D_Frame frame;
+    DataSetProperties props;
     JRadioButton autoButton;
     JSlider minSlider;
     JSlider maxSlider;

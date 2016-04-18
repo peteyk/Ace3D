@@ -31,7 +31,7 @@ public class ContrastDialog extends JDialog {
         super(owner,title,false);
         this.frame = (Ace3D_Frame)owner;
         this.props = props;
-        this.setSize(300,125);
+        this.setSize(500,125);
         this.setLocationRelativeTo(owner);
         
         JPanel centerPanel = new JPanel();

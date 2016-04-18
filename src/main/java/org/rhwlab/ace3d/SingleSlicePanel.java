@@ -6,6 +6,7 @@
 package org.rhwlab.ace3d;
 
 import ij.ImagePlus;
+import ij.process.LUT;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -66,14 +67,14 @@ public class SingleSlicePanel extends JPanel {
                 if (timePointImage != null){
                     IntervalView iv = timePointImage.getImage(dim, slice);
                     imagePlus = ImageJFunctions.wrap(iv, title);
-
+                    LUT lut = Ace3D_Frame.getLUT(timePointImage.getDataset());
+                    imagePlus.setLut(lut);
                     DataSetProperties props = Ace3D_Frame.getProperties(timePointImage.getDataset());
                     if (props.autoContrast){
                         imagePlus.setDisplayRange(timePointImage.getMin(),timePointImage.getMax());
                     }else {
                         imagePlus.setDisplayRange(props.min,props.max);
                     }
-                    
                     Graphics2D g2 = (Graphics2D) g;
 
                     // clear the panel
@@ -83,6 +84,8 @@ public class SingleSlicePanel extends JPanel {
                     g2.fillRect(0,0,d.width,d.height);
 
                     BufferedImage buffered = imagePlus.getBufferedImage();
+                    
+//                    buffered = lut.convertToIntDiscrete(buffered.getData(), true);
                     int h = buffered.getHeight();
                     int w = buffered.getWidth();
 

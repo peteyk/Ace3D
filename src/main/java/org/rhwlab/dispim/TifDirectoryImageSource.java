@@ -48,7 +48,7 @@ public class TifDirectoryImageSource implements ImageSource {
             List<SCIFIOImgPlus<?>> list = opener.openImgs(fileNames.get(time));
             SCIFIOImgPlus img = list.get(0);
 
-            double[] dims = new double[img.numDimensions()];
+            long[] dims = new long[img.numDimensions()];
             for (int d=0 ; d<dims.length ; ++d) {
                 dims[d] = img.dimension(d);
             }

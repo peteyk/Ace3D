@@ -49,7 +49,7 @@ public class SynchronizedMultipleSlicePanel extends JPanel {
         this.add(slider,BorderLayout.SOUTH);
     }
     public void showCurrentImage(){
-        TimePointImage timePointImage = embryo.getImage(Ace3D_Frame.datasetsSelected().get(0),time); 
+        timePointImage = embryo.getImage(Ace3D_Frame.datasetsSelected().get(0),time); 
         for (SingleSlicePanel panel : panels){
             panel.setImage(timePointImage, position);
         }  
@@ -143,15 +143,21 @@ public class SynchronizedMultipleSlicePanel extends JPanel {
         this.embryo = emb;
         time = emb.getTimes()/2;
         
-        TimePointImage timePointImage = emb.getImage(Ace3D_Frame.datasetsSelected().get(0),time);
-        double[] xformDims = timePointImage.getDims();
+        timePointImage = emb.getImage(Ace3D_Frame.datasetsSelected().get(0),time);
+        double[] minPosition = timePointImage.getMinPosition();
+        double[] maxPosition = timePointImage.getMaxPosition();        
+        long[] xformDims = timePointImage.getDims();
         for (int d=0 ; d<position.length ; ++d){
-            position[d] = (long)xformDims[d]/2;
+//            position[d] = (long)xformDims[d]/2;
+                position[d] = (long)(0.5*(minPosition[d]+maxPosition[d]));
         } 
+
         for (int d=0 ; d<nDims ; ++d){
             SingleSlicePanel panel = panels[d];
+            
+//            panel.setExtent(1,(int)xformDims[d]);
+            panel.setExtent(minPosition[d],maxPosition[d]);
             panel.setImage(timePointImage, position);
-            panel.setExtent(1,(int)xformDims[d]);
         }
         slider.setMinimum(0);
         slider.setMaximum(emb.getTimes());
@@ -163,11 +169,15 @@ public class SynchronizedMultipleSlicePanel extends JPanel {
     public ImagedEmbryo getEmbryo(){
         return embryo;
     }
+    public TimePointImage getCuurrentImage(){
+        return this.timePointImage;
+    }
 
     int nDims;
     JSlider slider;
     int time;
     ImagedEmbryo embryo;
+    TimePointImage timePointImage;
     TitledBorder titledBorder;
     SingleSlicePanel[] panels;
     long[] position;

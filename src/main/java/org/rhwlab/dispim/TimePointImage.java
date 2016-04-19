@@ -20,7 +20,7 @@ import net.imglib2.view.Views;
  */
 public class TimePointImage{
 
-    public TimePointImage(RandomAccessibleInterval img,float[] mm,int time,double[] dims,String dataset){
+    public TimePointImage(RandomAccessibleInterval img,float[] mm,int time,long[] dims,String dataset){
         this.image = img;
         this.minmax = mm;
         this.time = time;
@@ -49,7 +49,7 @@ public class TimePointImage{
     public float getMax(){
         return minmax[1];
     }
-    public double[] getDims(){
+    public long[] getDims(){
         return this.dims;
     }
     public void addNucleus(Nucleus nuc){
@@ -75,10 +75,30 @@ public class TimePointImage{
     public String getDataset(){
         return this.dataset;
     }
+    public double[] getMinPosition(){
+        double[] ret = new double[image.numDimensions()];
+        for (int i=0 ; i<ret.length ; ++i){
+            ret[i] = image.realMin(i);
+        }
+        return ret;
+    }
+    public double[] getMaxPosition(){
+        double[] ret = new double[image.numDimensions()];
+        for (int i=0 ; i<ret.length ; ++i){
+            ret[i] = image.realMax(i);
+        }
+        return ret;
+    }  
+    public double minPosition(int d){
+        return image.realMin(d);
+    }
+    public double maxPosition(int d){
+        return image.realMax(d);
+    }    
     String dataset;
     int time;
     Set<Nucleus> nuclei = new HashSet<Nucleus>();
     RandomAccessibleInterval image;
     float[] minmax;
-    double[] dims;
+    long[] dims;
 }

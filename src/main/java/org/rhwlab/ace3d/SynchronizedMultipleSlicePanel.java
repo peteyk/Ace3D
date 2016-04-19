@@ -6,6 +6,7 @@
 package org.rhwlab.ace3d;
 
 import java.awt.BorderLayout;
+import java.util.List;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JPanel;
@@ -13,9 +14,9 @@ import javax.swing.JSlider;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import net.imglib2.RandomAccessibleInterval;
 import org.rhwlab.dispim.ImagedEmbryo;
 import org.rhwlab.dispim.TimePointImage;
+import org.rhwlab.dispim.nucleus.Nucleus;
 
 /**
  *
@@ -41,29 +42,77 @@ public class SynchronizedMultipleSlicePanel extends JPanel {
         slider.addChangeListener(new ChangeListener(){
             @Override
             public void stateChanged(ChangeEvent e) {
-                
                 time = slider.getValue();
-                TimePointImage timePointImage = embryo.getImage(time); 
-                for (SingleSlicePanel panel : panels){
-                    panel.setImage(timePointImage, position);
-                }  
-                updateBorder();
+                showCurrentImage();
             }
         });
         this.add(slider,BorderLayout.SOUTH);
-
+    }
+    public void showCurrentImage(){
+        TimePointImage timePointImage = embryo.getImage(Ace3D_Frame.datasetsSelected().get(0),time); 
+        for (SingleSlicePanel panel : panels){
+            panel.setImage(timePointImage, position);
+        }  
+        updateBorder();        
     }
     public void changeTime(int time){
         slider.setValue(time);
     }
     public void incrementTime(){
         if (time < slider.getMaximum()){
+            Nucleus selected = this.embryo.selectedNucleus(time);
+            if (selected != null){
+                // track the selected nucleus forward
+                List<Nucleus> next = this.embryo.nextNuclei(selected);
+                if (next.size() > 0){
+                    embryo.clearSelected(time+1);
+                    next.get(0).setSelected(true);
+                    if (next.size()>1){
+                        // nucleus has divided
+                        embryo.clearLabeled(time+1);
+                        next.get(1).setLabeled(true);
+                    }
+                    this.changePosition(next.get(0).getCenter());
+                }
+            }
             slider.setValue(time+1);
         }
     }
     public void decrementTime(){
         if (time > 1){
+            Nucleus selected = this.embryo.selectedNucleus(time);
+            if (selected!= null){
+                // track the selected nucleus back in time
+                Nucleus prev = this.embryo.previousNucleus(selected);
+                if (prev != null){
+                    embryo.clearSelected(time-1);
+                    prev.setSelected(true);   
+                    this.changePosition(prev.getCenter());
+                }
+            }            
             slider.setValue(time-1);
+        }
+    }
+    public void moveSelectedNucleus(int dim,int value){
+        Nucleus selected = this.embryo.selectedNucleus(time);
+        if (selected!= null){
+            long[] center = selected.getCenter();
+            center[dim] = center[dim] + (long)value;
+            selected.setCenter(center);
+            repaintPanels();
+        }        
+    }
+    public void changeRadiusSelectedNucleus(int value){
+        Nucleus selected = this.embryo.selectedNucleus(time);
+        if (selected!= null){
+            double v = selected.getRadius() + value;
+            selected.setRadius(v);
+            repaintPanels();
+        }        
+    }
+    public void repaintPanels(){
+        for (SingleSlicePanel p : panels){
+            p.repaint();
         }
     }
     public void changePosition(long[] pos){
@@ -92,10 +141,9 @@ public class SynchronizedMultipleSlicePanel extends JPanel {
     }
     public void setEmbryo(ImagedEmbryo emb){
         this.embryo = emb;
-//        time = emb.getTimes()/2;
-        time = 210;
+        time = emb.getTimes()/2;
         
-        TimePointImage timePointImage = emb.getImage(time);
+        TimePointImage timePointImage = emb.getImage(Ace3D_Frame.datasetsSelected().get(0),time);
         double[] xformDims = timePointImage.getDims();
         for (int d=0 ; d<position.length ; ++d){
             position[d] = (long)xformDims[d]/2;
@@ -107,11 +155,15 @@ public class SynchronizedMultipleSlicePanel extends JPanel {
         }
         slider.setMinimum(0);
         slider.setMaximum(emb.getTimes());
-        slider.setValue( 210);
+        slider.setValue( emb.getTimes()/2);
     }
     public long[] getPosition(){
         return this.position;
     }
+    public ImagedEmbryo getEmbryo(){
+        return embryo;
+    }
+
     int nDims;
     JSlider slider;
     int time;

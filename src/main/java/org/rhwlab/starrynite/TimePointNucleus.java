@@ -104,6 +104,14 @@ public class TimePointNucleus {
         TimePointNuclei nextTimeNucs = brothers.getSeries().getNucleiAtTime(this.getTime()+1);
         return nextTimeNucs.getNucleus(succ);
     }
+    public TimePointNucleus getPredecessor(){
+        if (this.predecessor==-1){
+            return null;
+        }
+        TimePointNuclei priorTimeNucs = brothers.getSeries().getNucleiAtTime(this.getTime()-1);
+        return priorTimeNucs.getNucleus(this.predecessor);
+    }
+    
     public int getTime(){
         return brothers.time;  
     }

@@ -9,12 +9,14 @@ import io.scif.img.ImgIOException;
 import io.scif.img.ImgOpener;
 import io.scif.img.SCIFIOImgPlus;
 import java.io.File;
+import java.util.Collection;
 import java.util.List;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.scijava.Context;
 import spim.process.fusion.FusionHelper;
 
 /**
@@ -39,13 +41,13 @@ public class TifDirectoryImageSource implements ImageSource {
     }
 
     @Override
-    public TimePointImage getImage(int time) {
-        ImgOpener opener = new ImgOpener();
+    public TimePointImage getImage(String dataset,int time) {
+        ImgOpener opener = new ImgOpener(new Context());
         try {
  
             List<SCIFIOImgPlus<?>> list = opener.openImgs(fileNames.get(time));
             SCIFIOImgPlus img = list.get(0);
-            
+
             double[] dims = new double[img.numDimensions()];
             for (int d=0 ; d<dims.length ; ++d) {
                 dims[d] = img.dimension(d);
@@ -53,7 +55,7 @@ public class TifDirectoryImageSource implements ImageSource {
             float[] mm = new float[2];           
             float[] minmax = FusionHelper.minMax(img);
             
-            return new TimePointImage(img.getImg(),mm,time,dims);
+            return new TimePointImage(img.getImg(),mm,time,dims,dataset);
         } catch (ImgIOException ex) {
             Logger.getLogger(TifDirectoryImageSource.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -73,7 +75,12 @@ public class TifDirectoryImageSource implements ImageSource {
     
     static public void main(String[] args){
         TifDirectoryImageSource source = new TifDirectoryImageSource("/net/waterston/vol9/diSPIM/20151118_nhr-25_XIL0141/CroppedReslicedBGSubtract488");
-        source.getImage(1);
+        
     }
-    
+
+    @Override
+    public Collection<DataSetDesc> getDataSets() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
 }

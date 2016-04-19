@@ -7,10 +7,19 @@ package org.rhwlab.ace3d;
 
 import ij.ImageJ;
 import ij.plugin.PlugIn;
+import ij.process.LUT;
+import java.awt.Container;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeMap;
+import javax.swing.ButtonGroup;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
@@ -18,6 +27,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.WindowConstants;
+import org.rhwlab.dispim.DataSetDesc;
 import org.rhwlab.dispim.Hdf5ImageSource;
 import org.rhwlab.dispim.ImageSource;
 import org.rhwlab.dispim.ImagedEmbryo;
@@ -47,16 +57,28 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
     }
     
 
-    final private void buildMenu(){
+    final void buildMenu(){
         JMenuBar menuBar = new JMenuBar();
         JMenu fileMenu = new JMenu("File");
         menuBar.add(fileMenu);
         
-        JMenuItem open = new JMenuItem("Open Images from HDF5");
+        JMenuItem open;
+        open = new JMenuItem("Open Images from HDF5");
         open.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
                 source = new Hdf5ImageSource(null);
+                
+                // set up the dataset properties map
+                dataSetProperties.clear();
+                Iterator<DataSetDesc> iter = source.getDataSets().iterator();
+                while (iter.hasNext()){
+                    dataSetProperties.put(iter.next().getName(),new DataSetProperties());
+                }
+                
+                buildDataSetMenu();
+                buildContrastMenu();
+                buildLutMenu();
                 imagedEmbryo = new ImagedEmbryo(source);
                 imagedEmbryo.setNucleusFile(nucFile);
                 panel.setEmbryo(imagedEmbryo);
@@ -134,6 +156,25 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
         });
         fileMenu.add(nucSaveAs);  
         fileMenu.addSeparator();
+
+        JMenuItem exit = new JMenuItem("Exit");
+        exit.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                System.exit(0);
+            }
+        });
+        fileMenu.add(exit);
+        
+        dataset = new JMenu("DataSet");
+        menuBar.add(dataset);
+        
+        JMenu imageMenu = new JMenu("Image");
+        menuBar.add(imageMenu);
+        contrast = new JMenu("Contrast");
+        imageMenu.add(contrast); 
+        lutMenu = new JMenu("LUT");
+        imageMenu.add(lutMenu);
         
         JMenu navigate = new JMenu("Navigate");
         JMenuItem toTime = new JMenuItem("To Time Point");
@@ -146,15 +187,51 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
         navigate.add(toTime);
         menuBar.add(navigate);
         
-        JMenuItem exit = new JMenuItem("Exit");
-        exit.addActionListener(new ActionListener(){
+        JMenu view = new JMenu("Annotations");
+        menuBar.add(view);
+        
+        segmentedNuclei = new JCheckBoxMenuItem("Nuclei indicator");
+        segmentedNuclei.setSelected(true);
+        segmentedNuclei.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
-                System.exit(0);
+                panel.repaint();
             }
         });
-        fileMenu.add(exit);
+        view.add(segmentedNuclei);
         
+        sisters = new JCheckBoxMenuItem("Sister indicator");
+        sisters.setSelected(true);
+        sisters.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                panel.repaint();
+            }
+        });        
+        view.add(sisters);
+        
+        selectedLabeled = new JCheckBoxMenuItem("Label the Selected Nucleus");
+        selectedLabeled.setSelected(false);
+        selectedLabeled.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                panel.repaint();
+            }
+        });        
+        view.add(selectedLabeled);
+        
+        nucleiLabeled = new JCheckBoxMenuItem("Label All the Nuclei");
+        nucleiLabeled.setSelected(false);
+        nucleiLabeled.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                panel.repaint();
+            }
+        });        
+        view.add(nucleiLabeled);
+        
+
+
         this.setJMenuBar(menuBar);        
     }
    
@@ -211,11 +288,134 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
             }
         }        
     }
+    private void buildDataSetMenu(){
+        dataset.removeAll();
+        ButtonGroup buttonGroup = new ButtonGroup();
+        Iterator<DataSetDesc> dataSetIter = source.getDataSets().iterator();
+        
+        datasetChoices = new JCheckBoxMenuItem[source.getDataSets().size()];
+        int i=0;
+        while(dataSetIter.hasNext()){
+            datasetChoices[i] = new JCheckBoxMenuItem(dataSetIter.next().getName());
+            datasetChoices[i].addActionListener(new ActionListener(){
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    panel.showCurrentImage();
+                }
+            });
+            dataset.add(datasetChoices[i]);
+            buttonGroup.add(datasetChoices[i]);
+            ++i;
+        }
+        datasetChoices[2].setState(true);
+    }
+    private void buildContrastMenu(){
+        contrast.removeAll();
+        Iterator<DataSetDesc> dataSetIter = source.getDataSets().iterator();
+        contrastDialogs.clear();
+        while(dataSetIter.hasNext()){
+            String datasetName = dataSetIter.next().getName();
+            ContrastDialog cd = new ContrastDialog(this,dataSetProperties.get(datasetName),String.format("Contrast for Dataset: %s",datasetName),0,Short.MAX_VALUE);
+            contrastDialogs.put(datasetName,cd);
+            JMenuItem channelContrast = new JMenuItem(datasetName);
+            contrast.add(channelContrast);
+            channelContrast.addActionListener(new ActionListener(){
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    cd.setVisible(true);
+                }
+            });
+        }
+    }
+    private void buildLutMenu(){
+        lutMenu.removeAll();
+        Iterator<DataSetDesc> dataSetIter = source.getDataSets().iterator();
+        while(dataSetIter.hasNext()){
+            ButtonGroup buttonGroup = new ButtonGroup();
+            String dataset = dataSetIter.next().getName();
+            JMenu dataSetMenu = new JMenu(dataset);
+            lutMenu.add(dataSetMenu);
+            Set<String> lutNames = lookUpTables.getLutNames();
+            JCheckBoxMenuItem[] lutItems = new JCheckBoxMenuItem[lutNames.size()];
+            int i=0;
+            for (String lutName : lutNames){
+                
+                lutItems[i] = new JCheckBoxMenuItem(lutName);
+                lutItems[i].setName(dataset);
+                lutItems[i].addActionListener(new ActionListener(){
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        JCheckBoxMenuItem checked = (JCheckBoxMenuItem)e.getSource();
+                        if (checked.getState()){
+
+                            dataSetLuts.put(checked.getName(),lookUpTables.getLUT(checked.getText()));
+                            panel.showCurrentImage();
+                        }
+                    }
+                });
+                dataSetMenu.add(lutItems[i]);
+                buttonGroup.add(lutItems[i]);
+                if (lutName.equalsIgnoreCase("Gray")){
+                    lutItems[i].setSelected(true);
+                }
+                ++i;
+            }
+            dataSetLuts.put(dataset,lookUpTables.getLUT("Gray"));
+        }
+        
+    }
+    public void refreshImage(){
+        panel.repaint();
+    }
+    static public boolean labelNuclei(){
+        return nucleiLabeled.getState();
+    }
+    static public boolean labelSelectedNucleus(){
+        return selectedLabeled.getState();
+    }
+    static public boolean sistersIndicated(){
+        return sisters.getState();
+    }
+    static public boolean nucleiIndicated(){
+        return segmentedNuclei.getState();
+    }
+
+    static List<String> datasetsSelected(){
+        ArrayList<String> ret = new ArrayList<>();
+        for (JCheckBoxMenuItem item : datasetChoices){
+            if (item.isSelected()){
+                ret.add(item.getText());
+            }
+        }
+        return ret;
+    }
+    static DataSetProperties getProperties(String dataSet){
+        return dataSetProperties.get(dataSet);
+    }
+    
+    static LUT getLUT(String dataSet){
+        return dataSetLuts.get(dataSet);
+    }
+    
+    JMenu dataset;
+    JMenu contrast;
+    JMenu lutMenu;
     ImageSource source;
     NucleusFile nucFile;
     ImagedEmbryo imagedEmbryo;
     SynchronizedMultipleSlicePanel panel;
     JFileChooser nucChooser;
+    TreeMap<String,ContrastDialog> contrastDialogs = new TreeMap<>();
+    LookUpTables lookUpTables = new LookUpTables();
+    
+    static JCheckBoxMenuItem segmentedNuclei;
+    static JCheckBoxMenuItem sisters;
+    static JCheckBoxMenuItem nucleiLabeled;
+    static JCheckBoxMenuItem selectedLabeled;
+    static JCheckBoxMenuItem[] datasetChoices;
+    static TreeMap<String,LUT> dataSetLuts = new TreeMap<>();
+    
+    static TreeMap<String,DataSetProperties> dataSetProperties = new TreeMap<>();
     
     static public void main(String[] args) {
         EventQueue.invokeLater(new Runnable(){

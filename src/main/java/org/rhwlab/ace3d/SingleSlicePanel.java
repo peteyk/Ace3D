@@ -6,6 +6,7 @@
 package org.rhwlab.ace3d;
 
 import ij.ImagePlus;
+import ij.process.LUT;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -20,7 +21,9 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Ellipse2D;
 import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
+import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeMap;
 import javax.swing.BorderFactory;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
@@ -31,6 +34,7 @@ import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.view.IntervalView;
 import org.rhwlab.dispim.nucleus.Nucleus;
 import org.rhwlab.dispim.TimePointImage;
+import org.rhwlab.dispim.nucleus.NucleusFile;
 
 /**
  *
@@ -63,7 +67,14 @@ public class SingleSlicePanel extends JPanel {
                 if (timePointImage != null){
                     IntervalView iv = timePointImage.getImage(dim, slice);
                     imagePlus = ImageJFunctions.wrap(iv, title);
-                    imagePlus.setDisplayRange(timePointImage.getMin(),timePointImage.getMax());
+                    LUT lut = Ace3D_Frame.getLUT(timePointImage.getDataset());
+                    imagePlus.setLut(lut);
+                    DataSetProperties props = Ace3D_Frame.getProperties(timePointImage.getDataset());
+                    if (props.autoContrast){
+                        imagePlus.setDisplayRange(timePointImage.getMin(),timePointImage.getMax());
+                    }else {
+                        imagePlus.setDisplayRange(props.min,props.max);
+                    }
                     Graphics2D g2 = (Graphics2D) g;
 
                     // clear the panel
@@ -73,6 +84,8 @@ public class SingleSlicePanel extends JPanel {
                     g2.fillRect(0,0,d.width,d.height);
 
                     BufferedImage buffered = imagePlus.getBufferedImage();
+                    
+//                    buffered = lut.convertToIntDiscrete(buffered.getData(), true);
                     int h = buffered.getHeight();
                     int w = buffered.getWidth();
 
@@ -95,34 +108,28 @@ public class SingleSlicePanel extends JPanel {
                     
                     
                    // draw any nuclei
-                   Set<Nucleus> nucs = timePointImage.getNuclei();
-                   for (Nucleus nuc : nucs){
-                        long[] center = nuc.getCenter();  // image corrdinates
-                        double r = nuc.getRadius();   // image corrdinates
-                        double delta = Math.abs(slice-center[dim]);   // image corrdinates
-                        if (delta <= r){
-                            double diam = 2.0*scale*Math.sqrt(r*r-delta*delta);  //screen coordinates
-                            double rad = 0.5*diam;   // screen coordinates
-                            Ellipse2D.Double ellipse;
-                            switch (dim) {
-                                case 0:
-                                    ellipse = new Ellipse2D.Double(scale*center[1]-rad,scale*center[2]-rad,diam,diam);
-                                    break;
-                                case 1:
-                                    ellipse = new Ellipse2D.Double(scale*center[0]-rad,scale*center[2]-rad,diam,diam);
-                                    break;            
-                                default:
-                                    ellipse = new Ellipse2D.Double(scale*center[0]-rad,scale*center[1]-rad,diam,diam);
-                                    break;
-                            }
-                            if (nuc.getSelected()){
-                                g2.setColor(Color.RED);
-                            }else {
-                                g2.setColor(Color.GREEN);
-                            }
-                            g2.draw(ellipse);
-                        }
+                   if (Ace3D_Frame.nucleiIndicated()){
+                       drawNuclei(g2);
+                       g2.setColor(save);
                    }
+
+                   if (Ace3D_Frame.sistersIndicated()){
+                        g2.setColor(Color.GREEN);
+                        drawSisters(g2);  // draw the sister indicator   
+                        g2.setColor(save);
+                   }                   
+                   if (Ace3D_Frame.labelNuclei()){
+                        g2.setColor(Color.GREEN);
+                        labelAllNuclei(g2);
+                        g2.setColor(save);
+                   }
+                   if (Ace3D_Frame.labelSelectedNucleus()){
+                       g2.setColor(Color.RED);
+                       labelSelectedNucleus(g2);
+                       g2.setColor(save);
+                   }
+                   g2.setColor(Color.BLUE);
+                   labelMarkedNuclei(g2);
                    g2.setColor(save);
                 }
             }
@@ -133,19 +140,47 @@ public class SingleSlicePanel extends JPanel {
             @Override
             public void keyPressed(KeyEvent e){
                 char k = e.getKeyChar();
-                if (k == 'w'){
-                    long[] pos = parent.getPosition();
-                    pos[dim] = pos[dim] + 1;
-                    setPosition(pos);
-                } else if (k == 's'){
-                    long[] pos = parent.getPosition();
-                    pos[dim] = pos[dim] - 1;
-                    setPosition(pos);                    
-                } else if (k == 'a'){
-                    parent.decrementTime();
-                }else if (k == 'd'){
-                    parent.incrementTime();
-                }
+//                int mask = KeyEvent.SHIFT_DOWN_MASK;
+//                int modifier = e.getModifiersEx();
+ //               if ((modifier&mask) == mask){
+                    long pos[];
+                    switch (k) {
+                    case 'z':
+                        parent.changeRadiusSelectedNucleus(-1);
+                        break;
+                    case 'x':
+                        parent.changeRadiusSelectedNucleus(1);
+                        break;
+                    case 'A':
+                        parent.moveSelectedNucleus(imageXDirection(), -1);
+                        break;
+                    case 'D':
+                        parent.moveSelectedNucleus(imageXDirection(), 1);
+                        break;
+                    case 'S':
+                        parent.moveSelectedNucleus(imageYDirection(), 1);
+                        break;
+                    case 'W':
+                        parent.moveSelectedNucleus(imageYDirection(), -1);
+                        break;
+                    case 'w':
+                        pos = parent.getPosition();
+                        pos[dim] = pos[dim] + 1;
+                        setPosition(pos);
+                        break;  
+                    case 's':
+                        pos = parent.getPosition();
+                        pos[dim] = pos[dim] - 1;
+                        setPosition(pos);
+                        break; 
+                    case 'a':
+                        parent.decrementTime();
+                        break;
+                    case 'd':
+                        parent.incrementTime();
+                        break;
+                    }
+                
             }
         });
         this.addMouseWheelListener(new MouseAdapter(){
@@ -237,6 +272,40 @@ public class SingleSlicePanel extends JPanel {
         slider.setValue((int)pos[dim]);
         this.repaint();
     }
+    // return the screen x coordinate given image coordinates
+    public int screenX(long[] p){
+        if (dim==0){
+            return (int)(p[1]*scale);
+        } else {
+            return (int)(p[0]*scale);
+        }
+    }
+    public int imageXDirection(){
+        if (dim==0){
+            return 1;
+        }
+        return 0;
+    }
+
+    public int screenY(long[] p){
+        if (dim==2){
+            return (int)(p[1]*scale);
+        } else {
+            return (int)(p[2]*scale);
+        }
+    } 
+    public int imageYDirection(){
+        if (dim==2){
+            return 1;
+        }
+        return 2;
+    }    
+    private boolean visible(Nucleus nuc){
+        long[] center = nuc.getCenter();  // image corrdinates
+        double r = nuc.getRadius();   // image corrdinates
+        double delta = Math.abs(slice-center[dim]);   // image corrdinates
+        return delta <= r;       
+    }
     final private void setSlice(long p){
         slice = p;
 
@@ -268,6 +337,88 @@ public class SingleSlicePanel extends JPanel {
         }
         return "z";
     }
+    private void drawNuclei(Graphics2D g2){
+       Set<Nucleus> nucs = timePointImage.getNuclei();
+       for (Nucleus nuc : nucs){
+            long[] center = nuc.getCenter();  // image corrdinates
+            double r = nuc.getRadius();   // image corrdinates
+            double delta = Math.abs(slice-center[dim]);   // image corrdinates
+            if (delta <= r){
+                double diam = 2.0*scale*Math.sqrt(r*r-delta*delta);  //screen coordinates
+                double rad = 0.5*diam;   // screen coordinates
+                Ellipse2D.Double ellipse;
+                switch (dim) {
+                    case 0:
+                        ellipse = new Ellipse2D.Double(scale*center[1]-rad,scale*center[2]-rad,diam,diam);
+                        break;
+                    case 1:
+                        ellipse = new Ellipse2D.Double(scale*center[0]-rad,scale*center[2]-rad,diam,diam);
+                        break;            
+                    default:
+                        ellipse = new Ellipse2D.Double(scale*center[0]-rad,scale*center[1]-rad,diam,diam);
+                        break;
+                }
+                if (nuc.getSelected()){
+                    g2.setColor(Color.RED);
+                }else {
+                    g2.setColor(Color.GREEN);
+                }
+                g2.draw(ellipse);
+            }
+       }        
+    }
+    private void drawSisters(Graphics2D g2){
+        NucleusFile nucFile = parent.getEmbryo().getNucleusFile();
+        
+        TreeMap<Nucleus,Nucleus> sisterPairs = new TreeMap<>();
+        Set<Nucleus> nucs = timePointImage.getNuclei();
+        for (Nucleus nuc : nucs){
+           Nucleus sisterNuc = nucFile.sister(nuc);
+           if (sisterNuc != null){
+               if (sisterPairs.get(sisterNuc)==null){
+                   sisterPairs.put(nuc,sisterNuc);
+               }
+           }
+        } 
+        
+        for (Entry<Nucleus,Nucleus> entry : sisterPairs.entrySet()){
+            Nucleus nuc1 = entry.getKey();
+            Nucleus nuc2 = entry.getValue();
+            if (visible(nuc1)||visible(nuc2)){
+                g2.drawLine(screenX(nuc1.getCenter()),screenY(nuc1.getCenter()),screenX(nuc2.getCenter()),screenY(nuc2.getCenter()));
+            }
+        }
+    }
+    private void labelMarkedNuclei(Graphics2D g2){
+        Set<Nucleus> nucs = timePointImage.getNuclei();
+        for (Nucleus nuc : nucs){
+            if (nuc.getLabeled()){
+                labelNucleus(g2,nuc);
+            }
+        }
+        
+    }
+    private void labelSelectedNucleus(Graphics2D g2){
+        Set<Nucleus> nucs = timePointImage.getNuclei();
+        for (Nucleus nuc : nucs){
+            if (nuc.getSelected()){
+                labelNucleus(g2,nuc);
+            }
+        }        
+    }
+    // label all visible nuclei 
+    private void labelAllNuclei(Graphics2D g2){
+        Set<Nucleus> nucs = timePointImage.getNuclei();
+        for (Nucleus nuc : nucs){
+            if(visible(nuc)){
+                labelNucleus(g2,nuc);
+            }
+        }        
+    }
+    private void labelNucleus(Graphics g2,Nucleus nuc){
+        g2.drawString(nuc.getName(),screenX(nuc.getCenter()),screenY(nuc.getCenter()));
+    }
+
     SynchronizedMultipleSlicePanel parent;
     JPanel slicePanel;
     double scale=1.0;
@@ -278,6 +429,5 @@ public class SingleSlicePanel extends JPanel {
     JSlider slider;
     final String title;
     TimePointImage timePointImage;
-    ImagePlus imagePlus;
-    
+    ImagePlus imagePlus;  
 }

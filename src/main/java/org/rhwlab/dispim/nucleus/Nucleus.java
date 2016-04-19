@@ -9,6 +9,7 @@ import java.io.PrintStream;
 import java.util.Date;
 import java.util.Random;
 import javax.json.Json;
+import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import org.rhwlab.starrynite.TimePointNucleus;
 
@@ -16,7 +17,15 @@ import org.rhwlab.starrynite.TimePointNucleus;
  *
  * @author gevirl
  */
-public class Nucleus {
+public class Nucleus implements Comparable {
+    public Nucleus(JsonObject jsonObj){
+        this.time = jsonObj.getInt("Time");
+        this.name = jsonObj.getString("Name");
+        this.radius = jsonObj.getJsonNumber("Radius").doubleValue();
+        this.x = jsonObj.getJsonNumber("X").longValue();
+        this.y = jsonObj.getJsonNumber("Y").longValue();
+        this.z = jsonObj.getJsonNumber("Z").longValue();
+    }
     public Nucleus(TimePointNucleus data){
         this.time = data.getTime();
         this.name = data.getName();
@@ -57,7 +66,7 @@ public class Nucleus {
         if (rnd == null){
             rnd = new Random();
         }
-        return String.format("Nuc_%d_%d",(new Date()).getTime(),rnd.nextInt());
+        return String.format("Nuc_%d",(new Date()).getTime());
     }
     static public void saveHeadings(PrintStream stream){
         stream.println("Time,Name,X,Y,Z,Radius,Child1,Child2");
@@ -71,12 +80,20 @@ public class Nucleus {
     public double getRadius(){
         return radius;
     }
+    public void setRadius(double r){
+        this.radius = r;
+    }
     public long[] getCenter(){
         long[] center = new long[3];
         center[0] = x;
         center[1] = y;
         center[2] = z;
         return center;
+    }
+    public void setCenter(long[] c){
+        x = c[0];
+        y = c[1];
+        z = c[2];
     }
     public String getName(){
         if (name == null){
@@ -113,6 +130,22 @@ public class Nucleus {
         }
         return builder;
     }
+    public void setCell(Cell cell){
+        this.cell = cell;
+    }
+    public Cell getCell(){
+        return this.cell;
+    }
+    @Override
+    public int compareTo(Object o) {
+        return this.name.compareTo(((Nucleus)o).name);
+    }  
+    public boolean getLabeled(){
+        return this.labeled;
+    }
+    public void setLabeled(boolean lab){
+        this.labeled = lab;
+    }
     int time;
     String name;
     long x;
@@ -121,6 +154,9 @@ public class Nucleus {
     double radius;
     Cell cell;  // the cell to which this nucleus belongs - can be null
     
-    boolean selected=false;
+    boolean selected = false;
+    boolean labeled = false;
     static Random rnd;
+
+
 }

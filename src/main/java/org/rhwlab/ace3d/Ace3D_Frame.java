@@ -307,7 +307,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
             buttonGroup.add(datasetChoices[i]);
             ++i;
         }
-        datasetChoices[2].setState(true);
+        datasetChoices[0].setState(true);
     }
     private void buildContrastMenu(){
         contrast.removeAll();

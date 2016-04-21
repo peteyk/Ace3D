@@ -8,6 +8,7 @@ package org.rhwlab.ace3d;
 import ij.ImageJ;
 import ij.plugin.PlugIn;
 import ij.process.LUT;
+import java.awt.Color;
 import java.awt.Container;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
@@ -20,6 +21,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import javax.swing.ButtonGroup;
 import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JColorChooser;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
@@ -47,6 +49,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
         this.add(panel);
         buildMenu();
         this.pack();
+        buildChooser();
     }
 
     @Override
@@ -79,6 +82,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
                 buildDataSetMenu();
                 buildContrastMenu();
                 buildLutMenu();
+                buildColorMenu();
                 imagedEmbryo = new ImagedEmbryo(source);
                 imagedEmbryo.setNucleusFile(nucFile);
                 panel.setEmbryo(imagedEmbryo);
@@ -175,6 +179,8 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
         imageMenu.add(contrast); 
         lutMenu = new JMenu("LUT");
         imageMenu.add(lutMenu);
+        colorMenu = new JMenu("Color");
+        imageMenu.add(colorMenu);
         
         JMenu navigate = new JMenu("Navigate");
         JMenuItem toTime = new JMenuItem("To Time Point");
@@ -250,7 +256,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
         }
     }
     private void openNucFile()throws Exception {
-        buildChooser();
+
 
         if (nucChooser.showOpenDialog(panel) == JFileChooser.APPROVE_OPTION){
             nucFile = new Ace3DNucleusFile(nucChooser.getSelectedFile());
@@ -261,11 +267,14 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
     }
     
     private void openStarryNiteNucFile()throws Exception {
-        nucFile = new StarryNiteNucleusFile("/nfs/waterston/pete/Segmentation/dispim_sample_data/matlab_output/CroppedReslicedBGSubtract488/Decon_emb1.zip");
-        nucFile.open();
-        if (imagedEmbryo != null){
-            imagedEmbryo.setNucleusFile(nucFile);
-        }
+//        nucFile = new StarryNiteNucleusFile("/nfs/waterston/pete/Segmentation/dispim_sample_data/matlab_output/CroppedReslicedBGSubtract488/Decon_emb1.zip");
+
+        if (nucChooser.showOpenDialog(panel) == JFileChooser.APPROVE_OPTION){
+            nucFile = new StarryNiteNucleusFile(nucChooser.getSelectedFile().getPath());
+            if (imagedEmbryo != null){
+                imagedEmbryo.setNucleusFile(nucFile);
+            }
+        }        
     }
     
     private void saveAsNucFile()throws Exception {
@@ -304,7 +313,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
                 }
             });
             dataset.add(datasetChoices[i]);
-            buttonGroup.add(datasetChoices[i]);
+//            buttonGroup.add(datasetChoices[i]);
             ++i;
         }
         datasetChoices[0].setState(true);
@@ -362,7 +371,30 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
             }
             dataSetLuts.put(dataset,lookUpTables.getLUT("Gray"));
         }
-        
+    }
+    private void buildColorMenu(){
+        colorMenu.removeAll();
+        colorChoices = new JMenuItem[source.getDataSets().size()];
+        int i=0;
+        Iterator<DataSetDesc> dataSetIter = source.getDataSets().iterator();
+        while(dataSetIter.hasNext()){
+            String datasetName = dataSetIter.next().getName();
+            colorChoices[i] = new JMenuItem(datasetName);
+            colorChoices[i].addActionListener(new ActionListener(){
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    JMenuItem item = (JMenuItem)e.getSource();
+                    DataSetProperties props = dataSetProperties.get(item.getText());
+                    Color choosen = JColorChooser.showDialog(Ace3D_Frame.this,item.getText(),props.color);
+                    if (choosen!=null){
+                        props.color = choosen;
+                        item.setForeground(choosen);
+                    }
+                }
+            });
+            colorMenu.add(colorChoices[i]);
+            ++i;
+        }        
     }
     public void refreshImage(){
         panel.repaint();
@@ -380,7 +412,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
         return segmentedNuclei.getState();
     }
 
-    static List<String> datasetsSelected(){
+    static public List<String> datasetsSelected(){
         ArrayList<String> ret = new ArrayList<>();
         for (JCheckBoxMenuItem item : datasetChoices){
             if (item.isSelected()){
@@ -389,17 +421,18 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
         }
         return ret;
     }
-    static DataSetProperties getProperties(String dataSet){
+    static public DataSetProperties getProperties(String dataSet){
         return dataSetProperties.get(dataSet);
     }
     
-    static LUT getLUT(String dataSet){
+    static public LUT getLUT(String dataSet){
         return dataSetLuts.get(dataSet);
     }
     
     JMenu dataset;
     JMenu contrast;
     JMenu lutMenu;
+    JMenu colorMenu;
     ImageSource source;
     NucleusFile nucFile;
     ImagedEmbryo imagedEmbryo;
@@ -413,6 +446,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
     static JCheckBoxMenuItem nucleiLabeled;
     static JCheckBoxMenuItem selectedLabeled;
     static JCheckBoxMenuItem[] datasetChoices;
+    static JMenuItem[] colorChoices;
     static TreeMap<String,LUT> dataSetLuts = new TreeMap<>();
     
     static TreeMap<String,DataSetProperties> dataSetProperties = new TreeMap<>();
@@ -424,6 +458,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
                 new ImageJ();
                 try {
                     Ace3D_Frame   frame = new Ace3D_Frame();
+                    
                     frame.run(null);
                 } catch (Exception exc){
                     exc.printStackTrace();

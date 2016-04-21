@@ -64,21 +64,26 @@ public class SingleSlicePanel extends JPanel {
                 Dimension panelSize = this.getSize();
 //                System.out.printf("panel(%d,%d)\n",panelSize.width,panelSize.height);
 
-                if (timePointImage != null){
-                    IntervalView iv = timePointImage.getImage(dim, slice);
+                if (timePointImage != null){                    
+//                    IntervalView iv = timePointImage.getImage(dim, slice);
+/*                    
                     int nDim = iv.numDimensions();
+                    
                     long[] ivDims = new long[nDim];
                     iv.dimensions(ivDims);
-                    
-                    imagePlus = ImageJFunctions.wrap(iv, title);
+ */                   
+//                    imagePlus = ImageJFunctions.wrap(iv, title);
+/*                    
                     LUT lut = Ace3D_Frame.getLUT(timePointImage.getDataset());
                     imagePlus.setLut(lut);
+                  
                     DataSetProperties props = Ace3D_Frame.getProperties(timePointImage.getDataset());
                     if (props.autoContrast){
                         imagePlus.setDisplayRange(timePointImage.getMin(),timePointImage.getMax());
                     }else {
                         imagePlus.setDisplayRange(props.min,props.max);
                     }
+*/                    
                     Graphics2D g2 = (Graphics2D) g;
 
                     // clear the panel
@@ -87,8 +92,8 @@ public class SingleSlicePanel extends JPanel {
                     Dimension d = this.getSize();
                     g2.fillRect(0,0,d.width,d.height);
 
-                    BufferedImage buffered = imagePlus.getBufferedImage();
-                    
+//                    BufferedImage buffered = imagePlus.getBufferedImage();
+                    BufferedImage buffered = timePointImage.getBufferedImage(dim,slice);
 //                    buffered = lut.convertToIntDiscrete(buffered.getData(), true);
                     bufH = buffered.getHeight();
                     bufW = buffered.getWidth();

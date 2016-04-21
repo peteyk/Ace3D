@@ -100,7 +100,7 @@ public class  Hdf5ImageSource implements ImageSource {
         SetupImgLoader setupImgLoader = imgLoader.getSetupImgLoader(viewId.getViewSetupId());
         
         RandomAccessibleInterval img = setupImgLoader.getImage(viewId.getTimePointId() );
-        
+        Object obj = img.randomAccess().get();
         RandomAccessible input = Views.extendZero(img);
         RealRandomAccessible<UnsignedShortType> interpolated = Views.interpolate( input, new NLinearInterpolatorFactory<UnsignedShortType>() );
 

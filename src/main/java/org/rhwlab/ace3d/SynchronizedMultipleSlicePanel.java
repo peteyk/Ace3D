@@ -49,7 +49,7 @@ public class SynchronizedMultipleSlicePanel extends JPanel {
         this.add(slider,BorderLayout.SOUTH);
     }
     public void showCurrentImage(){
-        timePointImage = embryo.getImage(Ace3D_Frame.datasetsSelected().get(0),time); 
+        timePointImage = embryo.getImage(Ace3D_Frame.datasetsSelected(),time); 
         for (SingleSlicePanel panel : panels){
             panel.setImage(timePointImage, position);
         }  
@@ -143,7 +143,7 @@ public class SynchronizedMultipleSlicePanel extends JPanel {
         this.embryo = emb;
         time = emb.getTimes()/2;
         
-        timePointImage = emb.getImage(Ace3D_Frame.datasetsSelected().get(0),time);
+        timePointImage = emb.getImage(Ace3D_Frame.datasetsSelected(),time);
         double[] minPosition = timePointImage.getMinPosition();
         double[] maxPosition = timePointImage.getMaxPosition();        
         long[] xformDims = timePointImage.getDims();

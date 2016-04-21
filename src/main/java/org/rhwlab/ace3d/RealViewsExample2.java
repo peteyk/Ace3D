@@ -13,6 +13,8 @@ import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
 import io.scif.img.ImgIOException;
 import io.scif.img.ImgOpener;
+import java.awt.Color;
+import javax.swing.JColorChooser;
 import net.imglib2.realtransform.AffineTransform2D;
 import net.imglib2.realtransform.RealViews;
 import net.imglib2.type.numeric.real.FloatType;
@@ -22,6 +24,7 @@ public class RealViewsExample2
 {
 	public static void main( String[] args ) throws ImgIOException
 	{
+            
 		final Img< FloatType > img = new ImgOpener().openImg( "/net/waterston/vol2/home/gevirl/Downloads/advanced-imglib2/images/bee-1.tif", new ArrayImgFactory< FloatType >(), new FloatType() );
 
 		RandomAccessible< FloatType > input = Views.extendValue( img, new FloatType( 128 ) );

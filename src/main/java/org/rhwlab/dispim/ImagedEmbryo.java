@@ -5,10 +5,12 @@
  */
 package org.rhwlab.dispim;
 
+import java.util.ArrayList;
 import org.rhwlab.dispim.nucleus.Nucleus;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import net.imglib2.view.Views;
 import org.rhwlab.dispim.nucleus.NucleusFile;
 
 /**
@@ -19,6 +21,14 @@ import org.rhwlab.dispim.nucleus.NucleusFile;
 public class ImagedEmbryo {
     public ImagedEmbryo(ImageSource src){
         this.source=src;
+    }
+    public TimePointImage getImage(List<String> datasets,int time){
+        ArrayList<TimePointImage> list = new ArrayList<>();
+        for (String dataset : datasets){
+            TimePointImage tpi = getImage(dataset,time);
+            list.add(tpi);
+        }
+        return new CompositeTimePointImage(list);
     }
     public TimePointImage getImage(String dataset,int time){
         for (TimePointImage image : timePointCache){

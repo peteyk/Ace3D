@@ -6,14 +6,17 @@
 package org.rhwlab.ace3d;
 
 import ij.process.LUT;
+import java.awt.Color;
 
 /**
  *
  * @author gevirl
  */
 public class DataSetProperties {
-    boolean autoContrast;
-    float min;
-    float max;
-    LUT lut;
+   
+    public boolean autoContrast = true;
+    public float min;
+    public float max;
+    public LUT lut=null;
+    public Color color = Color.white;
 }

@@ -11,8 +11,10 @@ import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.WritableRaster;
 import java.util.List;
+import java.util.Set;
 import org.rhwlab.ace3d.Ace3D_Frame;
 import org.rhwlab.ace3d.DataSetProperties;
+import org.rhwlab.dispim.nucleus.Nucleus;
 
 /**
  *
@@ -23,6 +25,10 @@ public class CompositeTimePointImage extends TimePointImage {
         super(images.get(0).image,images.get(0).minmax,images.get(0).time,images.get(0).dims,images.get(0).dataset);
         this.images = images;
     }
+    @Override
+    public Set<Nucleus> getNuclei(){
+        return images.get(0).nuclei;
+    }    
     @Override
     public BufferedImage getBufferedImage(int dim,long slice){
 /*        

@@ -83,6 +83,13 @@ public class ImagedEmbryo {
     public NucleusFile getNucleusFile(){
         return nucFile;
     }
+    public long[] getMinCoordinate(){
+        
+        TimePointImage tpi = timePointCache.get(0);
+        long[] ret = new long[tpi.image.numDimensions()];
+        tpi.image.min(ret);
+        return ret;
+    }
     static int cacheSize = 20;
     NucleusFile nucFile;
     ImageSource source;

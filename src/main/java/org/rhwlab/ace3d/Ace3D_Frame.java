@@ -267,12 +267,15 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
     }
     
     private void openStarryNiteNucFile()throws Exception {
+        
 //        nucFile = new StarryNiteNucleusFile("/nfs/waterston/pete/Segmentation/dispim_sample_data/matlab_output/CroppedReslicedBGSubtract488/Decon_emb1.zip");
 
         if (nucChooser.showOpenDialog(panel) == JFileChooser.APPROVE_OPTION){
             nucFile = new StarryNiteNucleusFile(nucChooser.getSelectedFile().getPath());
             
             if (imagedEmbryo != null){
+                long[] coords = imagedEmbryo.getMinCoordinate();
+                ((StarryNiteNucleusFile)nucFile).adjustCoordinates((int)coords[0],(int)coords[1],(int)coords[2]);
                 imagedEmbryo.setNucleusFile(nucFile);
             }
         }        

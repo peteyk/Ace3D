@@ -6,6 +6,7 @@
 package org.rhwlab.dispim.nucleus;
 
 import java.io.File;
+import java.util.Set;
 import org.rhwlab.starrynite.SeriesNuclei;
 import org.rhwlab.starrynite.TimePointNuclei;
 import org.rhwlab.starrynite.TimePointNucleus;
@@ -18,6 +19,15 @@ public class StarryNiteNucleusFile extends Ace3DNucleusFile {
     public StarryNiteNucleusFile(String fn)throws Exception {
         this.fileName = fn;
         open();
+    }
+    public void adjustCoordinates(int xMin,int yMin,int zMin){
+        for (Set<Nucleus> nucSet : this.byTime.values()){
+            for (Nucleus nuc : nucSet){
+                nuc.x = nuc.x - xMin;
+                nuc.y = nuc.y - yMin;
+                nuc.z = nuc.z - zMin;
+            }
+        }
     }
     public void open()throws Exception {
         SeriesNuclei seriesNucs = new SeriesNuclei("");

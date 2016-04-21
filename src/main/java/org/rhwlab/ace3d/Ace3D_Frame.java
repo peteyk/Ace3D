@@ -271,6 +271,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
 
         if (nucChooser.showOpenDialog(panel) == JFileChooser.APPROVE_OPTION){
             nucFile = new StarryNiteNucleusFile(nucChooser.getSelectedFile().getPath());
+            
             if (imagedEmbryo != null){
                 imagedEmbryo.setNucleusFile(nucFile);
             }

@@ -23,6 +23,7 @@ import net.imglib2.display.RealARGBColorConverter;
 
 import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.type.numeric.ARGBType;
+import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 import org.rhwlab.ace3d.Ace3D_Frame;
@@ -44,10 +45,16 @@ public class TimePointImage{
     }
     public BufferedImage getBufferedImage(int dim,long slice){
         DataSetProperties props = Ace3D_Frame.getProperties(dataset);
-        RealARGBColorConverter converter = new RealARGBColorConverter.Imp0((double)props.min,(double)props.max);
-        converter.setColor(new ARGBType(props.color.getRGB()));
-        RandomAccessibleInterval rai = Converters.convert(image, converter,new ARGBType());
-        IntervalView iv = Views.hyperSlice(rai, dim, slice);
+        double scale = 1.0/(props.max-props.min);
+        int alpha = props.color.getAlpha();
+        double scaleR = scale*props.color.getRed();
+        double scaleG = scale*props.color.getGreen();
+        double scaleB = scale*props.color.getBlue();
+        int black = new Color(0,0,0,0).getRGB();
+//        RealARGBColorConverter converter = new RealARGBColorConverter.Imp0((double)props.min,(double)props.max);
+//        converter.setColor(new ARGBType(props.color.getRGB()));
+//        RandomAccessibleInterval rai = Converters.convert(image, converter,new ARGBType());
+        IntervalView iv = Views.hyperSlice(image, dim, slice);
         Cursor cursor = iv.localizingCursor();
         int x0 = (int)iv.min(0);
         int y0 = (int)iv.min(1);
@@ -56,12 +63,23 @@ public class TimePointImage{
         BufferedImage ret = new BufferedImage(w,h,BufferedImage.TYPE_INT_ARGB_PRE);
         while (cursor.hasNext()){
             cursor.fwd();
-            ARGBType pix  = (ARGBType)cursor.get();
+            UnsignedShortType pix = (UnsignedShortType)cursor.get();
+            double v = pix.getRealDouble() - props.min;
             int x = cursor.getIntPosition(0)-x0;
-            int y = cursor.getIntPosition(1)-y0;
-            System.out.printf("(%d,%d,%d,%d)\n",ARGBType.red(pix.get()),ARGBType.green(pix.get()),ARGBType.blue(pix.get()),ARGBType.alpha(pix.get()));
+            int y = cursor.getIntPosition(1)-y0;            
+            if (v < 0) {
+                ret.setRGB(x,y,black);   
+            } else {
+                int r = Math.min(255,(int)(scaleR*v + .5));
+                int g = Math.min(255,(int)(scaleG*v + .5));
+                int b = Math.min(255,(int)(scaleB*v + .5));
+                Color c = new Color(r,g,b,alpha);
+
+
+                ret.setRGB(x,y,c.getRGB());
+            }
             try {
-                ret.setRGB(x,y, pix.get());
+//                ret.setRGB(x,y, pix.get());
             } catch (Exception exc){
                 int iusahfuis=0;
             }

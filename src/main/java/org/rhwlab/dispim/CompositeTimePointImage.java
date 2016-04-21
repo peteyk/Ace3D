@@ -11,6 +11,8 @@ import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.WritableRaster;
 import java.util.List;
+import org.rhwlab.ace3d.Ace3D_Frame;
+import org.rhwlab.ace3d.DataSetProperties;
 
 /**
  *
@@ -23,8 +25,14 @@ public class CompositeTimePointImage extends TimePointImage {
     }
     @Override
     public BufferedImage getBufferedImage(int dim,long slice){
-
-        AlphaComposite composite = AlphaComposite.getInstance(AlphaComposite.SRC_ATOP);
+/*        
+        for (int i=0 ; i<images.size() ;++i){
+            TimePointImage image = images.get(i);
+            DataSetProperties props = Ace3D_Frame.getProperties(image.getDataset());
+            
+        }
+*/
+        AlphaComposite composite = AlphaComposite.getInstance(AlphaComposite.DST_OVER);
         BufferedImage source = images.get(0).getBufferedImage(dim, slice);
 
         for (int i=1 ; i<images.size() ;++i){
@@ -33,6 +41,7 @@ public class CompositeTimePointImage extends TimePointImage {
             context.compose(source.getRaster(),dest.getRaster(),source.getRaster());
         }
         return source;
+
     }
     List<TimePointImage> images;
 }

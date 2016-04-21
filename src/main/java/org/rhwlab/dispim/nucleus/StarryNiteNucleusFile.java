@@ -15,9 +15,9 @@ import org.rhwlab.starrynite.TimePointNucleus;
  * @author gevirl
  */
 public class StarryNiteNucleusFile extends Ace3DNucleusFile {
-    public StarryNiteNucleusFile(String fn){
+    public StarryNiteNucleusFile(String fn)throws Exception {
         this.fileName = fn;
-        
+        open();
     }
     public void open()throws Exception {
         SeriesNuclei seriesNucs = new SeriesNuclei("");

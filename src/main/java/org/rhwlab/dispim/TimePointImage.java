@@ -43,6 +43,7 @@ public class TimePointImage{
         this.dims = dims;
         this.dataset = dataset;
     }
+    /*
     public BufferedImage getBufferedImage(int dim,long slice){
         DataSetProperties props = Ace3D_Frame.getProperties(dataset);
         double scale = 1.0/(props.max-props.min);
@@ -91,6 +92,7 @@ public class TimePointImage{
 //        BufferedImage bi = imagePlus.getBufferedImage();
         return ret;        
     }
+    */
 /*    
     public BufferedImage getBufferedImage(int dim,long slice){
 //        IntervalView iv = this.getImage(dim,slice);
@@ -134,6 +136,7 @@ public class TimePointImage{
     public int getTime(){
         return time;
     }
+/*    
     public RandomAccessibleInterval  getWholeImage(){
         LUT lut = Ace3D_Frame.getLUT(dataset);
         RealLUTConverter converter = new RealLUTConverter();
@@ -151,11 +154,12 @@ public class TimePointImage{
         converter.setLUT(ct);  
         return Converters.convert(image, converter,new ARGBType());
     }
+*/
     // get a time slice image
     public IntervalView getImage(int dim,long slice){
 
-        return Views.hyperSlice(getWholeImage(), dim, slice);
-//        return Views.hyperSlice(image, dim, slice);
+//        return Views.hyperSlice(getWholeImage(), dim, slice);
+        return Views.hyperSlice(image, dim, slice);
     }
     public RandomAccessibleInterval getImage(){
         return this.image;
@@ -169,15 +173,7 @@ public class TimePointImage{
     public long[] getDims(){
         return this.dims;
     }
-    public void addNucleus(Nucleus nuc){
-        nuclei.add(nuc);
-    }
-    public void setNuclei(Set<Nucleus> nucs){
-        this.nuclei = nucs;
-    }
-    public Set<Nucleus> getNuclei(){
-        return nuclei;
-    }
+
     public boolean equals(Object obj){
         if (obj instanceof TimePointImage){
             TimePointImage other = (TimePointImage)obj;
@@ -211,10 +207,10 @@ public class TimePointImage{
     }
     public double maxPosition(int d){
         return image.realMax(d);
-    }    
+    }  
+
     String dataset;
     int time;
-    Set<Nucleus> nuclei = new HashSet<Nucleus>();
     RandomAccessibleInterval image;
     float[] minmax;
     long[] dims;

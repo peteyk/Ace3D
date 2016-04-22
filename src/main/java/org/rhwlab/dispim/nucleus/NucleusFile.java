@@ -22,4 +22,5 @@ public interface NucleusFile {
     public List<Nucleus> linkedForward(Nucleus nuc);
     public Nucleus linkedBack(Nucleus nuc);
     public Nucleus sister(Nucleus nuc);
+    public void addNucleus(Nucleus nuc);
 }

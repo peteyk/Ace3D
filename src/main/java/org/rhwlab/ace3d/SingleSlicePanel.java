@@ -32,6 +32,8 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.view.IntervalView;
+import org.rhwlab.dispim.CompositeTimePointImage;
+import org.rhwlab.dispim.ImagedEmbryo;
 import org.rhwlab.dispim.nucleus.Nucleus;
 import org.rhwlab.dispim.TimePointImage;
 import org.rhwlab.dispim.nucleus.NucleusFile;
@@ -240,11 +242,11 @@ public class SingleSlicePanel extends JPanel {
                             radius = radius + l*l;  // (image coordinates)
                         }
                         radius = Math.sqrt(radius);
-                        timePointImage.addNucleus(new Nucleus(timePointImage.getTime(),center,radius));
+                        embryo.addNucleus(new Nucleus(timePointImage.getTime(),center,radius));
                         parent.repaint();
                     } else {
                         // selecting the closest nucleus
-                        Set<Nucleus> nucs = timePointImage.getNuclei();
+                        Set<Nucleus> nucs = embryo.getNuclei(timePointImage.getTime());
                         double min = Double.MAX_VALUE;
                         Nucleus closest = null;
                         for (Nucleus nuc : nucs){
@@ -311,7 +313,7 @@ public class SingleSlicePanel extends JPanel {
         }
     } 
     public long[] imageCoordinates(int screenX,int screenY){
-        long[] pos = new long[timePointImage.getImage().numDimensions()];
+        long[] pos = new long[timePointImage.numDimensions()];
         pos[dim] = SingleSlicePanel.this.slice;
         double bufX = screenX/scale/bufW;
         double bufY = screenY/scale/bufH;
@@ -349,7 +351,7 @@ public class SingleSlicePanel extends JPanel {
         return this.slice;
     }
     
-    final public void setImage(TimePointImage tpi,long[] pos){
+    final public void setImage(CompositeTimePointImage tpi,long[] pos){
         this.timePointImage = tpi;
         this.setPosition(pos);
         this.repaint();
@@ -373,7 +375,7 @@ public class SingleSlicePanel extends JPanel {
         return "z";
     }
     private void drawNuclei(Graphics2D g2){
-       Set<Nucleus> nucs = timePointImage.getNuclei();
+       Set<Nucleus> nucs = embryo.getNuclei(timePointImage.getTime());
        for (Nucleus nuc : nucs){
             long[] center = nuc.getCenter();  // image corrdinates
             double r = nuc.getRadius();   // image corrdinates
@@ -421,7 +423,7 @@ public class SingleSlicePanel extends JPanel {
         NucleusFile nucFile = parent.getEmbryo().getNucleusFile();
         
         TreeMap<Nucleus,Nucleus> sisterPairs = new TreeMap<>();
-        Set<Nucleus> nucs = timePointImage.getNuclei();
+        Set<Nucleus> nucs = embryo.getNuclei(timePointImage.getTime());
         for (Nucleus nuc : nucs){
            Nucleus sisterNuc = nucFile.sister(nuc);
            if (sisterNuc != null){
@@ -440,7 +442,7 @@ public class SingleSlicePanel extends JPanel {
         }
     }
     private void labelMarkedNuclei(Graphics2D g2){
-        Set<Nucleus> nucs = timePointImage.getNuclei();
+        Set<Nucleus> nucs = embryo.getNuclei(timePointImage.getTime());
         for (Nucleus nuc : nucs){
             if (nuc.getLabeled()){
                 labelNucleus(g2,nuc);
@@ -449,7 +451,7 @@ public class SingleSlicePanel extends JPanel {
         
     }
     private void labelSelectedNucleus(Graphics2D g2){
-        Set<Nucleus> nucs = timePointImage.getNuclei();
+        Set<Nucleus> nucs = embryo.getNuclei(timePointImage.getTime());
         for (Nucleus nuc : nucs){
             if (nuc.getSelected()){
                 labelNucleus(g2,nuc);
@@ -458,7 +460,7 @@ public class SingleSlicePanel extends JPanel {
     }
     // label all visible nuclei 
     private void labelAllNuclei(Graphics2D g2){
-        Set<Nucleus> nucs = timePointImage.getNuclei();
+        Set<Nucleus> nucs = embryo.getNuclei(timePointImage.getTime());
         for (Nucleus nuc : nucs){
             if(visible(nuc)){
                 labelNucleus(g2,nuc);
@@ -467,6 +469,9 @@ public class SingleSlicePanel extends JPanel {
     }
     private void labelNucleus(Graphics g2,Nucleus nuc){
         g2.drawString(nuc.getName(),screenX(nuc.getCenter()),screenY(nuc.getCenter()));
+    }
+    public void setEmbryo(ImagedEmbryo em){
+        this.embryo = em;
     }
 
     SynchronizedMultipleSlicePanel parent;
@@ -480,7 +485,8 @@ public class SingleSlicePanel extends JPanel {
     int dim;
     JSlider slider;
     final String title;
-    TimePointImage timePointImage;
+    CompositeTimePointImage timePointImage;
+    ImagedEmbryo embryo;
     ImagePlus imagePlus;  
     long[] imagePosition;
 }

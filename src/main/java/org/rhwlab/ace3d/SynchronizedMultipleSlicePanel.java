@@ -14,6 +14,7 @@ import javax.swing.JSlider;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import org.rhwlab.dispim.CompositeTimePointImage;
 import org.rhwlab.dispim.ImagedEmbryo;
 import org.rhwlab.dispim.TimePointImage;
 import org.rhwlab.dispim.nucleus.Nucleus;
@@ -146,7 +147,7 @@ public class SynchronizedMultipleSlicePanel extends JPanel {
         timePointImage = emb.getImage(Ace3D_Frame.datasetsSelected(),time);
         double[] minPosition = timePointImage.getMinPosition();
         double[] maxPosition = timePointImage.getMaxPosition();        
-        long[] xformDims = timePointImage.getDims();
+//        long[] xformDims = timePointImage.getDims();
         for (int d=0 ; d<position.length ; ++d){
 //            position[d] = (long)xformDims[d]/2;
                 position[d] = (long)(0.5*(minPosition[d]+maxPosition[d]));
@@ -154,7 +155,7 @@ public class SynchronizedMultipleSlicePanel extends JPanel {
 
         for (int d=0 ; d<nDims ; ++d){
             SingleSlicePanel panel = panels[d];
-            
+            panel.setEmbryo(emb);
 //            panel.setExtent(1,(int)xformDims[d]);
             panel.setExtent(minPosition[d],maxPosition[d]);
             panel.setImage(timePointImage, position);
@@ -169,7 +170,7 @@ public class SynchronizedMultipleSlicePanel extends JPanel {
     public ImagedEmbryo getEmbryo(){
         return embryo;
     }
-    public TimePointImage getCuurrentImage(){
+    public CompositeTimePointImage getCuurrentImage(){
         return this.timePointImage;
     }
 
@@ -177,7 +178,7 @@ public class SynchronizedMultipleSlicePanel extends JPanel {
     JSlider slider;
     int time;
     ImagedEmbryo embryo;
-    TimePointImage timePointImage;
+    CompositeTimePointImage timePointImage;
     TitledBorder titledBorder;
     SingleSlicePanel[] panels;
     long[] position;

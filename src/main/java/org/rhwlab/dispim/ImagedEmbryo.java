@@ -22,25 +22,21 @@ public class ImagedEmbryo {
     public ImagedEmbryo(ImageSource src){
         this.source=src;
     }
-    public TimePointImage getImage(List<String> datasets,int time){
+    public CompositeTimePointImage getImage(List<String> datasets,int time){
         ArrayList<TimePointImage> list = new ArrayList<>();
         for (String dataset : datasets){
-            TimePointImage tpi = getImage(dataset,time);
+            TimePointImage tpi = getSingleImage(dataset,time);
             list.add(tpi);
         }
         return new CompositeTimePointImage(list);
     }
-    public TimePointImage getImage(String dataset,int time){
+    public TimePointImage getSingleImage(String dataset,int time){
         for (TimePointImage image : timePointCache){
             if (image.getTime()==time && image.getDataset().equals(dataset)){
-                Set<Nucleus> nuclei = nucFile.getNuclei(time);
-                image.setNuclei(nuclei);
                 return image;
             }
         }
         TimePointImage image = source.getImage(dataset,time);
-        Set<Nucleus> nuclei = nucFile.getNuclei(time);
-        image.setNuclei(nuclei);
         if (timePointCache.size()==cacheSize){
             timePointCache.removeLast();
         } 
@@ -90,6 +86,14 @@ public class ImagedEmbryo {
         tpi.image.min(ret);
         return ret;
     }
+    public Set<Nucleus> getNuclei(int time){
+        return nucFile.getNuclei(time);
+    }
+    public void addNucleus(Nucleus nuc){
+        nucFile.addNucleus(nuc);
+    }
+
+    
     static int cacheSize = 20;
     NucleusFile nucFile;
     ImageSource source;

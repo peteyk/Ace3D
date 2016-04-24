@@ -95,6 +95,15 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
             @Override
             public void actionPerformed(ActionEvent e) {
                 source = new TifDirectoryImageSource("/net/waterston/vol9/diSPIM/20151118_nhr-25_XIL0141/CroppedReslicedBGSubtract488");
+                // set up the dataset properties map
+                dataSetProperties.clear();
+                Iterator<DataSetDesc> iter = source.getDataSets().iterator();
+                while (iter.hasNext()){
+                    dataSetProperties.put(iter.next().getName(),new DataSetProperties());
+                }                
+                buildDataSetMenu();
+                buildContrastMenu();
+                buildColorMenu();                
                 imagedEmbryo = new ImagedEmbryo(source);
                 imagedEmbryo.setNucleusFile(nucFile);
                 panel.setEmbryo(imagedEmbryo);
@@ -215,6 +224,16 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
             }
         });        
         view.add(sisters);
+
+        locationIndicator = new JCheckBoxMenuItem("Location indicator");
+        locationIndicator.setSelected(true);
+        locationIndicator.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                panel.repaint();
+            }
+        });        
+        view.add(locationIndicator);
         
         selectedLabeled = new JCheckBoxMenuItem("Label the Selected Nucleus");
         selectedLabeled.setSelected(false);
@@ -415,6 +434,9 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
     static public boolean nucleiIndicated(){
         return segmentedNuclei.getState();
     }
+    static public boolean locationIndicated(){
+        return locationIndicator.getState();
+    }
 
     static public List<String> datasetsSelected(){
         ArrayList<String> ret = new ArrayList<>();
@@ -447,6 +469,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
     
     static JCheckBoxMenuItem segmentedNuclei;
     static JCheckBoxMenuItem sisters;
+    static JCheckBoxMenuItem locationIndicator;
     static JCheckBoxMenuItem nucleiLabeled;
     static JCheckBoxMenuItem selectedLabeled;
     static JCheckBoxMenuItem[] datasetChoices;

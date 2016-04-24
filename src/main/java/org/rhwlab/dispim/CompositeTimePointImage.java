@@ -30,7 +30,9 @@ public class CompositeTimePointImage  {
     public BufferedImage getBufferedImage(int dim,long slice){
         TimePointImage tpi = images.get(0);
         IntervalView iv = Views.hyperSlice(tpi.image, dim, slice);
-        RandomAccessibleIntervalCursor cursor = (RandomAccessibleIntervalCursor)iv.localizingCursor();
+        
+//        RandomAccessibleIntervalCursor cursor = (RandomAccessibleIntervalCursor)iv.localizingCursor();
+        Cursor cursor = iv.localizingCursor();
         cursor.fwd();
         int x0 = (int)iv.min(0);  // images min x position
         int y0 = (int)iv.min(1);  // images min y position
@@ -51,6 +53,9 @@ public class CompositeTimePointImage  {
             double blue = ps.color.getBlue();
             double alpha = ps.color.getAlpha();
             double range = ps.max-ps.min;
+            if (ps.autoContrast){
+                range = tpi.getMax()-tpi.getMin();
+            }
             pixMin[i] = ps.min;
             double f = 255.0/(alpha*range*images.size());
             Rfactor[i] = red*f;

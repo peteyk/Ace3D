@@ -5,6 +5,7 @@
  */
 package org.rhwlab.dispim.nucleus;
 
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeMap;
@@ -126,6 +127,9 @@ public class Cell {
             }
         }
         return ret;
+    }
+    public BufferedImage drawTree(){
+        return null;
     }
     String name;
     Cell parent;  // the parent cell - can be null

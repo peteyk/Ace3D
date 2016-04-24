@@ -10,8 +10,11 @@ import io.scif.img.ImgOpener;
 import io.scif.img.SCIFIOImgPlus;
 import java.io.File;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -35,6 +38,7 @@ public class TifDirectoryImageSource implements ImageSource {
                 Matcher matcher = pattern.matcher(fileName);
                 matcher.matches();
                 Integer time = new Integer(matcher.group(2));
+                datasetname = matcher.group(1);
                 fileNames.put(time,file.getPath());
             }
         }
@@ -70,7 +74,17 @@ public class TifDirectoryImageSource implements ImageSource {
     public String getFile(){
         return directory;
     }
+    @Override
+    public Collection<DataSetDesc> getDataSets() {
+        HashSet<DataSetDesc> ret = new HashSet<>();
+        DataSetDescImpl ds = new DataSetDescImpl();
+        ds.name = datasetname;
+        ret.add(ds);
+        return ret;
+    }
+    
     String directory;
+    String datasetname;
     TreeMap<Integer,String> fileNames = new TreeMap<Integer,String>();
     
     static public void main(String[] args){
@@ -78,9 +92,6 @@ public class TifDirectoryImageSource implements ImageSource {
         
     }
 
-    @Override
-    public Collection<DataSetDesc> getDataSets() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
+
 
 }

@@ -6,7 +6,6 @@
 package org.rhwlab.ace3d;
 
 import ij.ImagePlus;
-import ij.process.LUT;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -30,12 +29,9 @@ import javax.swing.JSlider;
 import javax.swing.border.BevelBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import net.imglib2.img.display.imagej.ImageJFunctions;
-import net.imglib2.view.IntervalView;
 import org.rhwlab.dispim.CompositeTimePointImage;
 import org.rhwlab.dispim.ImagedEmbryo;
 import org.rhwlab.dispim.nucleus.Nucleus;
-import org.rhwlab.dispim.TimePointImage;
 import org.rhwlab.dispim.nucleus.NucleusFile;
 
 /**
@@ -103,16 +99,17 @@ public class SingleSlicePanel extends JPanel {
                     double rw = (double)panelSize.width/(double)bufW;
                     double rh = (double)panelSize.height/(double)bufH;
                     scale = Math.max(1.0, Math.min(rw, rh));
-                    xPos = screenX(imagePosition);
-                    yPos = screenY(imagePosition);
+
                     AffineTransform xForm = AffineTransform.getScaleInstance(scale, scale);
                     g2.drawImage(buffered,new AffineTransformOp(xForm,AffineTransformOp.TYPE_NEAREST_NEIGHBOR),0,0);
 
                     // draw lines showing the current position
-//                    g2.drawLine(0, (int)(scale*yPos), (int)(scale*w),(int)(scale*yPos));
-//                    g2.drawLine((int)(scale*xPos), 0,(int)(scale*xPos), (int)(scale*h));
-                    g2.drawLine(0, (int)(yPos), (int)(scale*bufW),(int)(yPos));
-                    g2.drawLine((int)(xPos), 0,(int)(xPos), (int)(scale*bufH));
+                    if (Ace3D_Frame.locationIndicated()){
+                        long xPos = screenX(imagePosition);
+                        long yPos = screenY(imagePosition);                        
+                        g2.drawLine(0, (int)(yPos), (int)(scale*bufW),(int)(yPos));
+                        g2.drawLine((int)(xPos), 0,(int)(xPos), (int)(scale*bufH));
+                    }
                     // add an axis identifyer
                     g2.drawLine(10,5,20,5);  //horizontal
                     g2.drawString(horizontalAxis(), 25,10);
@@ -208,24 +205,7 @@ public class SingleSlicePanel extends JPanel {
             }
             @Override
             public void mouseClicked(MouseEvent e){
-/*                
-                long[] pos = new long[timePointImage.getImage().numDimensions()];
-                pos[dim] = SingleSlicePanel.this.slice;
-                switch (dim) {
-                case 0:                   
-                    pos[1] = (int)(e.getX()/scale);
-                    pos[2] = (int)(e.getY()/scale);
-                    break;
-                case 1:
-                    pos[0] = (int)(e.getX()/scale);
-                    pos[2] = (int)(e.getY()/scale);
-                    break;            
-                default:
-                    pos[0] = (int)(e.getX()/scale);
-                    pos[1] = (int)(e.getY()/scale);
-                    break;
-                } 
-*/                
+                
                 long [] pos = imageCoordinates(e.getX(),e.getY());
                 if (e.getButton() == MouseEvent.BUTTON1){
                     if (parent != null )parent.changePosition(pos);                 
@@ -270,22 +250,7 @@ public class SingleSlicePanel extends JPanel {
     }
     // set the position (image coordinates)
     public void setPosition(long[] pos){
-/*        
-        switch (dim) {
-            case 0:
-                xPos = pos[1];
-                yPos = pos[2];
-                break;
-            case 1:
-                xPos = pos[0];
-                yPos = pos[2];
-                break;            
-            default:
-                xPos = pos[0];
-                yPos = pos[1];
-                break;
-        }   
-*/
+
         imagePosition = pos;
         setSlice(pos[dim]);
         slider.setValue((int)pos[dim]);
@@ -294,10 +259,6 @@ public class SingleSlicePanel extends JPanel {
     // return the screen x coordinate given image coordinates
     public int screenX(long[] p){
         if (dim==0){
-            double del = p[1]-timePointImage.minPosition(1);
-            double fullDel = timePointImage.maxPosition(1)-timePointImage.minPosition(1);
-            double ratio = del/fullDel;
-            double res = bufW*scale*ratio;
             return (int)((p[1]-timePointImage.minPosition(1))*scale*bufW/(timePointImage.maxPosition(1)-timePointImage.minPosition(1)));
         } else {
             return (int)((p[0]-timePointImage.minPosition(0))*scale*bufW/(timePointImage.maxPosition(0)-timePointImage.minPosition(0)));
@@ -480,8 +441,8 @@ public class SingleSlicePanel extends JPanel {
     int bufW;
     int bufH;
     long slice;
-    long xPos;  // screen x coordinate of the image position
-    long yPos;  // screen y coordinate of the image position
+//    long xPos;  // screen x coordinate of the image position
+//    long yPos;  // screen y coordinate of the image position
     int dim;
     JSlider slider;
     final String title;

@@ -9,10 +9,11 @@ import ij.ImageJ;
 import ij.plugin.PlugIn;
 import ij.process.LUT;
 import java.awt.Color;
-import java.awt.Container;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -28,7 +29,6 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
-import javax.swing.WindowConstants;
 import org.rhwlab.dispim.DataSetDesc;
 import org.rhwlab.dispim.Hdf5ImageSource;
 import org.rhwlab.dispim.ImageSource;
@@ -50,13 +50,30 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
         buildMenu();
         this.pack();
         buildChooser();
+        String homeDir = System.getProperty("user.home");
+        File propFile = new File(homeDir,"Ace3D_Frame.properties");
+        props.open(propFile.getPath());
+        this.addWindowListener(new WindowAdapter(){
+            @Override
+            public void windowClosing(WindowEvent e){
+                try {
+                    close();
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+        });
     }
 
+    public void close() throws Exception {
+        props.save();
+        System.exit(0);
+    }
     @Override
     public void run(String string) {
         this.setSize(1800,600);
         this.setVisible(true);
-        this.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+//        this.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
     }
     
 
@@ -70,22 +87,9 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
         open.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
-                source = new Hdf5ImageSource(null);
-                
-                // set up the dataset properties map
-                dataSetProperties.clear();
-                Iterator<DataSetDesc> iter = source.getDataSets().iterator();
-                while (iter.hasNext()){
-                    dataSetProperties.put(iter.next().getName(),new DataSetProperties());
-                }
-                
-                buildDataSetMenu();
-                buildContrastMenu();
-                buildLutMenu();
-                buildColorMenu();
-                imagedEmbryo = new ImagedEmbryo(source);
-                imagedEmbryo.setNucleusFile(nucFile);
-                panel.setEmbryo(imagedEmbryo);
+                source = new Hdf5ImageSource();
+                source.open();
+                initToSource();
             }
         });
         fileMenu.add(open);
@@ -95,18 +99,8 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
             @Override
             public void actionPerformed(ActionEvent e) {
                 source = new TifDirectoryImageSource("/net/waterston/vol9/diSPIM/20151118_nhr-25_XIL0141/CroppedReslicedBGSubtract488");
-                // set up the dataset properties map
-                dataSetProperties.clear();
-                Iterator<DataSetDesc> iter = source.getDataSets().iterator();
-                while (iter.hasNext()){
-                    dataSetProperties.put(iter.next().getName(),new DataSetProperties());
-                }                
-                buildDataSetMenu();
-                buildContrastMenu();
-                buildColorMenu();                
-                imagedEmbryo = new ImagedEmbryo(source);
-                imagedEmbryo.setNucleusFile(nucFile);
-                panel.setEmbryo(imagedEmbryo);
+                source.open();
+                initToSource();
             }
         });
         fileMenu.add(openTif);        
@@ -144,7 +138,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
-                    if (nucFile.getFile() != null){
+                    if (nucFile.getFile() != null && !(nucFile instanceof StarryNiteNucleusFile)){
                         nucFile.save();
                     }else {
                         saveAsNucFile();
@@ -174,7 +168,11 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
         exit.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
-                System.exit(0);
+                try {
+                    close();
+                } catch (Exception exc){
+                    exc.printStackTrace();
+                }
             }
         });
         fileMenu.add(exit);
@@ -260,6 +258,20 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
         this.setJMenuBar(menuBar);        
     }
    
+    private void initToSource(){
+                // set up the dataset properties map
+        dataSetProperties.clear();
+        Iterator<DataSetDesc> iter = source.getDataSets().iterator();
+        while (iter.hasNext()){
+            dataSetProperties.put(iter.next().getName(),new DataSetProperties());
+        }                
+        buildDataSetMenu();
+        buildContrastMenu();
+        buildColorMenu();                
+        imagedEmbryo = new ImagedEmbryo(source);
+        imagedEmbryo.setNucleusFile(nucFile);
+        panel.setEmbryo(imagedEmbryo);        
+    }
     private void moveToTime(){
         boolean valid = false;
         while (!valid) {
@@ -275,8 +287,6 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
         }
     }
     private void openNucFile()throws Exception {
-
-
         if (nucChooser.showOpenDialog(panel) == JFileChooser.APPROVE_OPTION){
             nucFile = new Ace3DNucleusFile(nucChooser.getSelectedFile());
             if (imagedEmbryo != null){
@@ -303,10 +313,21 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
     private void saveAsNucFile()throws Exception {
         buildChooser();
         if (nucFile != null){
-            nucChooser.setSelectedFile(nucFile.getFile());
+            nucChooser.setSelectedFile(nucFile.getFile().getParentFile());
         }
         if (nucChooser.showSaveDialog(panel) == JFileChooser.APPROVE_OPTION){
-            nucFile.saveAs(nucChooser.getSelectedFile());
+            File f = nucChooser.getSelectedFile();
+            if (f.getPath().equals(nucFile.getFile().getPath())){
+                if (nucFile instanceof StarryNiteNucleusFile){
+                    JOptionPane.showMessageDialog(rootPane,"Cannot overwrite the StarryNite file");
+                } else {
+                    if (JOptionPane.showConfirmDialog(rootPane,"Replace the original nucleus file?")==JOptionPane.OK_OPTION){
+                        nucFile.saveAs(f);
+                    }
+                }
+            } else {
+                nucFile.saveAs(nucChooser.getSelectedFile());
+            }
         }
     }
     
@@ -454,7 +475,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
     static public LUT getLUT(String dataSet){
         return dataSetLuts.get(dataSet);
     }
-    
+    Properties props = new Properties();
     JMenu dataset;
     JMenu contrast;
     JMenu lutMenu;
@@ -464,6 +485,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
     ImagedEmbryo imagedEmbryo;
     SynchronizedMultipleSlicePanel panel;
     JFileChooser nucChooser;
+    JFileChooser imageChooser;
     TreeMap<String,ContrastDialog> contrastDialogs = new TreeMap<>();
     LookUpTables lookUpTables = new LookUpTables();
     

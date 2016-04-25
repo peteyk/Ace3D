@@ -12,7 +12,6 @@ import net.imglib2.Cursor;
 import net.imglib2.RandomAccess;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.view.IntervalView;
-import net.imglib2.view.RandomAccessibleIntervalCursor;
 import net.imglib2.view.Views;
 import org.rhwlab.ace3d.Ace3D_Frame;
 import org.rhwlab.ace3d.DataSetProperties;
@@ -25,13 +24,10 @@ public class CompositeTimePointImage  {
     public CompositeTimePointImage(List<TimePointImage> images){
         this.images = images;
     }
-    
 
     public BufferedImage getBufferedImage(int dim,long slice){
         TimePointImage tpi = images.get(0);
         IntervalView iv = Views.hyperSlice(tpi.image, dim, slice);
-        
-//        RandomAccessibleIntervalCursor cursor = (RandomAccessibleIntervalCursor)iv.localizingCursor();
         Cursor cursor = iv.localizingCursor();
         cursor.fwd();
         int x0 = (int)iv.min(0);  // images min x position
@@ -64,15 +60,6 @@ public class CompositeTimePointImage  {
             
             access[i] = Views.hyperSlice(images.get(i).getImage(), dim, slice).randomAccess();
         }
-        
-
-        int black = new Color(0,0,0,0).getRGB();
-//        RealARGBColorConverter converter = new RealARGBColorConverter.Imp0((double)props.min,(double)props.max);
-//        converter.setColor(new ARGBType(props.color.getRGB()));
-//        RandomAccessibleInterval rai = Converters.convert(image, converter,new ARGBType());
-
-
-
         while (cursor.hasNext()){
             UnsignedShortType pix = (UnsignedShortType)cursor.get();
             int[] cursorPos = new int[2];
@@ -98,10 +85,6 @@ public class CompositeTimePointImage  {
 
             cursor.fwd();
         }
-
-        
-//        ImagePlus imagePlus = ImageJFunctions.wrapRGB(iv,String.format("(%d,%d,%d)", time,dim,slice));
-//        BufferedImage bi = imagePlus.getBufferedImage();
         return ret;  
     }
     public int getTime(){

@@ -46,6 +46,12 @@ public class ImagedEmbryo {
     public int getTimes(){
         return source.getTimes();
     }
+    public int getMinTime(){
+        return source.getMinTime();
+    }
+    public int getMaxTime(){
+        return source.getMaxTime();
+    }
     public void setNucleusFile(NucleusFile file){
         nucFile = file;
     }

@@ -167,14 +167,7 @@ public class Ace3DNucleusFile implements NucleusFile {
     @Override
     public void save()throws Exception {
         PrintWriter writer = new PrintWriter(file);
-/*       
-        JsonGenerator gen = Json.createGenerator(writer);
-        gen.writeStartObject();
-        gen.write("Nuclei", this.nucleiAsJson().build());
-        gen.writeEnd();
-        gen.flush();
-        gen.close();
-*/       
+      
        PrettyWriter pretty = new PrettyWriter(writer);
         pretty.writeObject(this.asJson().build(), 0);
 

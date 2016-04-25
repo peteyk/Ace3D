@@ -20,6 +20,7 @@ import mpicbg.spim.data.sequence.ImgLoader;
 import mpicbg.spim.data.sequence.SequenceDescription;
 import mpicbg.spim.data.sequence.SetupImgLoader;
 import mpicbg.spim.data.sequence.TimePoint;
+import mpicbg.spim.data.sequence.TimePoints;
 import mpicbg.spim.data.sequence.ViewDescription;
 import mpicbg.spim.data.sequence.ViewId;
 import mpicbg.spim.data.sequence.ViewSetup;
@@ -40,23 +41,28 @@ import spim.process.fusion.FusionHelper;
  * @author gevirl
  */
 public class  Hdf5ImageSource implements ImageSource {
-    public Hdf5ImageSource(LoadParseQueryXML re){
-        result = re;
-        if (result == null){
-            result = new LoadParseQueryXML();
-            result.queryXML( "editing", false, false, false, false );
-        }
-        ArrayList<ViewSetup> setups = result.getViewSetupsToProcess();
-        for (ViewSetup setup : setups){
-            Hdf5DataSetDesc desc = new Hdf5DataSetDesc(setup);
-            this.dataSetMap.put(desc.getName(), desc);
-        }
-        
-        timepoints = result.getTimePointsToProcess();
-        angles = result.getData().getSequenceDescription().getAllAngles();
-        channels = result.getData().getSequenceDescription().getAllChannels();
-        illuminations = result.getData().getSequenceDescription().getAllIlluminations();
-        spimData = result.getData();        
+    public Hdf5ImageSource(){
+
+    }
+    public void open(){
+        result = new LoadParseQueryXML();
+        String xml = result.getXMLFileName();
+        if (result.queryXML( "editing", false, false, false, false )){
+            xml = result.getXMLFileName();
+            ArrayList<ViewSetup> setups = result.getViewSetupsToProcess();
+            for (ViewSetup setup : setups){
+                Hdf5DataSetDesc desc = new Hdf5DataSetDesc(setup);
+                this.dataSetMap.put(desc.getName(), desc);
+            }
+
+     
+            timepoints = result.getData().getSequenceDescription().getTimePoints();
+
+            angles = result.getData().getSequenceDescription().getAllAngles();
+            channels = result.getData().getSequenceDescription().getAllChannels();
+            illuminations = result.getData().getSequenceDescription().getAllIlluminations();
+            spimData = result.getData();                
+        }        
     }
     @Override
     public TimePointImage getImage(String dataset,int time) {
@@ -66,12 +72,12 @@ public class  Hdf5ImageSource implements ImageSource {
     
     public  TimePointImage getImage(String dataset,int time,int angle,int channel,int illum) {
 
-        TimePoint timepoint = timepoints.get(time);
+        TimePoint timepoint = timepoints.getTimePoints().get(time);
         Channel ch = channels.get(channel);
         Angle an = angles.get(angle);
         Illumination il = illuminations.get(illum);
         final ViewId viewId = SpimData2.getViewId( 
-                spimData.getSequenceDescription(),timepoints.get(time),channels.get(channel),angles.get(angle),illuminations.get(illum) );
+                spimData.getSequenceDescription(),timepoint,channels.get(channel),angles.get(angle),illuminations.get(illum) );
         ViewRegistrations viewRegs = spimData.getViewRegistrations();
         ViewRegistration viewReg = viewRegs.getViewRegistration(viewId);
         
@@ -172,15 +178,26 @@ public class  Hdf5ImageSource implements ImageSource {
     int angle;
     int channel;
     int illum;
-    final List< mpicbg.spim.data.sequence.TimePoint > timepoints;
-    final Map<Integer, Angle > angles;
-    final Map<Integer, Channel > channels;
-    final Map<Integer, Illumination > illuminations;
+    TimePoints timepoints;
+    Map<Integer, Angle > angles;
+    Map<Integer, Channel > channels;
+    Map<Integer, Illumination > illuminations;
     SpimData2 spimData;
 
     @Override
     public Collection<DataSetDesc> getDataSets() {
         return this.dataSetMap.values();
+    }
+
+    @Override
+    public int getMinTime() {
+       return timepoints.getTimePointsOrdered().get(0).getId();
+        
+    }
+
+    @Override
+    public int getMaxTime() {
+        return timepoints.getTimePointsOrdered().get(timepoints.size()-1).getId();
     }
 
 

@@ -160,9 +160,9 @@ public class SynchronizedMultipleSlicePanel extends JPanel {
             panel.setExtent(minPosition[d],maxPosition[d]);
             panel.setImage(timePointImage, position);
         }
-        slider.setMinimum(0);
-        slider.setMaximum(emb.getTimes());
-        slider.setValue( emb.getTimes()/2);
+        slider.setMinimum(emb.getMinTime());
+        slider.setMaximum(emb.getMaxTime());
+        slider.setValue( (emb.getMaxTime()+emb.getMinTime())/2);
     }
     public long[] getPosition(){
         return this.position;

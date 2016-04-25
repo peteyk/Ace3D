@@ -29,8 +29,11 @@ import spim.process.fusion.FusionHelper;
 public class TifDirectoryImageSource implements ImageSource {
     public TifDirectoryImageSource(String dirName){
         this.directory = dirName;
+
+    }
+    public void open(){
         Pattern pattern = Pattern.compile("(\\D+)(\\d+).tif");
-        File dir = new File(dirName);
+        File dir = new File(this.directory);
         File[] files = dir.listFiles();
         for (File file : files){
             String fileName = file.getName();
@@ -41,7 +44,7 @@ public class TifDirectoryImageSource implements ImageSource {
                 datasetname = matcher.group(1);
                 fileNames.put(time,file.getPath());
             }
-        }
+        }        
     }
 
     @Override
@@ -90,6 +93,16 @@ public class TifDirectoryImageSource implements ImageSource {
     static public void main(String[] args){
         TifDirectoryImageSource source = new TifDirectoryImageSource("/net/waterston/vol9/diSPIM/20151118_nhr-25_XIL0141/CroppedReslicedBGSubtract488");
         
+    }
+
+    @Override
+    public int getMinTime() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public int getMaxTime() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
 

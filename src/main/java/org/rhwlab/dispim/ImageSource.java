@@ -14,8 +14,11 @@ import java.util.List;
  * @author gevirl
  */
 public interface ImageSource {
+    public void open();
     public TimePointImage getImage(String datatset,int time);
     public int getTimes();
+    public int getMinTime();
+    public int getMaxTime();
     public String getFile();
     public Collection<DataSetDesc> getDataSets();
 

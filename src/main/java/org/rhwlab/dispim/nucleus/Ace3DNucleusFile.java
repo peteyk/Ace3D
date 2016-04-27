@@ -5,16 +5,16 @@
  */
 package org.rhwlab.dispim.nucleus;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
+import java.util.Observable;
 import java.util.Set;
 import java.util.TreeMap;
+import javafx.beans.InvalidationListener;
 import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonArrayBuilder;
@@ -26,7 +26,7 @@ import javax.json.JsonReader;
  *
  * @author gevirl
  */
-public class Ace3DNucleusFile implements NucleusFile {
+public class Ace3DNucleusFile extends Observable implements NucleusFile  {
     public Ace3DNucleusFile(){
         
     }
@@ -42,31 +42,46 @@ public class Ace3DNucleusFile implements NucleusFile {
         for (int n=0 ; n<jsonNucs.size() ; ++n){
             JsonObject jsonNuc = jsonNucs.getJsonObject(n);
             Nucleus nuc = new Nucleus(jsonNuc);
-            this.addNucleus(nuc);
+            this.addNucleus(nuc,false);
         }
         reader.close();
+        this.notifyObservers();
     }
     public void addRoot(Cell cell){
-        this.roots.add(cell);
+        addRoot(cell,true);
+    }
+    public void addRoot(Cell cell,boolean notify){
+        int t = cell.firstTime();
+        Set<Cell> rootSet = roots.get(t);
+        if(rootSet == null){
+            rootSet = new HashSet<Cell>();
+            roots.put(t,rootSet);
+        }
+        rootSet.add(cell);
         cellMap.put(cell.getName(),cell);
+        if (notify)        {
+            this.notifyObservers();
+        }
     }
     // add a new nucleus with no cell links
     @Override
     public void addNucleus(Nucleus nuc){
-            Set<Nucleus> timeSet = byTime.get(nuc.getTime());
-            if (timeSet == null){
-                timeSet = new HashSet<Nucleus>();
-                byTime.put(nuc.getTime(), timeSet);
-            }
-            timeSet.add(nuc);
-            
-            Map<Integer,Nucleus> nameMap = byName.get(nuc.getName());
-            if (nameMap == null){
-                nameMap = new TreeMap<Integer,Nucleus>();
-                byName.put(nuc.getName(), nameMap);
-            }
-            nameMap.put(nuc.getTime(),nuc);        
+        addNucleus(nuc,true);
+    }    
+
+    public void addNucleus(Nucleus nuc,boolean notify){
+        Set<Nucleus> timeSet = byTime.get(nuc.getTime());
+        if (timeSet == null){
+            timeSet = new HashSet<Nucleus>();
+            byTime.put(nuc.getTime(), timeSet);
+        }
+        timeSet.add(nuc);
+        byName.put(nuc.getName(), nuc);
+        if (notify){
+            this.notifyObservers();
+        }
     }
+    
     // unlink a nucleus from the next time point
     public void unlinkNextTime(Nucleus unlinkNuc){
         Cell unlinkCell = this.getCell(unlinkNuc.getName());
@@ -78,13 +93,14 @@ public class Ace3DNucleusFile implements NucleusFile {
             // unlink the children cells
             for (Cell child : unlinkCell.getChildren()){
                 child.setParent(null);
-                this.addRoot(child);                
+                this.addRoot(child,false);                
             }
             unlinkCell.clearChildren();
         } else {
             // split the unlinkCell and make a new root 
-            this.addRoot(unlinkCell.split(unlinkNuc.getTime()));
+            this.addRoot(unlinkCell.split(unlinkNuc.getTime()),false);
         }
+        this.notifyObservers();
     }
     public void unlinkPreviousTime(Nucleus unlinkNuc){
         Cell unlinkCell = this.getCell(unlinkNuc.getName());
@@ -94,12 +110,13 @@ public class Ace3DNucleusFile implements NucleusFile {
         if (unlinkNuc.getTime() == unlinkCell.firstTime()){
             // unlink the cell from its parent and make it a new root
             unlinkCell.unlink();
-            this.addRoot(unlinkCell);
+            this.addRoot(unlinkCell,false);
         } else {
             // split the unlink cell and make a new root
             Cell splitCell = unlinkCell.split(unlinkNuc.getTime());
-            this.addRoot(splitCell);
+            this.addRoot(splitCell,false);
         }
+        this.notifyObservers();
     }
     
     public void linkInTime(Nucleus from,Nucleus to){
@@ -114,7 +131,7 @@ public class Ace3DNucleusFile implements NucleusFile {
                 Cell cell = new Cell(from.getName());
                 cell.addNucleus(from);
                 cell.addNucleus(to);
-                this.addRoot(cell);
+                this.addRoot(cell,false);
             } else {
                 // put the fromNuc into the toCell
                 toCell.addNucleus(from);
@@ -129,6 +146,7 @@ public class Ace3DNucleusFile implements NucleusFile {
                 fromCell.combineWith(toCell);
             }
         }
+        this.notifyObservers();
     }
     
     public void linkDivision(Nucleus from,Nucleus to1,Nucleus to2){
@@ -140,7 +158,7 @@ public class Ace3DNucleusFile implements NucleusFile {
         if (fromCell == null){
             fromCell = new Cell(from.getName());
             fromCell.addNucleus(from);
-            this.addRoot(fromCell);
+            this.addRoot(fromCell,false);
         }
         Cell to1Cell = this.getCell(to1.getName());
         if (to1Cell == null){
@@ -157,6 +175,7 @@ public class Ace3DNucleusFile implements NucleusFile {
         fromCell.addChild(to2Cell);
         roots.remove(to1);
         roots.remove(to2);
+        this.notifyObservers(); 
     }
 
     @Override
@@ -205,8 +224,11 @@ public class Ace3DNucleusFile implements NucleusFile {
     
     public JsonArrayBuilder rootsAsJson(){
         JsonArrayBuilder builder = Json.createArrayBuilder();
-        for (Cell root : roots){
-            builder.add(root.asJson());
+        for (Integer t : roots.navigableKeySet()){
+            Set<Cell> rootSet = roots.get(t);
+            for (Cell root : rootSet){
+                builder.add(root.asJson());
+            }
         }
         return builder;
     }
@@ -259,13 +281,15 @@ public class Ace3DNucleusFile implements NucleusFile {
         }
         return sisterCell.getNucleus(nuc.getTime());
     }
+    @Override
+    public Set<Cell> getRoots(int time) {
+    
+        return roots.get(time);
+    }    
     File file;
-    Set<Cell> roots = new HashSet<Cell>();
-    TreeMap<String,Cell> cellMap = new TreeMap<String,Cell>();  // map of the all the cells
-    TreeMap<Integer,Set<Nucleus>> byTime = new TreeMap<Integer,Set<Nucleus>>();  // all the nuclei present at a given time
-    TreeMap<String,Map<Integer,Nucleus>> byName = new TreeMap<String,Map<Integer,Nucleus>>();  // map of nuclei indexed by name, map indexed by time
-
-
-
+    TreeMap<Integer,Set<Cell>> roots = new TreeMap<>();  // roots indexed by time
+    TreeMap<String,Cell> cellMap = new TreeMap<>();  // map of the all the cells
+    TreeMap<Integer,Set<Nucleus>> byTime = new TreeMap<>();  // all the nuclei present at a given time
+    TreeMap<String,Nucleus> byName = new TreeMap<>();  // map of nuclei indexed by name, map indexed by time
 
 }

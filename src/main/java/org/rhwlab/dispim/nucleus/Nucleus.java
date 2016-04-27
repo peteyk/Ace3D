@@ -146,6 +146,9 @@ public class Nucleus implements Comparable {
     public void setLabeled(boolean lab){
         this.labeled = lab;
     }
+        public int getExpression(){
+        return 100;
+    }
     int time;
     String name;
     long x;

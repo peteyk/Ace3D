@@ -14,7 +14,7 @@ import java.util.List;
  * @author gevirl
  */
 public interface ImageSource {
-    public void open();
+    public boolean open();
     public TimePointImage getImage(String datatset,int time);
     public int getTimes();
     public int getMinTime();

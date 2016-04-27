@@ -16,7 +16,6 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import org.rhwlab.dispim.CompositeTimePointImage;
 import org.rhwlab.dispim.ImagedEmbryo;
-import org.rhwlab.dispim.TimePointImage;
 import org.rhwlab.dispim.nucleus.Nucleus;
 
 /**
@@ -131,7 +130,6 @@ public class SynchronizedMultipleSlicePanel extends JPanel {
             panels[d].setPosition(position);
         }
         updateBorder();
- 
     }
     private void updateBorder(){
         titledBorder = BorderFactory.createTitledBorder(positionString());
@@ -143,20 +141,15 @@ public class SynchronizedMultipleSlicePanel extends JPanel {
     public void setEmbryo(ImagedEmbryo emb){
         this.embryo = emb;
         time = emb.getTimes()/2;
-        
         timePointImage = emb.getImage(Ace3D_Frame.datasetsSelected(),time);
         double[] minPosition = timePointImage.getMinPosition();
         double[] maxPosition = timePointImage.getMaxPosition();        
-//        long[] xformDims = timePointImage.getDims();
         for (int d=0 ; d<position.length ; ++d){
-//            position[d] = (long)xformDims[d]/2;
                 position[d] = (long)(0.5*(minPosition[d]+maxPosition[d]));
         } 
-
         for (int d=0 ; d<nDims ; ++d){
             SingleSlicePanel panel = panels[d];
             panel.setEmbryo(emb);
-//            panel.setExtent(1,(int)xformDims[d]);
             panel.setExtent(minPosition[d],maxPosition[d]);
             panel.setImage(timePointImage, position);
         }

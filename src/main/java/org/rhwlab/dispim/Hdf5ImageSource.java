@@ -10,6 +10,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import mpicbg.spim.data.generic.sequence.ImgLoaderHints;
 import mpicbg.spim.data.registration.ViewRegistration;
 import mpicbg.spim.data.registration.ViewRegistrations;
 import mpicbg.spim.data.registration.ViewTransform;
@@ -44,25 +45,23 @@ public class  Hdf5ImageSource implements ImageSource {
     public Hdf5ImageSource(){
 
     }
-    public void open(){
+    @Override
+    public boolean open(){
         result = new LoadParseQueryXML();
-        String xml = result.getXMLFileName();
         if (result.queryXML( "editing", false, false, false, false )){
-            xml = result.getXMLFileName();
             ArrayList<ViewSetup> setups = result.getViewSetupsToProcess();
             for (ViewSetup setup : setups){
                 Hdf5DataSetDesc desc = new Hdf5DataSetDesc(setup);
                 this.dataSetMap.put(desc.getName(), desc);
             }
-
-     
             timepoints = result.getData().getSequenceDescription().getTimePoints();
-
             angles = result.getData().getSequenceDescription().getAllAngles();
             channels = result.getData().getSequenceDescription().getAllChannels();
             illuminations = result.getData().getSequenceDescription().getAllIlluminations();
-            spimData = result.getData();                
-        }        
+            spimData = result.getData();  
+            return true;
+        }
+        return false;        
     }
     @Override
     public TimePointImage getImage(String dataset,int time) {
@@ -105,8 +104,7 @@ public class  Hdf5ImageSource implements ImageSource {
         ImgLoader imgLoader = seqDesc.getImgLoader();
         SetupImgLoader setupImgLoader = imgLoader.getSetupImgLoader(viewId.getViewSetupId());
         
-        RandomAccessibleInterval img = setupImgLoader.getImage(viewId.getTimePointId() );
-        Object obj = img.randomAccess().get();
+        RandomAccessibleInterval img = setupImgLoader.getImage(viewId.getTimePointId(),ImgLoaderHints.LOAD_COMPLETELY  );
         RandomAccessible input = Views.extendZero(img);
         RealRandomAccessible<UnsignedShortType> interpolated = Views.interpolate( input, new NLinearInterpolatorFactory<UnsignedShortType>() );
 

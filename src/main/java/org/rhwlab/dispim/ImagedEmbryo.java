@@ -100,7 +100,7 @@ public class ImagedEmbryo {
     }
 
     
-    static int cacheSize = 20;
+    static int cacheSize = 100;
     NucleusFile nucFile;
     ImageSource source;
     LinkedList<TimePointImage> timePointCache = new LinkedList<TimePointImage>();

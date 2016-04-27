@@ -31,30 +31,41 @@ public class TifDirectoryImageSource implements ImageSource {
         this.directory = dirName;
 
     }
-    public void open(){
+    @Override
+    public boolean open(){
         Pattern pattern = Pattern.compile("(\\D+)(\\d+).tif");
         File dir = new File(this.directory);
         File[] files = dir.listFiles();
+        minTime = Integer.MAX_VALUE;
+        maxTime = Integer.MIN_VALUE;
         for (File file : files){
             String fileName = file.getName();
             if (fileName.endsWith("tif")){
                 Matcher matcher = pattern.matcher(fileName);
                 matcher.matches();
                 Integer time = new Integer(matcher.group(2));
+                if (time < minTime){
+                    minTime = time;
+                }
+                if (time> maxTime){
+                    maxTime = time;
+                }
                 datasetname = matcher.group(1);
                 fileNames.put(time,file.getPath());
             }
-        }        
+        }
+        opener = new ImgOpener(new Context());
+    return true;        
     }
 
     @Override
     public TimePointImage getImage(String dataset,int time) {
-        ImgOpener opener = new ImgOpener(new Context());
+        
         try {
  
             List<SCIFIOImgPlus<?>> list = opener.openImgs(fileNames.get(time));
             SCIFIOImgPlus img = list.get(0);
-
+            
             long[] dims = new long[img.numDimensions()];
             for (int d=0 ; d<dims.length ; ++d) {
                 dims[d] = img.dimension(d);
@@ -85,7 +96,7 @@ public class TifDirectoryImageSource implements ImageSource {
         ret.add(ds);
         return ret;
     }
-    
+    ImgOpener opener;
     String directory;
     String datasetname;
     TreeMap<Integer,String> fileNames = new TreeMap<Integer,String>();
@@ -97,14 +108,15 @@ public class TifDirectoryImageSource implements ImageSource {
 
     @Override
     public int getMinTime() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return minTime;
     }
 
     @Override
     public int getMaxTime() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return maxTime;
     }
-
+    int minTime;
+    int maxTime;
 
 
 }

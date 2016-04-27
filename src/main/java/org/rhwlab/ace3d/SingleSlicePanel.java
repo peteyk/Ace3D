@@ -209,9 +209,10 @@ public class SingleSlicePanel extends JPanel {
                 long [] pos = imageCoordinates(e.getX(),e.getY());
                 if (e.getButton() == MouseEvent.BUTTON1){
                     if (parent != null )parent.changePosition(pos);                 
-                } else if (e.getButton() == MouseEvent.BUTTON3){
+                } 
+                else if (e.getButton() == MouseEvent.BUTTON3){
                     int mask = MouseEvent.SHIFT_DOWN_MASK;
-                    if (( e.getModifiersEx()&mask) == mask){
+                    if (( e.getModifiersEx()&mask) == mask){   // right shift mouse button adds a nucleus
                         // making a new nucleus
                         long[] parentPos = parent.getPosition();
                         long[] center = new long[parentPos.length];
@@ -224,7 +225,7 @@ public class SingleSlicePanel extends JPanel {
                         radius = Math.sqrt(radius);
                         embryo.addNucleus(new Nucleus(timePointImage.getTime(),center,radius));
                         parent.repaint();
-                    } else {
+                    } else {  // right mouse button selects a nucleus
                         // selecting the closest nucleus
                         Set<Nucleus> nucs = embryo.getNuclei(timePointImage.getTime());
                         double min = Double.MAX_VALUE;
@@ -448,6 +449,6 @@ public class SingleSlicePanel extends JPanel {
     final String title;
     CompositeTimePointImage timePointImage;
     ImagedEmbryo embryo;
-    ImagePlus imagePlus;  
+//    ImagePlus imagePlus;  
     long[] imagePosition;
 }

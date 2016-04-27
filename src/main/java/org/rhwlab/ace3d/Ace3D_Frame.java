@@ -31,6 +31,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import org.rhwlab.dispim.DataSetDesc;
 import org.rhwlab.dispim.Hdf5ImageSource;
+import org.rhwlab.dispim.ImageJHyperstackSource;
 import org.rhwlab.dispim.ImageSource;
 import org.rhwlab.dispim.ImagedEmbryo;
 import org.rhwlab.dispim.nucleus.Ace3DNucleusFile;
@@ -82,14 +83,31 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
         JMenu fileMenu = new JMenu("File");
         menuBar.add(fileMenu);
         
-        JMenuItem open;
-        open = new JMenuItem("Open Images from HDF5");
+        JMenuItem hyper = new JMenuItem("Import ImageJ Hyperstack");
+        hyper.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                source = new ImageJHyperstackSource();
+                source.open();
+                initToSource();
+                int fhsduis=0;
+            }
+        });
+        fileMenu.add(hyper);
+        
+        JMenuItem open = new JMenuItem("Open Images from HDF5");
         open.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
+                String hdf5File = props.getProperty("HDF5ImageFile");
+                if (hdf5File != null){
+                    ij.io.OpenDialog.setDefaultDirectory(new File(hdf5File).getParent());
+                }
                 source = new Hdf5ImageSource();
-                source.open();
-                initToSource();
+                if (source.open()){
+                    props.setProperty("HDF5ImageFile", source.getFile());
+                    initToSource();
+                }
             }
         });
         fileMenu.add(open);
@@ -298,10 +316,13 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
     private void openStarryNiteNucFile()throws Exception {
         
 //        nucFile = new StarryNiteNucleusFile("/nfs/waterston/pete/Segmentation/dispim_sample_data/matlab_output/CroppedReslicedBGSubtract488/Decon_emb1.zip");
-
+        String starry = props.getProperty("StarryNite");
+        if (starry != null){
+            nucChooser.setSelectedFile(new File(starry));
+        }
         if (nucChooser.showOpenDialog(panel) == JFileChooser.APPROVE_OPTION){
             nucFile = new StarryNiteNucleusFile(nucChooser.getSelectedFile().getPath());
-            
+            props.setProperty("StarryNite",nucFile.getFile().getPath());
             if (imagedEmbryo != null){
                 long[] coords = imagedEmbryo.getMinCoordinate();
                 ((StarryNiteNucleusFile)nucFile).adjustCoordinates((int)coords[0],(int)coords[1],(int)coords[2]);

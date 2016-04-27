@@ -10,6 +10,7 @@ import java.awt.image.BufferedImage;
 import java.util.List;
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccess;
+import net.imglib2.display.ColorTable8;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
@@ -26,6 +27,7 @@ public class CompositeTimePointImage  {
     }
 
     public BufferedImage getBufferedImage(int dim,long slice){
+
         TimePointImage tpi = images.get(0);
         IntervalView iv = Views.hyperSlice(tpi.image, dim, slice);
         Cursor cursor = iv.localizingCursor();

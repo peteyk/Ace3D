@@ -128,9 +128,65 @@ public class Cell {
         }
         return ret;
     }
-    public BufferedImage drawTree(){
-        return null;
+    // the maximum time this cell and its descents reach
+    public int maxTime(){
+        if (children.isEmpty()){
+            return this.lastTime();
+        } else {
+            int ret = Integer.MIN_VALUE;
+            for (Cell child : children){
+                int t = child.maxTime();
+                if (t >ret){
+                    ret = t;
+                }
+            }
+            return ret;
+        }
     }
+    // all the leaves of this cell
+    public List<Cell> leaves(){
+        ArrayList<Cell> ret = new ArrayList<>();
+        if (!this.children.isEmpty()){
+            for (Cell child : children){
+                ret.addAll(child.leaves());
+            }
+        }
+        return ret;
+    }
+
+    public int getMaxExpression(){
+        int ret = Integer.MIN_VALUE;
+        for (Cell child : children){
+            int v = child.getMaxExpression();
+            if (v > ret){
+                ret = v;
+            }
+        }
+        for (Nucleus nuc : nuclei.values()){
+            int v = nuc.getExpression();
+            if (v > ret){
+                ret = v;
+            }
+        }
+        return ret;
+    }
+    public int getMinExpression(){
+        int ret = Integer.MAX_VALUE;
+        for (Cell child : children){
+            int v = child.getMinExpression();
+            if (v < ret){
+                ret = v;
+            }
+        }
+        for (Nucleus nuc : nuclei.values()){
+            int v = nuc.getExpression();
+            if (v < ret){
+                ret = v;
+            }
+        }
+        return ret;        
+    }
+
     String name;
     Cell parent;  // the parent cell - can be null
     List<Cell> children = new ArrayList<>();  // children after division of this cell - can be empty

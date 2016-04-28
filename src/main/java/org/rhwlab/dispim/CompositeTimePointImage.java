@@ -22,14 +22,16 @@ import org.rhwlab.ace3d.DataSetProperties;
  * @author gevirl
  */
 public class CompositeTimePointImage  {
-    public CompositeTimePointImage(List<TimePointImage> images){
-        this.images = images;
+    public CompositeTimePointImage(int time){
+        this.time = time;
     }
 
     public BufferedImage getBufferedImage(int dim,long slice){
-
-        TimePointImage tpi = images.get(0);
-        IntervalView iv = Views.hyperSlice(tpi.image, dim, slice);
+        List<String> datasets = Ace3D_Frame.datasetsSelected();
+        if (datasets.isEmpty()) return null;
+        
+        TimePointImage tpi = TimePointImage.getSingleImage(datasets.get(0),time);
+        IntervalView iv = Views.hyperSlice(tpi.getImage(), dim, slice);
         Cursor cursor = iv.localizingCursor();
         cursor.fwd();
         int x0 = (int)iv.min(0);  // images min x position
@@ -39,13 +41,13 @@ public class CompositeTimePointImage  {
         BufferedImage ret = new BufferedImage(w,h,BufferedImage.TYPE_INT_ARGB_PRE);   
         
         // get the properties of each dataset in the composite image
-        RandomAccess[] access = new RandomAccess[images.size()];
-        double[] Rfactor = new double[images.size()];
-        double[] Gfactor = new double[images.size()];
-        double[] Bfactor = new double[images.size()];
-        double[] pixMin = new double[images.size()];
-        for (int i=0 ; i<images.size() ; ++i){
-            DataSetProperties ps = Ace3D_Frame.getProperties(images.get(i).getDataset());
+        RandomAccess[] access = new RandomAccess[datasets.size()];
+        double[] Rfactor = new double[datasets.size()];
+        double[] Gfactor = new double[datasets.size()];
+        double[] Bfactor = new double[datasets.size()];
+        double[] pixMin = new double[datasets.size()];
+        for (int i=0 ; i<datasets.size() ; ++i){
+            DataSetProperties ps = Ace3D_Frame.getProperties(datasets.get(i));
             double red = ps.color.getRed();
             double green = ps.color.getGreen();
             double blue = ps.color.getBlue();
@@ -55,12 +57,13 @@ public class CompositeTimePointImage  {
                 range = tpi.getMax()-tpi.getMin();
             }
             pixMin[i] = ps.min;
-            double f = 255.0/(alpha*range*images.size());
+            double f = 255.0/(alpha*range*datasets.size());
             Rfactor[i] = red*f;
             Gfactor[i] = green*f;
             Bfactor[i] = blue*f;
-            
-            access[i] = Views.hyperSlice(images.get(i).getImage(), dim, slice).randomAccess();
+            if (i > 0){
+                access[i] = Views.hyperSlice(TimePointImage.getSingleImage(datasets.get(i),time).getImage(), dim, slice).randomAccess();
+            }
         }
         while (cursor.hasNext()){
             UnsignedShortType pix = (UnsignedShortType)cursor.get();
@@ -74,7 +77,7 @@ public class CompositeTimePointImage  {
             int y = cursorPos[1]-y0;    // BufferedImage y position
             
             // fuse over all the images the current cursor location
-            for (int i=1 ; i<images.size() ; ++i){
+            for (int i=1 ; i<datasets.size() ; ++i){
                 access[i].setPosition(cursorPos);
                 pix = (UnsignedShortType)access[i].get();
                 v = Math.max(0.0,pix.getRealDouble() - pixMin[i]);
@@ -90,22 +93,24 @@ public class CompositeTimePointImage  {
         return ret;  
     }
     public int getTime(){
-        return images.get(0).getTime();
+        return time;
     }
     public double minPosition(int d){
-        return images.get(0).minPosition(d);
+        return TimePointImage.timePointCache.get(0).minPosition(d);
     }
     public double maxPosition(int d){
-        return images.get(0).maxPosition(d);
+        return TimePointImage.timePointCache.get(0).maxPosition(d);
     } 
     public int numDimensions(){
-        return images.get(0).image.numDimensions();
+        return TimePointImage.timePointCache.get(0).getDims().length;
     }
     public double[] getMinPosition(){
-        return images.get(0).getMinPosition();
+        return TimePointImage.timePointCache.get(0).getMinPosition();
     }
     public double[] getMaxPosition(){
-        return images.get(0).getMaxPosition();
+        return TimePointImage.timePointCache.get(0).getMaxPosition();
     }
-    List<TimePointImage> images;
+    int time;
+
+//    List<TimePointImage> images;
 }

@@ -13,10 +13,21 @@ import java.awt.Color;
  * @author gevirl
  */
 public class DataSetProperties {
+    public DataSetProperties(){
+        
+    }
+    public DataSetProperties (boolean auto,float mn,float mx,Color c,boolean sel){
+        this.autoContrast = auto;
+        this.max = mx;
+        this.min = mn;
+        this.color = c;
+        this.selected = sel;
+    }
    
     public boolean autoContrast = true;
-    public float min;
-    public float max;
+    public float min = (float)0.0;
+    public float max = Short.MAX_VALUE;
     public LUT lut=null;
     public Color color = Color.white;
+    public boolean selected = true;
 }

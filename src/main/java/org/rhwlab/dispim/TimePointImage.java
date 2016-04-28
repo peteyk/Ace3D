@@ -5,11 +5,9 @@
  */
 package org.rhwlab.dispim;
 
-import ij.ImagePlus;
+import java.util.HashMap;
+import java.util.LinkedList;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.img.display.imagej.ImageJFunctions;
-import net.imglib2.view.IntervalView;
-import net.imglib2.view.Views;
 
 /**
  *
@@ -26,36 +24,10 @@ public class TimePointImage{
         this.dataset = dataset;
     }
 
-    ImagePlus getSlice(int dim,int slice){
-        IntervalView iv = Views.hyperSlice(image, dim, slice);
-        ImagePlus imagePlus = ImageJFunctions.wrap(iv,String.format("(%d,%d,%d)", time,dim,slice));
-        return imagePlus;
-    }
     public int getTime(){
         return time;
     }
-/*    
-    public RandomAccessibleInterval  getWholeImage(){
-        LUT lut = Ace3D_Frame.getLUT(dataset);
-        RealLUTConverter converter = new RealLUTConverter();
-         DataSetProperties props = Ace3D_Frame.getProperties(dataset);
-        converter.setMin((double)props.min);
-        converter.setMax((double)props.max);
-        byte[] by = lut.getBytes();
-        byte[] red = new byte[by.length/3];
-        lut.getReds(red);
-        byte[] green = new byte[by.length/3];
-        lut.getGreens(green);
-        byte[] blue = new byte[by.length/3];
-        lut.getBlues(blue);
-        ColorTable8 ct = new ColorTable8(red,green,blue);
-        converter.setLUT(ct);  
-        return Converters.convert(image, converter,new ARGBType());
-    }
-*/
-    public IntervalView getImage(int dim,long slice){
-        return Views.hyperSlice(image, dim, slice);
-    }
+
     public RandomAccessibleInterval getImage(){
         return this.image;
     }
@@ -103,11 +75,47 @@ public class TimePointImage{
     }
     public double maxPosition(int d){
         return image.realMax(d);
-    }  
+    } 
+    static public TimePointImage getSingleImage(String dataset,int time){
+        HashMap<Integer,TimePointImage> map = imageIndex.get(dataset);
+        if (map != null){
+            TimePointImage ret = map.get(time);
+            if (ret != null){
+                return ret;
+            }   
+        } else {
+            map = new HashMap<>();
+            imageIndex.put(dataset,map);
+        }
+        TimePointImage ret = addToCache(dataset,time);
+        map.put(time, ret);
+        return ret;
+
+    }
+    static private TimePointImage addToCache(String dataset,int time){
+        TimePointImage tpi = source.getImage(dataset,time);
+        if (timePointCache.size()==cacheSize){
+            
+            // cache is full, remove the last
+            TimePointImage last = timePointCache.removeLast();
+            HashMap<Integer,TimePointImage> map  = imageIndex.get(dataset);
+            map.remove(last.time);  // remove it from the index too
+        }  
+        timePointCache.addFirst(tpi);
+        return tpi;
+    }
+    static public void setSource(ImageSource s){
+        source = s;
+    }
 
     String dataset;
     int time;
-    RandomAccessibleInterval image;
+    private RandomAccessibleInterval image;
     float[] minmax;
     long[] dims;
+    
+    static int cacheSize = 20;
+    static ImageSource source;
+    static LinkedList<TimePointImage> timePointCache = new LinkedList<>();    
+    static HashMap<String,HashMap<Integer,TimePointImage>> imageIndex = new HashMap<>();
 }

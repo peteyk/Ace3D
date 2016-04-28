@@ -38,7 +38,7 @@ import org.rhwlab.dispim.nucleus.NucleusFile;
  *
  * @author gevirl
  */
-public class SingleSlicePanel extends JPanel {
+public class SingleSlicePanel extends JPanel implements ChangeListener {
     public SingleSlicePanel(String ttl,int d,final SynchronizedMultipleSlicePanel par){
         this.parent = par;
         this.title = ttl;
@@ -63,36 +63,16 @@ public class SingleSlicePanel extends JPanel {
 //                System.out.printf("panel(%d,%d)\n",panelSize.width,panelSize.height);
 
                 if (timePointImage != null){                    
-//                    IntervalView iv = timePointImage.getImage(dim, slice);
-/*                    
-                    int nDim = iv.numDimensions();
-                    
-                    long[] ivDims = new long[nDim];
-                    iv.dimensions(ivDims);
- */                   
-//                    imagePlus = ImageJFunctions.wrap(iv, title);
-/*                    
-                    LUT lut = Ace3D_Frame.getLUT(timePointImage.getDataset());
-                    imagePlus.setLut(lut);
-                  
-                    DataSetProperties props = Ace3D_Frame.getProperties(timePointImage.getDataset());
-                    if (props.autoContrast){
-                        imagePlus.setDisplayRange(timePointImage.getMin(),timePointImage.getMax());
-                    }else {
-                        imagePlus.setDisplayRange(props.min,props.max);
-                    }
-*/                    
                     Graphics2D g2 = (Graphics2D) g;
-
+                    buffered = timePointImage.getBufferedImage(dim,slice);
+                    if (buffered == null){
+                        return ;
+                    }
                     // clear the panel
                     Color save = g2.getColor();
                     g2.setColor(Color.white);
                     Dimension d = this.getSize();
-                    g2.fillRect(0,0,d.width,d.height);
-
-//                    BufferedImage buffered = imagePlus.getBufferedImage();
-                    BufferedImage buffered = timePointImage.getBufferedImage(dim,slice);
-//                    buffered = lut.convertToIntDiscrete(buffered.getData(), true);
+                    g2.fillRect(0,0,d.width,d.height);                    
                     bufH = buffered.getHeight();
                     bufW = buffered.getWidth();
 
@@ -436,19 +416,26 @@ public class SingleSlicePanel extends JPanel {
         this.embryo = em;
     }
 
+    @Override
+    public void stateChanged(ChangeEvent e) {
+        this.slicePanel.repaint();
+    }
+    
     SynchronizedMultipleSlicePanel parent;
     JPanel slicePanel;
     double scale=1.0;
     int bufW;
     int bufH;
     long slice;
-//    long xPos;  // screen x coordinate of the image position
-//    long yPos;  // screen y coordinate of the image position
+    BufferedImage buffered;
+    long bufferedSlice=Long.MAX_VALUE;
+    int bufferedTime = Integer.MAX_VALUE;
+    DataSetProperties bufferedProps;
     int dim;
     JSlider slider;
     final String title;
     CompositeTimePointImage timePointImage;
     ImagedEmbryo embryo;
-//    ImagePlus imagePlus;  
     long[] imagePosition;
+
 }

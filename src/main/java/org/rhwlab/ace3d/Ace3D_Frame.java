@@ -8,7 +8,6 @@ package org.rhwlab.ace3d;
 import ij.ImageJ;
 import ij.plugin.PlugIn;
 import ij.process.LUT;
-import java.awt.Color;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -22,13 +21,14 @@ import java.util.Set;
 import java.util.TreeMap;
 import javax.swing.ButtonGroup;
 import javax.swing.JCheckBoxMenuItem;
-import javax.swing.JColorChooser;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import org.rhwlab.dispim.DataSetDesc;
 import org.rhwlab.dispim.Hdf5ImageSource;
 import org.rhwlab.dispim.ImageJHyperstackSource;
@@ -36,6 +36,7 @@ import org.rhwlab.dispim.ImageSource;
 import org.rhwlab.dispim.ImagedEmbryo;
 import org.rhwlab.dispim.nucleus.Ace3DNucleusFile;
 import org.rhwlab.dispim.TifDirectoryImageSource;
+import org.rhwlab.dispim.TimePointImage;
 import org.rhwlab.dispim.nucleus.NucleusFile;
 import org.rhwlab.dispim.nucleus.StarryNiteNucleusFile;
 
@@ -43,7 +44,7 @@ import org.rhwlab.dispim.nucleus.StarryNiteNucleusFile;
  *
  * @author gevirl
  */
-public class Ace3D_Frame extends JFrame implements PlugIn {
+public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
     public  Ace3D_Frame()  {
         nucFile = new Ace3DNucleusFile();
         panel = new SynchronizedMultipleSlicePanel(3);
@@ -74,7 +75,6 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
     public void run(String string) {
         this.setSize(1800,600);
         this.setVisible(true);
-//        this.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
     }
     
 
@@ -194,19 +194,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
             }
         });
         fileMenu.add(exit);
-        
-        dataset = new JMenu("DataSet");
-        menuBar.add(dataset);
-        
-        JMenu imageMenu = new JMenu("Image");
-        menuBar.add(imageMenu);
-        contrast = new JMenu("Contrast");
-        imageMenu.add(contrast); 
-        lutMenu = new JMenu("LUT");
-        imageMenu.add(lutMenu);
-        colorMenu = new JMenu("Color");
-        imageMenu.add(colorMenu);
-        
+      
         JMenu navigate = new JMenu("Navigate");
         JMenuItem toTime = new JMenuItem("To Time Point");
         toTime.addActionListener(new ActionListener(){
@@ -280,12 +268,15 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
                 // set up the dataset properties map
         dataSetProperties.clear();
         Iterator<DataSetDesc> iter = source.getDataSets().iterator();
+        TimePointImage.setSource(source);
         while (iter.hasNext()){
-            dataSetProperties.put(iter.next().getName(),new DataSetProperties());
-        }                
-        buildDataSetMenu();
-        buildContrastMenu();
-        buildColorMenu();                
+            String dataset = iter.next().getName();
+            dataSetProperties.put(dataset,new DataSetProperties());
+            TimePointImage.getSingleImage(dataset,source.getMinTime());
+        }   
+        contrastDialog = new ContrastDialog(this,"Select DataSets/Adjust Contrast and Color",0,Short.MAX_VALUE);
+        contrastDialog.setVisible(true);
+               
         imagedEmbryo = new ImagedEmbryo(source);
         imagedEmbryo.setNucleusFile(nucFile);
         panel.setEmbryo(imagedEmbryo);        
@@ -362,45 +353,8 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
             }
         }        
     }
-    private void buildDataSetMenu(){
-        dataset.removeAll();
-        ButtonGroup buttonGroup = new ButtonGroup();
-        Iterator<DataSetDesc> dataSetIter = source.getDataSets().iterator();
-        
-        datasetChoices = new JCheckBoxMenuItem[source.getDataSets().size()];
-        int i=0;
-        while(dataSetIter.hasNext()){
-            datasetChoices[i] = new JCheckBoxMenuItem(dataSetIter.next().getName());
-            datasetChoices[i].addActionListener(new ActionListener(){
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    panel.showCurrentImage();
-                }
-            });
-            dataset.add(datasetChoices[i]);
-//            buttonGroup.add(datasetChoices[i]);
-            ++i;
-        }
-        datasetChoices[0].setState(true);
-    }
-    private void buildContrastMenu(){
-        contrast.removeAll();
-        Iterator<DataSetDesc> dataSetIter = source.getDataSets().iterator();
-        contrastDialogs.clear();
-        while(dataSetIter.hasNext()){
-            String datasetName = dataSetIter.next().getName();
-            ContrastDialog cd = new ContrastDialog(this,dataSetProperties.get(datasetName),String.format("Contrast for Dataset: %s",datasetName),0,Short.MAX_VALUE);
-            contrastDialogs.put(datasetName,cd);
-            JMenuItem channelContrast = new JMenuItem(datasetName);
-            contrast.add(channelContrast);
-            channelContrast.addActionListener(new ActionListener(){
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    cd.setVisible(true);
-                }
-            });
-        }
-    }
+
+
     private void buildLutMenu(){
         lutMenu.removeAll();
         Iterator<DataSetDesc> dataSetIter = source.getDataSets().iterator();
@@ -437,33 +391,13 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
             dataSetLuts.put(dataset,lookUpTables.getLUT("Gray"));
         }
     }
-    private void buildColorMenu(){
-        colorMenu.removeAll();
-        colorChoices = new JMenuItem[source.getDataSets().size()];
-        int i=0;
-        Iterator<DataSetDesc> dataSetIter = source.getDataSets().iterator();
-        while(dataSetIter.hasNext()){
-            String datasetName = dataSetIter.next().getName();
-            colorChoices[i] = new JMenuItem(datasetName);
-            colorChoices[i].addActionListener(new ActionListener(){
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    JMenuItem item = (JMenuItem)e.getSource();
-                    DataSetProperties props = dataSetProperties.get(item.getText());
-                    Color choosen = JColorChooser.showDialog(Ace3D_Frame.this,item.getText(),props.color);
-                    if (choosen!=null){
-                        props.color = choosen;
-                        item.setForeground(choosen);
-                    }
-                }
-            });
-            colorMenu.add(colorChoices[i]);
-            ++i;
-        }        
-    }
-    public void refreshImage(){
-        panel.repaint();
-    }
+
+
+    @Override
+    public void stateChanged(ChangeEvent e) {
+        panel.stateChanged(e);
+    }    
+
     static public boolean labelNuclei(){
         return nucleiLabeled.getState();
     }
@@ -482,15 +416,26 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
 
     static public List<String> datasetsSelected(){
         ArrayList<String> ret = new ArrayList<>();
-        for (JCheckBoxMenuItem item : datasetChoices){
-            if (item.isSelected()){
-                ret.add(item.getText());
+        for (String key : dataSetProperties.keySet()){
+            DataSetProperties props = dataSetProperties.get(key);
+            if (props.selected){
+                ret.add(key);
             }
         }
         return ret;
     }
+    static public List<String> getAllDatsets(){
+        ArrayList<String> ret = new ArrayList<>();
+        for (String key : dataSetProperties.keySet()){
+            ret.add(key);
+        }
+        return ret;        
+    }
     static public DataSetProperties getProperties(String dataSet){
         return dataSetProperties.get(dataSet);
+    }
+    static public void setProperties(String dataset,DataSetProperties ps){
+        dataSetProperties.put(dataset, ps);
     }
     
     static public LUT getLUT(String dataSet){
@@ -507,7 +452,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
     SynchronizedMultipleSlicePanel panel;
     JFileChooser nucChooser;
     JFileChooser imageChooser;
-    TreeMap<String,ContrastDialog> contrastDialogs = new TreeMap<>();
+    ContrastDialog contrastDialog;
     LookUpTables lookUpTables = new LookUpTables();
     
     static JCheckBoxMenuItem segmentedNuclei;
@@ -515,7 +460,6 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
     static JCheckBoxMenuItem locationIndicator;
     static JCheckBoxMenuItem nucleiLabeled;
     static JCheckBoxMenuItem selectedLabeled;
-    static JCheckBoxMenuItem[] datasetChoices;
     static JMenuItem[] colorChoices;
     static TreeMap<String,LUT> dataSetLuts = new TreeMap<>();
     
@@ -536,5 +480,6 @@ public class Ace3D_Frame extends JFrame implements PlugIn {
             }
         });
     }     
+
 
 }

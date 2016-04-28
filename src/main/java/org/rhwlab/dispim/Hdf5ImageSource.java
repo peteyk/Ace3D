@@ -145,7 +145,7 @@ public class  Hdf5ImageSource implements ImageSource {
         
         float[] minmax = FusionHelper.minMax(img);  
 //	RealRandomAccessible< UnsignedShortType > realview = RealViews.affineReal( interpolated, affine );
-  RealRandomAccessible< UnsignedShortType > realview = RealViews.affineReal( interpolated, viewReg.getModel() );
+        RealRandomAccessible< UnsignedShortType > realview = RealViews.affineReal( interpolated, viewReg.getModel() );
 
         RandomAccessibleInterval< UnsignedShortType > view = Views.interval( Views.raster( realview ),min,max);
         long[] viewDims = new long[nDim];

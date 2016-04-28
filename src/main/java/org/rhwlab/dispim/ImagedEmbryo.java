@@ -22,27 +22,10 @@ public class ImagedEmbryo {
     public ImagedEmbryo(ImageSource src){
         this.source=src;
     }
-    public CompositeTimePointImage getImage(List<String> datasets,int time){
-        ArrayList<TimePointImage> list = new ArrayList<>();
-        for (String dataset : datasets){
-            TimePointImage tpi = getSingleImage(dataset,time);
-            list.add(tpi);
-        }
-        return new CompositeTimePointImage(list);
+    public CompositeTimePointImage getImage(int time){
+        return new CompositeTimePointImage(time);
     }
-    public TimePointImage getSingleImage(String dataset,int time){
-        for (TimePointImage image : timePointCache){
-            if (image.getTime()==time && image.getDataset().equals(dataset)){
-                return image;
-            }
-        }
-        TimePointImage image = source.getImage(dataset,time);
-        if (timePointCache.size()==cacheSize){
-            timePointCache.removeLast();
-        } 
-        timePointCache.addFirst(image);
-        return image;
-    }
+
     public int getTimes(){
         return source.getTimes();
     }
@@ -88,8 +71,8 @@ public class ImagedEmbryo {
     public long[] getMinCoordinate(){
         
         TimePointImage tpi = timePointCache.get(0);
-        long[] ret = new long[tpi.image.numDimensions()];
-        tpi.image.min(ret);
+        long[] ret = new long[tpi.getImage().numDimensions()];
+        tpi.getImage().min(ret);
         return ret;
     }
     public Set<Nucleus> getNuclei(int time){

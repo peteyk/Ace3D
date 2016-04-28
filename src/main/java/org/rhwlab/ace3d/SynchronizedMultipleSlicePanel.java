@@ -22,7 +22,7 @@ import org.rhwlab.dispim.nucleus.Nucleus;
  *
  * @author gevirl
  */
-public class SynchronizedMultipleSlicePanel extends JPanel {
+public class SynchronizedMultipleSlicePanel extends JPanel implements ChangeListener {
     public SynchronizedMultipleSlicePanel(int n){
         this.nDims = n;
         position = new long[n];
@@ -49,7 +49,7 @@ public class SynchronizedMultipleSlicePanel extends JPanel {
         this.add(slider,BorderLayout.SOUTH);
     }
     public void showCurrentImage(){
-        timePointImage = embryo.getImage(Ace3D_Frame.datasetsSelected(),time); 
+        timePointImage = embryo.getImage(time); 
         for (SingleSlicePanel panel : panels){
             panel.setImage(timePointImage, position);
         }  
@@ -141,7 +141,7 @@ public class SynchronizedMultipleSlicePanel extends JPanel {
     public void setEmbryo(ImagedEmbryo emb){
         this.embryo = emb;
         time = emb.getTimes()/2;
-        timePointImage = emb.getImage(Ace3D_Frame.datasetsSelected(),time);
+        timePointImage = emb.getImage(time);
         double[] minPosition = timePointImage.getMinPosition();
         double[] maxPosition = timePointImage.getMaxPosition();        
         for (int d=0 ; d<position.length ; ++d){
@@ -167,6 +167,13 @@ public class SynchronizedMultipleSlicePanel extends JPanel {
         return this.timePointImage;
     }
 
+    @Override
+    public void stateChanged(ChangeEvent e) {
+        for (SingleSlicePanel p : panels){
+            p.stateChanged(e);
+        }
+    }    
+
     int nDims;
     JSlider slider;
     int time;
@@ -175,4 +182,5 @@ public class SynchronizedMultipleSlicePanel extends JPanel {
     TitledBorder titledBorder;
     SingleSlicePanel[] panels;
     long[] position;
+
 }

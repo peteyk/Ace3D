@@ -13,7 +13,7 @@ import java.util.Set;
  *
  * @author gevirl
  */
-public interface NucleusFile {
+public interface NucleusFile extends javafx.beans.Observable{
     public void open()throws Exception ;
     public void save()throws Exception ;
     public void saveAs(File file) throws Exception ;
@@ -24,4 +24,9 @@ public interface NucleusFile {
     public Nucleus linkedBack(Nucleus nuc);
     public Nucleus sister(Nucleus nuc);
     public void addNucleus(Nucleus nuc);
+    public Set<Integer> getAllTimes();
+    public Nucleus getNucleus(String name);
+    public void setSelected(int time,String name);
+    public void setSelected(Nucleus nuc);
+    public Nucleus getSelected();
 }

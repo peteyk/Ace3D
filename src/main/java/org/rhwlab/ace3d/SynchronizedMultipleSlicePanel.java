@@ -60,13 +60,13 @@ public class SynchronizedMultipleSlicePanel extends JPanel implements ChangeList
     }
     public void incrementTime(){
         if (time < slider.getMaximum()){
-            Nucleus selected = this.embryo.selectedNucleus(time);
+            Nucleus selected = this.embryo.selectedNucleus();
             if (selected != null){
                 // track the selected nucleus forward
                 List<Nucleus> next = this.embryo.nextNuclei(selected);
                 if (next.size() > 0){
-                    embryo.clearSelected(time+1);
-                    next.get(0).setSelected(true);
+                    this.embryo.setSelectedNUcleus(next.get(0));
+
                     if (next.size()>1){
                         // nucleus has divided
                         embryo.clearLabeled(time+1);
@@ -80,13 +80,12 @@ public class SynchronizedMultipleSlicePanel extends JPanel implements ChangeList
     }
     public void decrementTime(){
         if (time > 1){
-            Nucleus selected = this.embryo.selectedNucleus(time);
+            Nucleus selected = this.embryo.selectedNucleus();
             if (selected!= null){
                 // track the selected nucleus back in time
                 Nucleus prev = this.embryo.previousNucleus(selected);
                 if (prev != null){
-                    embryo.clearSelected(time-1);
-                    prev.setSelected(true);   
+                    embryo.setSelectedNUcleus(prev);
                     this.changePosition(prev.getCenter());
                 }
             }            
@@ -94,7 +93,7 @@ public class SynchronizedMultipleSlicePanel extends JPanel implements ChangeList
         }
     }
     public void moveSelectedNucleus(int dim,int value){
-        Nucleus selected = this.embryo.selectedNucleus(time);
+        Nucleus selected = this.embryo.selectedNucleus();
         if (selected!= null){
             long[] center = selected.getCenter();
             center[dim] = center[dim] + (long)value;
@@ -103,7 +102,7 @@ public class SynchronizedMultipleSlicePanel extends JPanel implements ChangeList
         }        
     }
     public void changeRadiusSelectedNucleus(int value){
-        Nucleus selected = this.embryo.selectedNucleus(time);
+        Nucleus selected = this.embryo.selectedNucleus();
         if (selected!= null){
             double v = selected.getRadius() + value;
             selected.setRadius(v);

@@ -11,7 +11,6 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Observable;
 import java.util.Set;
 import java.util.TreeMap;
 import javafx.beans.InvalidationListener;
@@ -26,7 +25,7 @@ import javax.json.JsonReader;
  *
  * @author gevirl
  */
-public class Ace3DNucleusFile extends Observable implements NucleusFile  {
+public class Ace3DNucleusFile implements NucleusFile   {
     public Ace3DNucleusFile(){
         
     }
@@ -45,7 +44,7 @@ public class Ace3DNucleusFile extends Observable implements NucleusFile  {
             this.addNucleus(nuc,false);
         }
         reader.close();
-        this.notifyObservers();
+        this.notifyListeners();
     }
     public void addRoot(Cell cell){
         addRoot(cell,true);
@@ -60,7 +59,7 @@ public class Ace3DNucleusFile extends Observable implements NucleusFile  {
         rootSet.add(cell);
         cellMap.put(cell.getName(),cell);
         if (notify)        {
-            this.notifyObservers();
+            this.notifyListeners();
         }
     }
     // add a new nucleus with no cell links
@@ -78,7 +77,7 @@ public class Ace3DNucleusFile extends Observable implements NucleusFile  {
         timeSet.add(nuc);
         byName.put(nuc.getName(), nuc);
         if (notify){
-            this.notifyObservers();
+            this.notifyListeners();
         }
     }
     
@@ -100,7 +99,7 @@ public class Ace3DNucleusFile extends Observable implements NucleusFile  {
             // split the unlinkCell and make a new root 
             this.addRoot(unlinkCell.split(unlinkNuc.getTime()),false);
         }
-        this.notifyObservers();
+        this.notifyListeners();
     }
     public void unlinkPreviousTime(Nucleus unlinkNuc){
         Cell unlinkCell = this.getCell(unlinkNuc.getName());
@@ -116,7 +115,7 @@ public class Ace3DNucleusFile extends Observable implements NucleusFile  {
             Cell splitCell = unlinkCell.split(unlinkNuc.getTime());
             this.addRoot(splitCell,false);
         }
-        this.notifyObservers();
+        this.notifyListeners();
     }
     
     public void linkInTime(Nucleus from,Nucleus to){
@@ -146,7 +145,7 @@ public class Ace3DNucleusFile extends Observable implements NucleusFile  {
                 fromCell.combineWith(toCell);
             }
         }
-        this.notifyObservers();
+        this.notifyListeners();
     }
     
     public void linkDivision(Nucleus from,Nucleus to1,Nucleus to2){
@@ -175,7 +174,7 @@ public class Ace3DNucleusFile extends Observable implements NucleusFile  {
         fromCell.addChild(to2Cell);
         roots.remove(to1);
         roots.remove(to2);
-        this.notifyObservers(); 
+        this.notifyListeners(); 
     }
 
     @Override
@@ -286,10 +285,61 @@ public class Ace3DNucleusFile extends Observable implements NucleusFile  {
     
         return roots.get(time);
     }    
+
+    @Override
+    public void addListener(InvalidationListener listener) {
+        listeners.add(listener);
+    }
+
+    @Override
+    public void removeListener(InvalidationListener listener) {
+        listeners.remove(listener);
+    }
+    
+    void notifyListeners(){
+        for (InvalidationListener listener : listeners){
+            if (listener != null){
+                listener.invalidated(this);
+            }
+        }
+    }
+    @Override
+    public Set<Integer> getAllTimes(){
+        return this.byTime.keySet();
+    }
+    @Override
+    public Nucleus getNucleus(String name) {
+        return byName.get(name);
+    }  
+
+    @Override
+    public void setSelected(int time, String name) {
+        Nucleus toSelect = byName.get(name);
+        if (toSelect != null && toSelect.time==time){
+            Set<Nucleus> nucs = byTime.get(time);
+            for (Nucleus nuc : nucs){
+                if (nuc.getName().equals(name)){
+                    selectedNucleus = nuc;
+                }
+            }
+        }
+    }
+    public void setSelected(Nucleus toSelect){
+        this.selectedNucleus = toSelect;
+    }
+    @Override
+    public Nucleus getSelected(){
+        return this.selectedNucleus;
+    }
+    
     File file;
+    Nucleus selectedNucleus;
     TreeMap<Integer,Set<Cell>> roots = new TreeMap<>();  // roots indexed by time
     TreeMap<String,Cell> cellMap = new TreeMap<>();  // map of the all the cells
     TreeMap<Integer,Set<Nucleus>> byTime = new TreeMap<>();  // all the nuclei present at a given time
     TreeMap<String,Nucleus> byName = new TreeMap<>();  // map of nuclei indexed by name, map indexed by time
+    ArrayList<InvalidationListener> listeners = new ArrayList<>();
+
+
 
 }

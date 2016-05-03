@@ -211,14 +211,13 @@ public class SingleSlicePanel extends JPanel implements ChangeListener {
                         double min = Double.MAX_VALUE;
                         Nucleus closest = null;
                         for (Nucleus nuc : nucs){
-                            nuc.setSelected(false);
                             double d = nuc.distanceSqaured(pos);
                             if (d < min){
                                 closest = nuc;
                                 min = d;
                             }
                         }
-                        closest.setSelected(true);
+                        embryo.setSelectedNUcleus(closest);
                         parent.repaint();
                     }
                 }
@@ -352,7 +351,8 @@ public class SingleSlicePanel extends JPanel implements ChangeListener {
                         break;
                 }
 */
-                if (nuc.getSelected()){
+                
+                if (nuc == this.embryo.selectedNucleus()){
                     g2.setColor(Color.RED);
                 }else {
                     g2.setColor(Color.GREEN);
@@ -395,7 +395,7 @@ public class SingleSlicePanel extends JPanel implements ChangeListener {
     private void labelSelectedNucleus(Graphics2D g2){
         Set<Nucleus> nucs = embryo.getNuclei(timePointImage.getTime());
         for (Nucleus nuc : nucs){
-            if (nuc.getSelected()){
+            if (nuc == embryo.selectedNucleus()){
                 labelNucleus(g2,nuc);
             }
         }        

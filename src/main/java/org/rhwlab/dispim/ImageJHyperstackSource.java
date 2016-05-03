@@ -8,7 +8,6 @@ package org.rhwlab.dispim;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;
-import ij.process.ImageProcessor;
 import java.util.ArrayList;
 import java.util.Collection;
 import net.imglib2.img.Img;
@@ -23,7 +22,6 @@ public class ImageJHyperstackSource implements ImageSource {
     @Override
     public boolean open() {
         imagePlus = IJ.getImage();
-        int ndims = imagePlus.getNDimensions();
         dims = imagePlus.getDimensions();
         return true;
     }
@@ -33,25 +31,16 @@ public class ImageJHyperstackSource implements ImageSource {
         ImageStack stack = new ImageStack(dims[0],dims[1],dims[3]);
         for (int slice =1 ; slice<=dims[3] ; ++slice){
             imagePlus.setPosition(1, slice, time);
-            ImageProcessor process = imagePlus.getProcessor();
-            Object obj = imagePlus.getProcessor().getPixels();
-            if (obj == null){
-                int ajishdf=0;
-            }
-            stack.setPixels(obj, slice);
+            stack.setPixels(imagePlus.getProcessor().getPixels(), slice);
         }
         float[] minmax = new float[2];
-        long[] dims= new long[3];
-        ImagePlus ip = new ImagePlus("",stack);
-        img = ImageJFunctions.wrap(ip);
-        return new TimePointImage(img,minmax,time,dims,"Hyperstack");
-
+        img = ImageJFunctions.wrap(new ImagePlus("",stack));
+        return new TimePointImage(img,minmax,time,longDims,"Hyperstack");
     }
 
     @Override
     public int getTimes() {
         return imagePlus.getNFrames();
-        
     }
 
     @Override
@@ -78,6 +67,7 @@ public class ImageJHyperstackSource implements ImageSource {
         return ret;
     }
     int[] dims;
+    long[] longDims;
     ImagePlus imagePlus;
     Img img;
 }

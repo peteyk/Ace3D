@@ -20,7 +20,8 @@ public class TimePointImage{
         this.image = img;
         this.minmax = mm;
         this.time = time;
-        this.dims = dims;
+        this.dims = new long[img.numDimensions()];
+        img.dimensions(this.dims);
         this.dataset = dataset;
     }
 
@@ -71,6 +72,7 @@ public class TimePointImage{
         return ret;
     }  
     public double minPosition(int d){
+       
         return image.realMin(d);
     }
     public double maxPosition(int d){
@@ -108,6 +110,13 @@ public class TimePointImage{
         source = s;
     }
 
+    static public long[] getMinCoordinate(){
+        
+        TimePointImage tpi = timePointCache.get(0);
+        long[] ret = new long[tpi.getImage().numDimensions()];
+        tpi.getImage().min(ret);
+        return ret;
+    }
     String dataset;
     int time;
     private RandomAccessibleInterval image;

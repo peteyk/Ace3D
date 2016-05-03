@@ -143,6 +143,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
             public void actionPerformed(ActionEvent e) {
                 try {
                     openStarryNiteNucFile();
+                    
                 }catch (Exception exc){
                     exc.printStackTrace();
                 }
@@ -258,9 +259,6 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
             }
         });        
         view.add(nucleiLabeled);
-        
-
-
         this.setJMenuBar(menuBar);        
     }
    
@@ -278,8 +276,17 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
         contrastDialog.setVisible(true);
                
         imagedEmbryo = new ImagedEmbryo(source);
-        imagedEmbryo.setNucleusFile(nucFile);
-        panel.setEmbryo(imagedEmbryo);        
+        panel.setEmbryo(imagedEmbryo);
+        if (nucFile != null){
+            imagedEmbryo.setNucleusFile(nucFile);
+            if (nucFile instanceof StarryNiteNucleusFile){
+                long[] coords = TimePointImage.getMinCoordinate();
+                ((StarryNiteNucleusFile)nucFile).adjustCoordinates((int)coords[0],(int)coords[1],(int)coords[2]);
+            }
+        }
+        navFrame = new Navigation_Frame(source,panel);
+        navFrame.run(null);
+                
     }
     private void moveToTime(){
         boolean valid = false;
@@ -313,9 +320,11 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
         }
         if (nucChooser.showOpenDialog(panel) == JFileChooser.APPROVE_OPTION){
             nucFile = new StarryNiteNucleusFile(nucChooser.getSelectedFile().getPath());
+            nucFile.addListener(navFrame);
+            nucFile.open();
             props.setProperty("StarryNite",nucFile.getFile().getPath());
             if (imagedEmbryo != null){
-                long[] coords = imagedEmbryo.getMinCoordinate();
+                long[] coords = TimePointImage.getMinCoordinate();
                 ((StarryNiteNucleusFile)nucFile).adjustCoordinates((int)coords[0],(int)coords[1],(int)coords[2]);
                 imagedEmbryo.setNucleusFile(nucFile);
             }
@@ -453,6 +462,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
     JFileChooser nucChooser;
     JFileChooser imageChooser;
     ContrastDialog contrastDialog;
+    Navigation_Frame navFrame;
     LookUpTables lookUpTables = new LookUpTables();
     
     static JCheckBoxMenuItem segmentedNuclei;

@@ -5,12 +5,9 @@
  */
 package org.rhwlab.dispim;
 
-import java.util.ArrayList;
 import org.rhwlab.dispim.nucleus.Nucleus;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import net.imglib2.view.Views;
 import org.rhwlab.dispim.nucleus.NucleusFile;
 
 /**
@@ -38,14 +35,11 @@ public class ImagedEmbryo {
     public void setNucleusFile(NucleusFile file){
         nucFile = file;
     }
-    public Nucleus selectedNucleus(int time){
-        Set<Nucleus> nucs = nucFile.getNuclei(time);
-        for (Nucleus nuc : nucs){
-            if (nuc.getSelected()){
-                return nuc;
-            }
-        }
-        return null;
+    public Nucleus selectedNucleus(){
+        return nucFile.getSelected();
+    }
+    public void setSelectedNUcleus(Nucleus toSelect){
+        nucFile.setSelected(toSelect);
     }
     public List<Nucleus> nextNuclei(Nucleus source){
         return nucFile.linkedForward(source);
@@ -53,12 +47,14 @@ public class ImagedEmbryo {
     public Nucleus previousNucleus(Nucleus source){
         return nucFile.linkedBack(source);
     }
+/*    
     public void clearSelected(int time){
         Set<Nucleus> nucs = nucFile.getNuclei(time);
         for (Nucleus nuc : nucs){
             nuc.setSelected(false);
         }        
     }
+*/
     public void clearLabeled(int time){
         Set<Nucleus> nucs = nucFile.getNuclei(time);
         for (Nucleus nuc : nucs){
@@ -68,23 +64,13 @@ public class ImagedEmbryo {
     public NucleusFile getNucleusFile(){
         return nucFile;
     }
-    public long[] getMinCoordinate(){
-        
-        TimePointImage tpi = timePointCache.get(0);
-        long[] ret = new long[tpi.getImage().numDimensions()];
-        tpi.getImage().min(ret);
-        return ret;
-    }
+
     public Set<Nucleus> getNuclei(int time){
         return nucFile.getNuclei(time);
     }
     public void addNucleus(Nucleus nuc){
         nucFile.addNucleus(nuc);
     }
-
-    
-    static int cacheSize = 100;
     NucleusFile nucFile;
     ImageSource source;
-    LinkedList<TimePointImage> timePointCache = new LinkedList<TimePointImage>();
 }

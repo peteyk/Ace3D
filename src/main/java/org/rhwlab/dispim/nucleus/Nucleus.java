@@ -101,13 +101,14 @@ public class Nucleus implements Comparable {
         }
         return name;
     }
-
+/*
     public void setSelected(boolean s){
         this.selected = s;
     }
     public boolean getSelected(){
         return this.selected;
     }
+*/
     public double distanceSqaured(long[] p){
         double d = 0.0;
         long[] c = this.getCenter();

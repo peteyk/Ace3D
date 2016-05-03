@@ -18,7 +18,6 @@ import org.rhwlab.starrynite.TimePointNucleus;
 public class StarryNiteNucleusFile extends Ace3DNucleusFile {
     public StarryNiteNucleusFile(String fn)throws Exception {
         this.fileName = fn;
-        open();
     }
     public void adjustCoordinates(int xMin,int yMin,int zMin){
         for (Set<Nucleus> nucSet : this.byTime.values()){
@@ -46,7 +45,7 @@ public class StarryNiteNucleusFile extends Ace3DNucleusFile {
                 }
             }
         }
-        this.notifyObservers();
+        this.notifyListeners();
     }
     // adds all the nuclei that belong to the cell being made, given the starting nucleus in the cell
     // then creates any children cells

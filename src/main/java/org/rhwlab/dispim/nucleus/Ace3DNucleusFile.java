@@ -9,10 +9,10 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import javafx.beans.InvalidationListener;
 import javax.json.Json;
 import javax.json.JsonArray;
@@ -53,7 +53,7 @@ public class Ace3DNucleusFile implements NucleusFile   {
         int t = cell.firstTime();
         Set<Cell> rootSet = roots.get(t);
         if(rootSet == null){
-            rootSet = new HashSet<Cell>();
+            rootSet = new TreeSet<Cell>();
             roots.put(t,rootSet);
         }
         rootSet.add(cell);
@@ -71,7 +71,7 @@ public class Ace3DNucleusFile implements NucleusFile   {
     public void addNucleus(Nucleus nuc,boolean notify){
         Set<Nucleus> timeSet = byTime.get(nuc.getTime());
         if (timeSet == null){
-            timeSet = new HashSet<Nucleus>();
+            timeSet = new TreeSet<Nucleus>();
             byTime.put(nuc.getTime(), timeSet);
         }
         timeSet.add(nuc);
@@ -197,7 +197,7 @@ public class Ace3DNucleusFile implements NucleusFile   {
     public Set<Nucleus> getNuclei(int time){
         Set<Nucleus> ret = byTime.get(time);
         if (ret == null){
-            ret = new HashSet<Nucleus>();
+            ret = new TreeSet<Nucleus>();
             byTime.put(time, ret);
         }
         return ret;

@@ -17,7 +17,7 @@ import javax.json.JsonObjectBuilder;
  *
  * @author gevirl
  */
-public class Cell {
+public class Cell  implements Comparable {
     public Cell(String name){
         this.name = name;
     }
@@ -188,10 +188,16 @@ public class Cell {
         }
         return ret;        
     }
+    @Override
+    public int compareTo(Object o) {
+        return name.compareTo(((Cell)o).name);
+    }    
 
     String name;
     Cell parent;  // the parent cell - can be null
     List<Cell> children = new ArrayList<>();  // children after division of this cell - can be empty
     TreeMap<Integer,Nucleus> nuclei =  new TreeMap<>();  // the time-linked nuclei in this cell
+
+
     
 }

@@ -44,12 +44,14 @@ public class Navigation_Frame extends JFrame implements PlugIn,InvalidationListe
             public void valueChanged(TreeSelectionEvent e) {
                 DefaultMutableTreeNode node = (DefaultMutableTreeNode)rootsTree.getLastSelectedPathComponent();
                 if (node.isLeaf()){
-                    String cell = (String)node.getUserObject();
+                    String cellName = (String)node.getUserObject();
                     int time = Integer.valueOf((String)((DefaultMutableTreeNode)node.getParent()).getUserObject());
                     NucleusFile nucFile = embryo.getNucleusFile();
-                    nucFile.setSelected(time, cell);
+                    Cell cell = nucFile.getCell(cellName);
+                    Nucleus nuc = cell.getNucleus(time);
+                    nucFile.setSelected(nuc);
                     panel.changeTime(time);
-                    panel.changePosition(nucFile.getNucleus(cell).getCenter());
+                    panel.changePosition(nuc.getCenter());
                 }
             }
         });

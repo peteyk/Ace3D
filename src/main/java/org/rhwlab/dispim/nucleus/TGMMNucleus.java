@@ -26,7 +26,8 @@ public class TGMMNucleus extends Nucleus {
         return ret;
     }
     static String name(int time,String id){
-        return String.format("%d_%s", time,id);
+        int n = Integer.valueOf(id);
+        return String.format("%03d_%03d", time,n);
     }
     static String name(int time,Element gmm){
         return name(time,gmm.getAttributeValue("id"));

@@ -27,20 +27,22 @@ public class ImageJHyperstackSource implements ImageSource {
     }
 
     @Override
-    public TimePointImage getImage(String datatset, int time) {
+    public TimePointImage getImage(String dataset, int time) {
+        int channel = Integer.valueOf(dataset.substring(7));
         ImageStack stack = new ImageStack(dims[0],dims[1],dims[3]);
         for (int slice =1 ; slice<=dims[3] ; ++slice){
-            imagePlus.setPosition(1, slice, time);
+            imagePlus.setPosition(channel, slice, time);
             stack.setPixels(imagePlus.getProcessor().getPixels(), slice);
         }
         float[] minmax = new float[2];
         img = ImageJFunctions.wrap(new ImagePlus("",stack));
-        return new TimePointImage(img,minmax,time,longDims,"Hyperstack");
+        return new TimePointImage(img,minmax,time,longDims,dataset);
     }
 
     @Override
     public int getTimes() {
-        return imagePlus.getNFrames();
+        int n =imagePlus.getNFrames();
+        return n;
     }
 
     @Override
@@ -60,10 +62,12 @@ public class ImageJHyperstackSource implements ImageSource {
 
     @Override
     public Collection<DataSetDesc> getDataSets() {
-        DataSetDescImpl desc = new DataSetDescImpl();
-        desc.name = "Hyperstack";
         ArrayList<DataSetDesc> ret = new ArrayList<>();
-        ret.add(desc);
+        for (int d=0 ; d<dims[2] ; ++d){
+            DataSetDescImpl desc = new DataSetDescImpl();
+            desc.name = String.format("Channel%d",d+1);
+            ret.add(desc);
+        }
         return ret;
     }
     int[] dims;

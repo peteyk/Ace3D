@@ -27,16 +27,22 @@ public class CellImage {
         g2 = image.createGraphics();
         BasicStroke stroke = new BasicStroke(3);
         g2.setStroke(stroke);
-        drawCellAt((int)w/2,0,cell);
+        drawCell((int)w,0,cell);
         return image;
     }
-    void drawCellAt(int width,int yStart,Cell cell){
-        double f = 0.5;
+    void drawCell(int width,int yStart,Cell cell){
+        int wl = width/2;
+
+        int childY0  = yStart + (int)timeScale*(cell.lastTime()-cell.firstTime()+1);
         if (!cell.children.isEmpty()){
             //draw the children
             int n1 = cell.children.get(1).leaves().size();
             int n0 = cell.children.get(0).leaves().size();
-            f = (double)n0/(double)(n0+n1);
+            double f = (double)n0/(double)(n0+n1);
+            wl = (int)f*width;
+            int wr = width - wl;
+            drawCell(wl,childY0,cell.children.get(0));
+            drawCell(wr,childY0,cell.children.get(1));
         }
         // drawing the veritical line
         int y0 = 0;

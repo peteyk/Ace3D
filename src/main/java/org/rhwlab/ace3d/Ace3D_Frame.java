@@ -39,6 +39,7 @@ import org.rhwlab.dispim.TifDirectoryImageSource;
 import org.rhwlab.dispim.TimePointImage;
 import org.rhwlab.dispim.nucleus.NucleusFile;
 import org.rhwlab.dispim.nucleus.StarryNiteNucleusFile;
+import org.rhwlab.dispim.nucleus.TGMM_NucleusFile;
 
 /**
  *
@@ -136,6 +137,20 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
             }
         });
         fileMenu.add(nucOpen);
+        
+        JMenuItem tgmmOpen = new JMenuItem("Open TGMM Nuclei ");
+        tgmmOpen.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    openTGMMNucFile();
+                    
+                }catch (Exception exc){
+                    exc.printStackTrace();
+                }
+            }
+        });
+        fileMenu.add(tgmmOpen);        
         
         JMenuItem snOpen = new JMenuItem("Open Starry Nite Nuclei File");
         snOpen.addActionListener(new ActionListener(){
@@ -284,7 +299,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
                 ((StarryNiteNucleusFile)nucFile).adjustCoordinates((int)coords[0],(int)coords[1],(int)coords[2]);
             }
         }
-        navFrame = new Navigation_Frame(source,panel);
+        navFrame = new Navigation_Frame(imagedEmbryo,panel);
         navFrame.run(null);
                 
     }
@@ -329,6 +344,22 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
                 imagedEmbryo.setNucleusFile(nucFile);
             }
         }        
+    }
+    private void openTGMMNucFile()throws Exception {
+        String tgmm = props.getProperty("TGMM");
+        if (tgmm != null){
+            nucChooser.setSelectedFile(new File(tgmm));
+        } 
+        if (nucChooser.showOpenDialog(panel) == JFileChooser.APPROVE_OPTION){
+            nucFile = new TGMM_NucleusFile(nucChooser.getSelectedFile().getPath());
+            nucFile.addListener(navFrame);
+            nucFile.open();
+            props.setProperty("TGMM",nucFile.getFile().getPath());
+            if (imagedEmbryo != null){
+                imagedEmbryo.setNucleusFile(nucFile);
+            }            
+        }
+        
     }
     
     private void saveAsNucFile()throws Exception {

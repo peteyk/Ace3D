@@ -83,7 +83,7 @@ public class Ace3DNucleusFile implements NucleusFile   {
     
     // unlink a nucleus from the next time point
     public void unlinkNextTime(Nucleus unlinkNuc){
-        Cell unlinkCell = this.getCell(unlinkNuc.getName());
+        Cell unlinkCell = this.getCell(unlinkNuc.cell.getName());
         if (unlinkCell == null)  return;  // nucleus is not in a cell so it is unlinked
         
         // is the nucleus at the last time of a cell
@@ -122,8 +122,8 @@ public class Ace3DNucleusFile implements NucleusFile   {
         this.unlinkNextTime(from);
         this.unlinkPreviousTime(to);
         
-        Cell fromCell = this.getCell(from.getName());
-        Cell toCell = this.getCell(to.getName());
+        Cell fromCell = from.cell;
+        Cell toCell = to.cell;
         if (fromCell == null){
             if (toCell == null){
                 // make a new cell with the two unlinked nuclei
@@ -153,18 +153,18 @@ public class Ace3DNucleusFile implements NucleusFile   {
         this.unlinkPreviousTime(to1);
         this.unlinkPreviousTime(to2);
         
-        Cell fromCell = this.getCell(from.getName());
+        Cell fromCell = from.cell;
         if (fromCell == null){
             fromCell = new Cell(from.getName());
             fromCell.addNucleus(from);
             this.addRoot(fromCell,false);
         }
-        Cell to1Cell = this.getCell(to1.getName());
+        Cell to1Cell = to1.cell;
         if (to1Cell == null){
             to1Cell = new Cell(to1.getName());
             to1Cell.addNucleus(to1);
         }
-        Cell to2Cell = this.getCell(to2.getName());
+        Cell to2Cell = to2.cell;
         if (to2Cell == null){
             to2Cell = new Cell(to2.getName());
             to2Cell.addNucleus(to2);
@@ -172,8 +172,10 @@ public class Ace3DNucleusFile implements NucleusFile   {
         
         fromCell.addChild(to1Cell);
         fromCell.addChild(to2Cell);
-        roots.remove(to1);
-        roots.remove(to2);
+        int time = to1.getTime();
+        Set<Cell> rootCells = roots.get(time);
+        rootCells.remove(to1Cell);
+        rootCells.remove(to2Cell);
         this.notifyListeners(); 
     }
 
@@ -231,6 +233,7 @@ public class Ace3DNucleusFile implements NucleusFile   {
         }
         return builder;
     }
+    @Override
     public Cell getCell(String name){
         return cellMap.get(name);
     }
@@ -331,6 +334,7 @@ public class Ace3DNucleusFile implements NucleusFile   {
     public Nucleus getSelected(){
         return this.selectedNucleus;
     }
+ 
     
     File file;
     Nucleus selectedNucleus;

@@ -18,6 +18,7 @@ import org.rhwlab.starrynite.TimePointNucleus;
  * @author gevirl
  */
 public class Nucleus implements Comparable {
+
     public Nucleus(JsonObject jsonObj){
         this.time = jsonObj.getInt("Time");
         this.name = jsonObj.getString("Name");

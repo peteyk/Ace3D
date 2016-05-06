@@ -99,11 +99,13 @@ public class Cell {
     }
     // unlink this cell from its parent
     public void unlink(){
-        Cell[] parentsChildren = parent.getChildren();
-        parent.clearChildren();
-        for (Cell child : parentsChildren){
-            if (!child.getName().equals(this.getName())){
-                parent.addChild(child);
+        if (parent != null){
+            Cell[] parentsChildren = parent.getChildren();
+            parent.clearChildren();
+            for (Cell child : parentsChildren){
+                if (!child.getName().equals(this.getName())){
+                    parent.addChild(child);
+                }
             }
         }
         this.parent = null;

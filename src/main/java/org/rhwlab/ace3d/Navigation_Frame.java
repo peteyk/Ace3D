@@ -21,6 +21,7 @@ import javax.swing.tree.TreeSelectionModel;
 import org.rhwlab.dispim.ImageSource;
 import org.rhwlab.dispim.ImagedEmbryo;
 import org.rhwlab.dispim.nucleus.Cell;
+import org.rhwlab.dispim.nucleus.Nucleus;
 import org.rhwlab.dispim.nucleus.NucleusFile;
 
 /**
@@ -34,6 +35,7 @@ public class Navigation_Frame extends JFrame implements PlugIn,InvalidationListe
         this.embryo = emb;
         this.panel = p;
         this.getContentPane().setLayout(new BorderLayout());
+        
         rootsRoot = new DefaultMutableTreeNode("Roots at Each Time",true);
         rootsTree = new JTree(rootsRoot);
         rootsTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);    
@@ -51,8 +53,28 @@ public class Navigation_Frame extends JFrame implements PlugIn,InvalidationListe
                 }
             }
         });
-        JScrollPane scroll = new JScrollPane(rootsTree);
-        this.getContentPane().add(scroll,BorderLayout.WEST);
+        JScrollPane rootsScroll = new JScrollPane(rootsTree);
+        this.getContentPane().add(rootsScroll,BorderLayout.WEST);
+ 
+        nucsRoot = new DefaultMutableTreeNode("All Nuclei at Each Time",true);
+        nucsTree = new JTree(nucsRoot);
+        nucsTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);    
+        nucsTree.addTreeSelectionListener(new TreeSelectionListener(){
+            @Override
+            public void valueChanged(TreeSelectionEvent e) {
+                DefaultMutableTreeNode node = (DefaultMutableTreeNode)nucsTree.getLastSelectedPathComponent();
+                if (node.isLeaf()){
+                    String nuc = (String)node.getUserObject();
+                    int time = Integer.valueOf((String)((DefaultMutableTreeNode)node.getParent()).getUserObject());
+                    NucleusFile nucFile = embryo.getNucleusFile();
+                    nucFile.setSelected(time, nuc);
+                    panel.changeTime(time);
+                    panel.changePosition(nucFile.getNucleus(nuc).getCenter());
+                }
+            }
+        });
+        JScrollPane nucsScroll = new JScrollPane(nucsTree);
+        this.getContentPane().add(nucsScroll,BorderLayout.EAST);  
         
         NavigationTreePanel treePanel = new NavigationTreePanel(embryo);
         this.add(treePanel,BorderLayout.CENTER);
@@ -72,6 +94,7 @@ public class Navigation_Frame extends JFrame implements PlugIn,InvalidationListe
 
     @Override
     public void invalidated(Observable observable) {
+        nucsRoot.removeAllChildren();
         rootsRoot.removeAllChildren();
         NucleusFile nucFile = (NucleusFile)observable;
         Set<Integer> times = nucFile.getAllTimes();
@@ -86,10 +109,20 @@ public class Navigation_Frame extends JFrame implements PlugIn,InvalidationListe
     
                 }
             }
+            Set<Nucleus> nucs = nucFile.getNuclei(time);
+            DefaultMutableTreeNode timeNode = new DefaultMutableTreeNode(Integer.toString(time));
+            nucsRoot.add(timeNode);
+            for (Nucleus nuc : nucs){
+                DefaultMutableTreeNode nucNode = new DefaultMutableTreeNode(nuc.getName());
+                timeNode.add(nucNode);                
+            }
         }
+        
     }
     ImagedEmbryo embryo;
     SynchronizedMultipleSlicePanel panel;
     DefaultMutableTreeNode rootsRoot;
+    DefaultMutableTreeNode nucsRoot;
     JTree rootsTree;
+    JTree nucsTree;
 }

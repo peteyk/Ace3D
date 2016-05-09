@@ -153,6 +153,7 @@ public class Cell  implements Comparable {
                 ret.addAll(child.leaves());
             }
         }
+        ret.add(this);
         return ret;
     }
 

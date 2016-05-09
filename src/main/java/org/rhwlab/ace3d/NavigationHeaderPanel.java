@@ -29,7 +29,7 @@ public class NavigationHeaderPanel extends JPanel {
         rootField.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
-                treePanel.stateChanged(new ChangeEvent(this));
+                treePanel.stateChanged(new ChangeEvent(NavigationHeaderPanel.this));
             }
         });
         this.add(rootField);
@@ -40,7 +40,7 @@ public class NavigationHeaderPanel extends JPanel {
         maxTime.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
-                treePanel.stateChanged(new ChangeEvent(this));
+                treePanel.stateChanged(new ChangeEvent(NavigationHeaderPanel.this));
             }
         });
         this.add(maxTime);

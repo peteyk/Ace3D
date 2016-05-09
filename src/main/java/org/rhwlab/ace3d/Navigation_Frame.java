@@ -11,14 +11,12 @@ import java.util.Set;
 import javafx.beans.InvalidationListener;
 import javafx.beans.Observable;
 import javax.swing.JFrame;
-import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTree;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeSelectionModel;
-import org.rhwlab.dispim.ImageSource;
 import org.rhwlab.dispim.ImagedEmbryo;
 import org.rhwlab.dispim.nucleus.Cell;
 import org.rhwlab.dispim.nucleus.Nucleus;
@@ -32,6 +30,7 @@ public class Navigation_Frame extends JFrame implements PlugIn,InvalidationListe
     public Navigation_Frame(ImagedEmbryo emb,SynchronizedMultipleSlicePanel p){
         super();
         this.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        this.setTitle("Navigation Trees");
         this.embryo = emb;
         this.panel = p;
         this.getContentPane().setLayout(new BorderLayout());
@@ -43,11 +42,14 @@ public class Navigation_Frame extends JFrame implements PlugIn,InvalidationListe
             @Override
             public void valueChanged(TreeSelectionEvent e) {
                 DefaultMutableTreeNode node = (DefaultMutableTreeNode)rootsTree.getLastSelectedPathComponent();
-                if (node.isLeaf()){
-                    String cellName = (String)node.getUserObject();
-                    int time = Integer.valueOf((String)((DefaultMutableTreeNode)node.getParent()).getUserObject());
-                    NucleusFile nucFile = embryo.getNucleusFile();
-                    Cell cell = nucFile.getCell(cellName);
+                if (node == null){
+                    return;
+                }
+                String cellName = (String)node.getUserObject();
+                NucleusFile nucFile = embryo.getNucleusFile();
+                Cell cell = nucFile.getCell(cellName);                
+                if (cell != null){
+                    int time = cell.firstTime();
                     Nucleus nuc = cell.getNucleus(time);
                     nucFile.setSelected(nuc);
                     panel.changeTime(time);
@@ -106,8 +108,7 @@ public class Navigation_Frame extends JFrame implements PlugIn,InvalidationListe
                 DefaultMutableTreeNode timeNode = new DefaultMutableTreeNode(Integer.toString(time));
                 rootsRoot.add(timeNode);
                 for (Cell cell : roots){
-                    DefaultMutableTreeNode cellNode = new DefaultMutableTreeNode(cell.getName());
-                    timeNode.add(cellNode);
+                    addCellToNode(cell,timeNode);
     
                 }
             }
@@ -118,6 +119,14 @@ public class Navigation_Frame extends JFrame implements PlugIn,InvalidationListe
                 DefaultMutableTreeNode nucNode = new DefaultMutableTreeNode(nuc.getName());
                 timeNode.add(nucNode);                
             }
+        }
+        
+    }
+    private void addCellToNode(Cell cell,DefaultMutableTreeNode node){
+        DefaultMutableTreeNode cellNode = new DefaultMutableTreeNode(cell.getName());
+        node.add(cellNode);
+        for (Cell child : cell.getChildren()){
+            addCellToNode(child,cellNode);
         }
         
     }

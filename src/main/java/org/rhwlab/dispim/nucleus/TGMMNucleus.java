@@ -16,12 +16,23 @@ public class TGMMNucleus extends Nucleus {
         super(time,name(time,gmm),center(gmm),10.0);  // for now make all radii the same
         id = gmm.getAttributeValue("id");
         parent = gmm.getAttributeValue("parent");
+        prec = precision(gmm);
     }
     static long[] center(Element gmm){
         long[] ret = new long[3];
         String[] tokens = gmm.getAttributeValue("m").split(" ");
         for (int i =0 ; i<ret.length ; ++i) {
             ret[i] = (long)(Double.parseDouble(tokens[i])+.5);
+        }
+        return ret;
+    }
+    static double[][] precision(Element gmm){
+        double [][] ret = new double[3][3];
+        String[] tokens = gmm.getAttributeValue("W").split(" ");
+        for (int i=0 ; i<3 ; ++i){
+            for (int j=0 ; j<3 ; ++j){
+                ret[i][j] = Double.valueOf(tokens[3*i+j]);
+            }
         }
         return ret;
     }
@@ -40,4 +51,5 @@ public class TGMMNucleus extends Nucleus {
     }
     String id;
     String parent;
+    double[][] prec;
 }

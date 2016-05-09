@@ -71,6 +71,7 @@ public class ImagedEmbryo {
     public void addNucleus(Nucleus nuc){
         nucFile.addNucleus(nuc);
     }
+    
     NucleusFile nucFile;
     ImageSource source;
 }

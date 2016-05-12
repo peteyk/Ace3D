@@ -67,9 +67,9 @@ public class CellImage {
         if (!cell.children.isEmpty()){
             // drawing the horizontal line
             g2.drawLine(c0, childY0, c1, childY0);
-            System.out.printf("Horiz %s c0=%d,c1=%d,yend=%d\n", cell.getName(),c0,c1,yend);
+//            System.out.printf("Horiz %s c0=%d,c1=%d,yend=%d\n", cell.getName(),c0,c1,yend);
         }
-        System.out.printf("Vertical %s x=%d,y0=%d,y1=%d\n", cell.getName(),xStart,yStart,yend);
+//        System.out.printf("Vertical %s x=%d,y0=%d,y1=%d\n", cell.getName(),xStart,yStart,yend);
         return xStart;
     }
     LUT lut;

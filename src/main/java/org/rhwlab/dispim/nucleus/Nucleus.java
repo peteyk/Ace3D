@@ -5,12 +5,15 @@
  */
 package org.rhwlab.dispim.nucleus;
 
+import java.awt.Shape;
+import java.awt.geom.Ellipse2D;
 import java.io.PrintStream;
 import java.util.Date;
 import java.util.Random;
 import javax.json.Json;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
+import org.rhwlab.ace3d.SingleSlicePanel;
 import org.rhwlab.starrynite.TimePointNucleus;
 
 /**
@@ -23,16 +26,16 @@ public class Nucleus implements Comparable {
         this.time = jsonObj.getInt("Time");
         this.name = jsonObj.getString("Name");
         this.radius = jsonObj.getJsonNumber("Radius").doubleValue();
-        this.x = jsonObj.getJsonNumber("X").longValue();
-        this.y = jsonObj.getJsonNumber("Y").longValue();
-        this.z = jsonObj.getJsonNumber("Z").longValue();
+        this.xC = jsonObj.getJsonNumber("X").longValue();
+        this.yC = jsonObj.getJsonNumber("Y").longValue();
+        this.zC = jsonObj.getJsonNumber("Z").longValue();
     }
     public Nucleus(TimePointNucleus data){
         this.time = data.getTime();
         this.name = data.getName();
-        this.x = data.getX();
-        this.y = data.getY();
-        this.z = (long)data.getZ();
+        this.xC = data.getX();
+        this.yC = data.getY();
+        this.zC = (long)data.getZ();
         this.radius = data.getRadius();
     }
     public Nucleus(String[] headings,String[] data){
@@ -42,11 +45,11 @@ public class Nucleus implements Comparable {
             } else if (headings[i].equalsIgnoreCase("Name")){
                 name = data[i];
             } else if (headings[i].equalsIgnoreCase("X")){
-                x = Long.valueOf(data[i]);
+                xC = Long.valueOf(data[i]);
             } else if (headings[i].equalsIgnoreCase("Y")){
-                y = Long.valueOf(data[i]);
+                yC = Long.valueOf(data[i]);
             } else if (headings[i].equalsIgnoreCase("Z")){
-                z = Long.valueOf(data[i]);
+                zC = Long.valueOf(data[i]);
             } else if (headings[i].equalsIgnoreCase("Radius")){
                 radius = Double.valueOf(data[i]);
             }
@@ -58,9 +61,9 @@ public class Nucleus implements Comparable {
     public Nucleus (int time,String name,long[] center,double radius){
         this.time = time;
         this.name = name;
-        this.x = center[0];
-        this.y = center[1];
-        this.z = center[2];
+        this.xC = center[0];
+        this.yC = center[1];
+        this.zC = center[2];
         this.radius = radius;
     } 
     static public String randomName(){
@@ -86,15 +89,15 @@ public class Nucleus implements Comparable {
     }
     public long[] getCenter(){
         long[] center = new long[3];
-        center[0] = x;
-        center[1] = y;
-        center[2] = z;
+        center[0] = xC;
+        center[1] = yC;
+        center[2] = zC;
         return center;
     }
     public void setCenter(long[] c){
-        x = c[0];
-        y = c[1];
-        z = c[2];
+        xC = c[0];
+        yC = c[1];
+        zC = c[2];
     }
     public String getName(){
         if (name == null){
@@ -123,9 +126,9 @@ public class Nucleus implements Comparable {
         JsonObjectBuilder builder = Json.createObjectBuilder();
         builder.add("Name", name);
         builder.add("Time", time);
-        builder.add("X", x);
-        builder.add("Y", y);
-        builder.add("Z", z);
+        builder.add("X", xC);
+        builder.add("Y", yC);
+        builder.add("Z", zC);
         builder.add("Radius", radius);
         if (cell != null){
             builder.add("Cell", cell.getName());
@@ -151,11 +154,57 @@ public class Nucleus implements Comparable {
         public int getExpression(){
         return 100;
     }
+    public boolean isVisible(long slice,int dim){
+        switch(dim){
+            case 0:
+                return Math.abs(slice-xC)<radius;
+            case 1:
+                return Math.abs(slice-yC)<radius;
+        }
+       return Math.abs(slice-zC)<radius;
+    }
+    
+    public Shape getShape(long slice,int dim,int bufW,int bufH){
+            long[] center = getCenter();  // image corrdinates
+            double r = getRadius();   // image corrdinates
+            double delta = Math.abs(slice-center[dim]);   // image corrdinates
+            if (isVisible(slice, dim)){
+                double rad = Math.sqrt(r*r-delta*delta);  //image coordinates
+                int ix = imageXDirection(dim);
+                int iy = imageYDirection(dim);
+                long[] low = new long[center.length];
+                long[] high = new long[center.length];
+                low[dim] = slice;
+                high[dim] = slice;
+                low[ix] = center[ix] - (long)rad;
+                low[iy] = center[iy] - (long)rad;
+                high[ix] = center[ix] + (long)rad;
+                high[iy] = center[iy] + (long)rad;  
+                int scrX = SingleSlicePanel.screenX(low,dim,bufW);
+                int scrY = SingleSlicePanel.screenY(low,dim,bufH);
+                int scrHighX = SingleSlicePanel.screenX(high,dim,bufW);
+                int scrHighY = SingleSlicePanel.screenY(high,dim,bufH);
+                return new Ellipse2D.Double(scrX,scrY,scrHighX-scrX,scrHighY-scrY); 
+            }
+        return null;
+    }
+    public int imageXDirection(int dim){
+        if (dim==0){
+            return 1;
+        }
+        return 0;
+    }    
+    public int imageYDirection(int dim){
+        if (dim==2){
+            return 1;
+        }
+        return 2;
+    }     
     int time;
     String name;
-    long x;
-    long y;
-    long z;
+    long xC;
+    long yC;
+    long zC;
     double radius;
     Cell cell;  // the cell to which this nucleus belongs - can be null
     

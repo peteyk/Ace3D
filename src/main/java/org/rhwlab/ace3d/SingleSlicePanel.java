@@ -11,6 +11,7 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Shape;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
@@ -31,6 +32,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import org.rhwlab.dispim.CompositeTimePointImage;
 import org.rhwlab.dispim.ImagedEmbryo;
+import org.rhwlab.dispim.TimePointImage;
 import org.rhwlab.dispim.nucleus.Nucleus;
 import org.rhwlab.dispim.nucleus.NucleusFile;
 
@@ -59,20 +61,19 @@ public class SingleSlicePanel extends JPanel implements ChangeListener {
             @Override
             public void paint(Graphics g) {
                 super.paint(g);
+                Graphics2D panelg2 = (Graphics2D)g;
                 Dimension panelSize = this.getSize();
 //                System.out.printf("panel(%d,%d)\n",panelSize.width,panelSize.height);
 
                 if (timePointImage != null){                    
-                    Graphics2D g2 = (Graphics2D) g;
+ //                   Graphics2D g2 = (Graphics2D) g;
                     buffered = timePointImage.getBufferedImage(dim,slice);
+                    Graphics2D g2 = buffered.createGraphics();
                     if (buffered == null){
                         return ;
                     }
-                    // clear the panel
-                    Color save = g2.getColor();
-                    g2.setColor(Color.white);
-                    Dimension d = this.getSize();
-                    g2.fillRect(0,0,d.width,d.height);                    
+  
+                    
                     bufH = buffered.getHeight();
                     bufW = buffered.getWidth();
 
@@ -80,15 +81,17 @@ public class SingleSlicePanel extends JPanel implements ChangeListener {
                     double rh = (double)panelSize.height/(double)bufH;
                     scale = Math.max(1.0, Math.min(rw, rh));
 
-                    AffineTransform xForm = AffineTransform.getScaleInstance(scale, scale);
-                    g2.drawImage(buffered,new AffineTransformOp(xForm,AffineTransformOp.TYPE_NEAREST_NEIGHBOR),0,0);
+//                    AffineTransform xForm = AffineTransform.getScaleInstance(scale, scale);
+//                    g2.drawImage(buffered,new AffineTransformOp(xForm,AffineTransformOp.TYPE_NEAREST_NEIGHBOR),0,0);
 
                     // draw lines showing the current position
                     if (Ace3D_Frame.locationIndicated()){
                         long xPos = screenX(imagePosition);
                         long yPos = screenY(imagePosition);                        
-                        g2.drawLine(0, (int)(yPos), (int)(scale*bufW),(int)(yPos));
-                        g2.drawLine((int)(xPos), 0,(int)(xPos), (int)(scale*bufH));
+                        g2.drawLine(0, (int)(yPos), (int)(bufW),(int)(yPos));
+                        g2.drawLine((int)(xPos), 0,(int)(xPos), (int)(bufH));
+//                        g2.drawLine(0, (int)(yPos), (int)(scale*bufW),(int)(yPos));
+//                        g2.drawLine((int)(xPos), 0,(int)(xPos), (int)(scale*bufH));                        
                     }
                     // add an axis identifyer
                     g2.drawLine(10,5,20,5);  //horizontal
@@ -100,27 +103,36 @@ public class SingleSlicePanel extends JPanel implements ChangeListener {
                    // draw any nuclei
                    if (Ace3D_Frame.nucleiIndicated()){
                        drawNuclei(g2);
-                       g2.setColor(save);
+//                       g2.setColor(save);
                    }
 
                    if (Ace3D_Frame.sistersIndicated()){
                         g2.setColor(Color.GREEN);
                         drawSisters(g2);  // draw the sister indicator   
-                        g2.setColor(save);
+//                        g2.setColor(save);
                    }                   
                    if (Ace3D_Frame.labelNuclei()){
                         g2.setColor(Color.GREEN);
                         labelAllNuclei(g2);
-                        g2.setColor(save);
+//                        g2.setColor(save);
                    }
                    if (Ace3D_Frame.labelSelectedNucleus()){
                        g2.setColor(Color.RED);
                        labelSelectedNucleus(g2);
-                       g2.setColor(save);
+//                       g2.setColor(save);
                    }
                    g2.setColor(Color.BLUE);
                    labelMarkedNuclei(g2);
-                   g2.setColor(save);
+                  
+                   
+                    // clear the panel
+                    Color save = panelg2.getColor();
+                    panelg2.setColor(Color.white);
+                    Dimension d = this.getSize();
+                    panelg2.fillRect(0,0,d.width,d.height);                   
+                    AffineTransform xForm = AffineTransform.getScaleInstance(scale, scale);
+                    panelg2.drawImage(buffered,new AffineTransformOp(xForm,AffineTransformOp.TYPE_NEAREST_NEIGHBOR),0,0);   
+                    panelg2.setColor(save);
                 }
             }
         };
@@ -236,6 +248,7 @@ public class SingleSlicePanel extends JPanel implements ChangeListener {
         slider.setValue((int)pos[dim]);
         this.repaint();
     }
+/*    
     // return the screen x coordinate given image coordinates
     public int screenX(long[] p){
         if (dim==0){
@@ -253,6 +266,39 @@ public class SingleSlicePanel extends JPanel implements ChangeListener {
             return (int)((p[2]-timePointImage.minPosition(2))*scale*bufH/(timePointImage.maxPosition(2)-timePointImage.minPosition(2)));
         }
     } 
+*/    
+    public int screenX(long[] p){
+        if (dim==0){
+            return (int)((p[1]-timePointImage.minPosition(1))*bufW/(timePointImage.maxPosition(1)-timePointImage.minPosition(1)));
+        } else {
+            return (int)((p[0]-timePointImage.minPosition(0))*bufW/(timePointImage.maxPosition(0)-timePointImage.minPosition(0)));
+        }
+    }
+    static public int screenX(long[] p,int dim,int bufW){
+        System.out.printf("screenX: p =(%d,%d,%d),dim=%d,bufH=%d\n",p[0],p[1],p[2],dim,bufW);
+        if (dim==0){
+            return (int)((p[1]-TimePointImage.getMinPosition(1))*bufW/(TimePointImage.getMaxPosition(1)-TimePointImage.getMinPosition(1)));
+        } else {
+            return (int)((p[0]-TimePointImage.getMinPosition(0))*bufW/(TimePointImage.getMaxPosition(0)-TimePointImage.getMinPosition(0)));
+        }
+    }
+
+    // return the screen y coordinate given image coordinates
+    public int screenY(long[] p){
+        if (dim==2){
+            return (int)((p[1]-timePointImage.minPosition(1))*bufH/(timePointImage.maxPosition(1)-timePointImage.minPosition(1)));
+        } else {
+            return (int)((p[2]-timePointImage.minPosition(2))*bufH/(timePointImage.maxPosition(2)-timePointImage.minPosition(2)));
+        }
+    }   
+    static public int screenY(long[] p,int dim,int bufH){
+        System.out.printf("screenY: p =(%d,%d,%d),dim=%d,bufH=%d\n",p[0],p[1],p[2],dim,bufH);
+        if (dim==2){
+            return (int)((p[1]-TimePointImage.getMinPosition(1))*bufH/(TimePointImage.getMaxPosition(1)-TimePointImage.getMinPosition(1)));
+        } else {
+            return (int)((p[2]-TimePointImage.getMinPosition(2))*bufH/(TimePointImage.getMaxPosition(2)-TimePointImage.getMinPosition(2)));
+        }
+    }     
     public long[] imageCoordinates(int screenX,int screenY){
         long[] pos = new long[timePointImage.numDimensions()];
         pos[dim] = SingleSlicePanel.this.slice;
@@ -318,13 +364,29 @@ public class SingleSlicePanel extends JPanel implements ChangeListener {
     private void drawNuclei(Graphics2D g2){
        Set<Nucleus> nucs = embryo.getNuclei(timePointImage.getTime());
        for (Nucleus nuc : nucs){
+           if (nuc == this.embryo.selectedNucleus()){
+               int asdfyusgdf=0;
+           }
+           Shape nucShape = nuc.getShape(slice, dim, bufW, bufH);   
+           if (nucShape != null){
+                if (nuc == this.embryo.selectedNucleus()){
+                    g2.setColor(Color.RED);
+                }else {
+                    g2.setColor(Color.GREEN);
+                }
+                g2.draw(nucShape);               
+           }
+           
+           
+/*           
+           
             long[] center = nuc.getCenter();  // image corrdinates
             double r = nuc.getRadius();   // image corrdinates
             double delta = Math.abs(slice-center[dim]);   // image corrdinates
-            if (delta <= r){
+            if (nuc.isVisible(slice, dim)){
                 double rad = Math.sqrt(r*r-delta*delta);  //image coordinates
                 int ix = imageXDirection();
-                int iy = imageYDirection();
+                int iy = imageYDirection(); 
                 long[] low = new long[center.length];
                 long[] high = new long[center.length];
                 low[dim] = slice;
@@ -338,19 +400,9 @@ public class SingleSlicePanel extends JPanel implements ChangeListener {
                 int scrHighX = screenX(high);
                 int scrHighY = screenY(high);
                 Ellipse2D.Double ellipse = new Ellipse2D.Double(scrX,scrY,scrHighX-scrX,scrHighY-scrY);
-/*                
-                switch (dim) {
-                    case 0:
-                        ellipse = new Ellipse2D.Double(scale*center[1]-rad,scale*center[2]-rad,diam,diam);
-                        break;
-                    case 1:
-                        ellipse = new Ellipse2D.Double(scale*center[0]-rad,scale*center[2]-rad,diam,diam);
-                        break;            
-                    default:
-                        ellipse = new Ellipse2D.Double(scale*center[0]-rad,scale*center[1]-rad,diam,diam);
-                        break;
-                }
-*/
+                
+
+
                 
                 if (nuc == this.embryo.selectedNucleus()){
                     g2.setColor(Color.RED);
@@ -358,7 +410,11 @@ public class SingleSlicePanel extends JPanel implements ChangeListener {
                     g2.setColor(Color.GREEN);
                 }
                 g2.draw(ellipse);
+               
             }
+            
+*/            
+            
        }        
     }
     private void drawSisters(Graphics2D g2){

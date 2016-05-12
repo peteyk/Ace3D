@@ -70,7 +70,45 @@ public class TimePointImage{
             ret[i] = image.realMax(i);
         }
         return ret;
-    }  
+    }
+    static public double[] getMinPosition2D(int excludeDim){
+        double[] ret = new double[2];
+        RandomAccessibleInterval img = timePointCache.get(0).getImage();
+        switch (excludeDim) {
+            case 0:
+                ret[0] = img.realMin(1);
+                ret[1] = img.realMin(2);
+                break;
+            case 1:
+                ret[0] = img.realMin(0);
+                ret[1] = img.realMin(2);                
+                break;
+            default:
+                ret[0] = img.realMin(0);
+                ret[1] = img.realMin(1);                
+                break;
+        }
+        return ret;
+    }
+    static public double[] getMaxPosition2D(int excludeDim){
+        double[] ret = new double[2];
+        RandomAccessibleInterval img = timePointCache.get(0).getImage();
+        switch (excludeDim) {
+            case 0:
+                ret[0] = img.realMax(1);
+                ret[1] = img.realMax(2);
+                break;
+            case 1:
+                ret[0] = img.realMax(0);
+                ret[1] = img.realMax(2);                
+                break;
+            default:
+                ret[0] = img.realMax(0);
+                ret[1] = img.realMax(1);                
+                break;
+        }
+        return ret;
+    }    
     public double minPosition(int d){
        
         return image.realMin(d);
@@ -78,6 +116,14 @@ public class TimePointImage{
     public double maxPosition(int d){
         return image.realMax(d);
     } 
+    static public double getMinPosition(int d){
+        RandomAccessibleInterval img = timePointCache.get(0).getImage(); 
+        return img.realMin(d);
+    }
+    static public double getMaxPosition(int d){
+        RandomAccessibleInterval img = timePointCache.get(0).getImage(); 
+        return img.realMax(d);
+    }    
     static public TimePointImage getSingleImage(String dataset,int time){
         HashMap<Integer,TimePointImage> map = imageIndex.get(dataset);
         if (map != null){

@@ -135,7 +135,11 @@ public class SynchronizedMultipleSlicePanel extends JPanel implements ChangeList
         this.setBorder(titledBorder);        
     }
     private String positionString(){
-        return String.format("(%d,%d,%d)@%d", position[0], position[1], position[2],time);
+        String l = "";
+        if (embryo!= null && embryo.selectedNucleus() != null){
+            l = embryo.selectedNucleus().getName();
+        }
+        return String.format("(%d,%d,%d)@%d %s", position[0], position[1], position[2],time,l);
     }
     public void setEmbryo(ImagedEmbryo emb){
         this.embryo = emb;

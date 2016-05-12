@@ -36,7 +36,10 @@ public class ImagedEmbryo {
         nucFile = file;
     }
     public Nucleus selectedNucleus(){
-        return nucFile.getSelected();
+        if (nucFile != null){
+            return nucFile.getSelected();    
+        }
+        return null;
     }
     public void setSelectedNUcleus(Nucleus toSelect){
         nucFile.setSelected(toSelect);

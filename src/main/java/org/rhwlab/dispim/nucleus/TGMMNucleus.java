@@ -13,6 +13,7 @@ import org.apache.commons.math3.linear.EigenDecomposition;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.jdom2.Element;
+import org.rhwlab.ace3d.Ace3D_Frame;
 import org.rhwlab.ace3d.SingleSlicePanel;
 
 /**
@@ -24,9 +25,7 @@ public class TGMMNucleus extends Nucleus {
         super(time,name(time,gmm),center(gmm),10.0);  // for now make all radii the same
         id = gmm.getAttributeValue("id");
         parent = gmm.getAttributeValue("parent");
-        a = precision(gmm);
-
-        
+        a = precision(gmm);      
         scale = scale(gmm);
         double yz = a[y][z] + a[z][y];
         double xz = a[x][z] + a[z][x];
@@ -35,12 +34,11 @@ public class TGMMNucleus extends Nucleus {
         delZ = Math.sqrt((4.0*a[x][x]*a[y][y] - xy*xy)/denom);
         delY = Math.sqrt((4.0*a[x][x]*a[z][z] - xz*xz)/denom);
         delX = Math.sqrt((4.0*a[y][y]*a[z][z] - yz*yz)/denom);
-        int iuhsfdui=0;
     }
     @Override
     public Shape getShape(long slice,int dim,int bufW,int bufH){
-        System.out.printf("%s dim=%d  slice=%d\n",this.getName(),dim,slice);
-        System.out.printf("Ellipsoid center = (%d,%d,%d)\n",this.xC,this.yC,this.zC);
+//System.out.printf("%s dim=%d  slice=%d\n",this.getName(),dim,slice);
+//System.out.printf("Ellipsoid center = (%d,%d,%d)\n",this.xC,this.yC,this.zC);
         Ellipse2d e;
         switch(dim){
             case 0:
@@ -65,7 +63,7 @@ public class TGMMNucleus extends Nucleus {
             shape = toOrigin.createTransformedShape(shape);
             shape =  xform.createTransformedShape(shape);
             shape = back.createTransformedShape(shape);
-System.out.printf("scrX:%d scrY:%d e.x:%f e.y:%f\n",scrX,scrY,e.x,e.y);
+//System.out.printf("scrX:%d scrY:%d e.x:%f e.y:%f\n",scrX,scrY,e.x,e.y);
             return shape;
         }
         return null;
@@ -108,21 +106,21 @@ System.out.printf("scrX:%d scrY:%d e.x:%f e.y:%f\n",scrX,scrY,e.x,e.y);
         long[] ce = this.getCenter();
         
         v = v-ce[zi];
-        c.A = a[xi][xi];
-        c.B = a[xi][yi] + a[yi][xi];
-        c.C = a[yi][yi];
-        c.D = v*(a[xi][zi] + a[zi][xi]);
-        c.E = v*(a[yi][zi] + a[zi][yi]);
-        c.F = a[zi][zi]*v*v-1.0;
+        c.A = Ace3D_Frame.R*a[xi][xi];
+        c.B = Ace3D_Frame.R*(a[xi][yi] + a[yi][xi]);
+        c.C = Ace3D_Frame.R*a[yi][yi];
+        c.D = Ace3D_Frame.R*v*(a[xi][zi] + a[zi][xi]);
+        c.E = Ace3D_Frame.R*v*(a[yi][zi] + a[zi][yi]);
+        c.F = Ace3D_Frame.R*a[zi][zi]*v*v-1.0;
         
         c.x = ce[xi];
         c.y = ce[yi];
         
-        c.d = c.D - (2*a[xi][xi]*ce[xi] + (a[yi][xi]+a[xi][yi])*ce[yi]);
-        c.e = c.E - (2*a[yi][yi]*ce[yi] + (a[yi][xi]+a[xi][yi])*ce[xi]);
-        c.f = c.F + a[xi][xi]*ce[xi]*ce[xi] + (a[yi][xi]+a[xi][yi])*ce[xi]*ce[yi] - v*(a[zi][xi]*ce[xi]+a[zi][yi]*ce[yi]+a[xi][zi]*ce[xi]+a[yi][zi]*ce[yi]);
+ //       c.d = c.D - (2*a[xi][xi]*ce[xi] + (a[yi][xi]+a[xi][yi])*ce[yi]);
+ //       c.e = c.E - (2*a[yi][yi]*ce[yi] + (a[yi][xi]+a[xi][yi])*ce[xi]);
+ //       c.f = c.F + a[xi][xi]*ce[xi]*ce[xi] + (a[yi][xi]+a[xi][yi])*ce[xi]*ce[yi] - v*(a[zi][xi]*ce[xi]+a[zi][yi]*ce[yi]+a[xi][zi]*ce[xi]+a[yi][zi]*ce[yi]);
         
-        System.out.printf("Coef: A=%f,B=%f,C=%f,D=%f,E=%f,F=%f,d=%f,e=%f,f=%f\n",c.A,c.B,c.C,c.D,c.E,c.F,c.d,c.e,c.f);
+//System.out.printf("Coef: A=%f,B=%f,C=%f,D=%f,E=%f,F=%f,d=%f,e=%f,f=%f\n",c.A,c.B,c.C,c.D,c.E,c.F,c.d,c.e,c.f);
         return c;
     }
     public  Ellipse2d ellipse(int xi,int yi,int zi,Coeff coef){
@@ -147,9 +145,9 @@ System.out.printf("scrX:%d scrY:%d e.x:%f e.y:%f\n",scrX,scrY,e.x,e.y);
         EigenDecomposition eigenDecomp = new EigenDecomposition(rm);
         double detA33 = eigenDecomp.getDeterminant();
         double[] eigenValues = eigenDecomp.getRealEigenvalues();
-System.out.printf("Eigenvalues: %f,%f\n",eigenValues[0],eigenValues[1])        ;
-        RealVector eigenvector0 = eigenDecomp.getEigenvector(0);
-        RealVector eigenvector1 = eigenDecomp.getEigenvector(1)       ;
+//System.out.printf("Eigenvalues: %f,%f\n",eigenValues[0],eigenValues[1])        ;
+//        RealVector eigenvector0 = eigenDecomp.getEigenvector(0);
+//        RealVector eigenvector1 = eigenDecomp.getEigenvector(1)       ;
         
         
         Ellipse2d e = new Ellipse2d();
@@ -171,13 +169,13 @@ System.out.printf("Eigenvalues: %f,%f\n",eigenValues[0],eigenValues[1])        ;
 */      
         double dd =  coef.B*coef.B - 4.0*coef.A*coef.C;
         double xc = ( 2.0*coef.C*coef.D - coef.B*coef.E)/dd;
-        double xcn = ( 2.0*coef.C*coef.d - coef.B*coef.e)/dd;
+ //       double xcn = ( 2.0*coef.C*coef.d - coef.B*coef.e)/dd;
         double yc = ( 2.0*coef.A*coef.E - coef.B*coef.D)/dd;
-        double ycn = ( 2.0*coef.A*coef.e - coef.B*coef.d)/dd;
-System.out.printf("dd=%f,xc=%f,xcn=%f,yc=%f,ycn%f\n",dd,xc,xcn,yc,ycn);
+//        double ycn = ( 2.0*coef.A*coef.e - coef.B*coef.d)/dd;
+// System.out.printf("dd=%f,xc=%f,xcn=%f,yc=%f,ycn%f\n",dd,xc,xcn,yc,ycn);
         e.x = coef.x + xc;
         e.y = coef.y + yc;
-        
+/*        
 //        double G = coef.A*xcn*xcn + coef.B*xcn*ycn + coef.C*ycn*ycn - coef.f;
 //        double H = coef.A + coef.C;
  //       double b2 = (H + Math.sqrt(H*H-4.0*G))/2.0;
@@ -197,6 +195,7 @@ System.out.printf("Test: gamma=%f, a2=%f, b2=%f , a=%f , b=%f\n",gamma,a2,b2,an,
             e.a = 1.0/Math.sqrt(coef.A/(-coef.F)+coef.C/(-coef.F)  );
             e.b = 1.0/Math.sqrt(coef.A/(-coef.F)+coef.C/(-coef.F) );            
         }
+ */       
         double f = -detQ/detA33;
         e.a = 1.0/Math.sqrt(eigenValues[0]/f);
         e.b = 1.0/Math.sqrt(eigenValues[1]/f);
@@ -206,7 +205,7 @@ System.out.printf("Test: gamma=%f, a2=%f, b2=%f , a=%f , b=%f\n",gamma,a2,b2,an,
         e.high[xi] = (long)(e.x + e.a);
         e.high[yi] = (long)(e.y + e.b);
         e.high[zi] = 0;
-System.out.printf("Ellipse: a=%f,b=%f,x=%f,y=%f\n", e.a,e.b,e.x,e.y);
+//System.out.printf("Ellipse: a=%f,b=%f,x=%f,y=%f\n", e.a,e.b,e.x,e.y);
         return e;
     }
     static long[] center(Element gmm){
@@ -223,7 +222,7 @@ System.out.printf("Ellipse: a=%f,b=%f,x=%f,y=%f\n", e.a,e.b,e.x,e.y);
         String[] tokens = gmm.getAttributeValue("W").split(" ");
         for (int i=0 ; i<3 ; ++i){
             for (int j=0 ; j<3 ; ++j){
-                ret[i][j] = Double.valueOf(tokens[3*i+j])*R;
+                ret[i][j] = Double.valueOf(tokens[3*i+j]);
             }
         }
         return ret;
@@ -272,7 +271,6 @@ System.out.printf("Ellipse: a=%f,b=%f,x=%f,y=%f\n", e.a,e.b,e.x,e.y);
         long[] low = new long[3];
         long[] high = new long[3];
     }
-    static double R=40.0;
     static int x=0;
     static int y=1;
     static int z=2;

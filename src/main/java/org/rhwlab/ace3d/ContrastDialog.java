@@ -5,10 +5,11 @@
  */
 package org.rhwlab.ace3d;
 
+import java.awt.BorderLayout;
 import java.awt.Container;
 import javax.swing.BoxLayout;
-import javax.swing.JDialog;
 import javax.swing.JFrame;
+import javax.swing.JPanel;
 
 
 
@@ -22,10 +23,17 @@ public class ContrastDialog extends JFrame {
         this.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         this.setLocationRelativeTo(owner);
         Container content = this.getContentPane();
-        content.setLayout(new BoxLayout(content,BoxLayout.Y_AXIS));
+        content.setLayout(new BorderLayout());
+        
+        JPanel contrastPanel = new JPanel();
+        contrastPanel .setLayout(new BoxLayout(contrastPanel,BoxLayout.Y_AXIS));
         for (String dataset : Ace3D_Frame.getAllDatsets()){
-            content.add(new ContrastColorPanel(owner,dataset,sliderMin,sliderMax));
+            contrastPanel.add(new ContrastColorPanel(owner,dataset,sliderMin,sliderMax));
         }
+        content.add(contrastPanel,BorderLayout.CENTER);
+        
+        RadiusControlPanel radiusPanel = new RadiusControlPanel(owner);
+        content.add(radiusPanel,BorderLayout.EAST);
         this.pack();
     }
 }

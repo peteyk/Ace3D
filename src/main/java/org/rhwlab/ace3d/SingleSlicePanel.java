@@ -275,7 +275,7 @@ public class SingleSlicePanel extends JPanel implements ChangeListener {
         }
     }
     static public int screenX(long[] p,int dim,int bufW){
-        System.out.printf("screenX: p =(%d,%d,%d),dim=%d,bufH=%d\n",p[0],p[1],p[2],dim,bufW);
+ //       System.out.printf("screenX: p =(%d,%d,%d),dim=%d,bufH=%d\n",p[0],p[1],p[2],dim,bufW);
         if (dim==0){
             return (int)((p[1]-TimePointImage.getMinPosition(1))*bufW/(TimePointImage.getMaxPosition(1)-TimePointImage.getMinPosition(1)));
         } else {
@@ -292,7 +292,7 @@ public class SingleSlicePanel extends JPanel implements ChangeListener {
         }
     }   
     static public int screenY(long[] p,int dim,int bufH){
-        System.out.printf("screenY: p =(%d,%d,%d),dim=%d,bufH=%d\n",p[0],p[1],p[2],dim,bufH);
+ //       System.out.printf("screenY: p =(%d,%d,%d),dim=%d,bufH=%d\n",p[0],p[1],p[2],dim,bufH);
         if (dim==2){
             return (int)((p[1]-TimePointImage.getMinPosition(1))*bufH/(TimePointImage.getMaxPosition(1)-TimePointImage.getMinPosition(1)));
         } else {

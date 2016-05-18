@@ -314,6 +314,9 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
         
         navFrame = new Navigation_Frame(imagedEmbryo,panel);
         navFrame.run(null);
+        
+        SelectedNucleusFrame selectedNucFrame = new SelectedNucleusFrame(this,imagedEmbryo);
+        selectedNucFrame.setVisible(true);
                 
     }
     private void moveToTime(){

@@ -49,7 +49,7 @@ public class ImagedEmbryo implements Observable {
         }
         return null;
     }
-    public void setSelectedNUcleus(Nucleus toSelect){
+    public void setSelectedNucleus(Nucleus toSelect){
         nucFile.setSelected(toSelect);
         notifyListeners();
     }

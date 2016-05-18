@@ -229,7 +229,7 @@ public class SingleSlicePanel extends JPanel implements ChangeListener {
                                 min = d;
                             }
                         }
-                        embryo.setSelectedNUcleus(closest);
+                        embryo.setSelectedNucleus(closest);
                         parent.repaint();
                     }
                 }

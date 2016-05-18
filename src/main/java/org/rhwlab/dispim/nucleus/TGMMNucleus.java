@@ -25,6 +25,7 @@ public class TGMMNucleus extends Nucleus {
     public TGMMNucleus(int time,Element gmm){
         super(time,name(time,gmm),center(gmm),10.0);  // for now make all radii the same
         id = gmm.getAttributeValue("id");
+        System.out.println(this.getName());
         parent = gmm.getAttributeValue("parent");
         double[][] a = precision(gmm);      
         scale = scale(gmm);
@@ -38,6 +39,7 @@ public class TGMMNucleus extends Nucleus {
         A = new Array2DRowRealMatrix(a);
         eigenA = new EigenDecomposition(A);
         adjustedA = A.copy();
+        adjustedEigenA = new EigenDecomposition(adjustedA);
         R = new double[3];
         R[0] = 1.0;
         R[1] = 1.0;
@@ -50,6 +52,7 @@ public class TGMMNucleus extends Nucleus {
         R[1] = v[1];
         R[2] = v[2];
         adjustedA = adjustPrecision();
+        adjustedEigenA = new EigenDecomposition(adjustedA);
         double[][]a = adjustedA.getData();
         double yz = a[y][z] + a[z][y];
         double xz = a[x][z] + a[z][x];
@@ -302,8 +305,21 @@ System.out.printf("Test: gamma=%f, a2=%f, b2=%f , a=%f , b=%f\n",gamma,a2,b2,an,
         return name(this.time-1,parent);
     }
     public String getRadiusLabel(int i){
-        RealVector v = eigenA.getEigenvector(i);
-        return String.format("(%.2f,%.2f,%.2f)", v.getEntry(0),v.getEntry(1),v.getEntry(2));
+        int adjustedI = 0;
+        double minD = Double.MAX_VALUE;
+        RealVector aV = eigenA.getEigenvector(i);
+        for (int j=0 ; j<A.getColumnDimension() ; ++j){
+            RealVector v = adjustedEigenA.getEigenvector(j);
+            double d = v.getDistance(aV);
+            if (d < minD){
+                minD = d;
+                adjustedI = j;
+            }
+        }
+        RealVector v = adjustedEigenA.getEigenvector(adjustedI);
+        double eigenVal = adjustedEigenA.getRealEigenvalue(adjustedI);
+        double r = 1.0/Math.sqrt(Ace3D_Frame.R*eigenVal);
+        return String.format("%4.1f (%.2f,%.2f,%.2f)",r, v.getEntry(0),v.getEntry(1),v.getEntry(2));
     }
     static int x=0;
     static int y=1;
@@ -317,6 +333,7 @@ System.out.printf("Test: gamma=%f, a2=%f, b2=%f , a=%f , b=%f\n",gamma,a2,b2,an,
     
     RealMatrix A;
     EigenDecomposition eigenA;
+    EigenDecomposition adjustedEigenA; 
     double[] R;
     RealMatrix adjustedA;
     

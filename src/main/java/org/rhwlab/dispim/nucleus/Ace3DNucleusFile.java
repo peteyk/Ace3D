@@ -300,6 +300,9 @@ public class Ace3DNucleusFile implements NucleusFile   {
     }
     
     void notifyListeners(){
+        if (opening){
+            return;
+        }
         for (InvalidationListener listener : listeners){
             if (listener != null){
                 listener.invalidated(this);
@@ -335,7 +338,7 @@ public class Ace3DNucleusFile implements NucleusFile   {
         return this.selectedNucleus;
     }
  
-    
+    boolean opening = true;
     File file;
     Nucleus selectedNucleus;
     TreeMap<Integer,Set<Cell>> roots = new TreeMap<>();  // roots indexed by time

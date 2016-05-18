@@ -33,10 +33,7 @@ public class ContrastDialog extends JFrame {
         }
         content.add(contrastPanel,BorderLayout.CENTER);
         
-        RadiusControlPanel radiusPanel = new RadiusControlPanel(owner);
-        radiusPanel.setEmbryo(embryo);
-        embryo.addListener(radiusPanel);
-        content.add(radiusPanel,BorderLayout.EAST);
+
         this.pack();
     }
 }

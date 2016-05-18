@@ -22,7 +22,7 @@ import org.rhwlab.dispim.nucleus.Nucleus;
  *
  * @author gevirl
  */
-public class RadiusControlPanel extends JPanel implements InvalidationListener {
+public class RadiusControlPanel extends JPanel  implements InvalidationListener {
     public RadiusControlPanel(Ace3D_Frame frame){
         this.frame = frame;
         this.setLayout(new BorderLayout());
@@ -34,10 +34,13 @@ public class RadiusControlPanel extends JPanel implements InvalidationListener {
         
         sliders = new JSlider[3];
         labels = new JLabel[3];
+        labels[0] = new JLabel(" a Radius");
+        labels[1] = new JLabel(" b Radius");
+        labels[2] = new JLabel(" c Radius");
         for (int i=0 ; i<sliders.length ; ++i){
             JPanel sliderPanel = new JPanel();
             sliderPanel.setLayout(new BoxLayout(sliderPanel,BoxLayout.Y_AXIS));
-            labels[i] = new JLabel("radius");
+            
             sliderPanel.add(labels[i]);
             
             sliders[i] = new JSlider(1,sliderMax,100);
@@ -58,6 +61,7 @@ public class RadiusControlPanel extends JPanel implements InvalidationListener {
                                 }
                                 nuc.setAdjustment(r);
                                 frame.stateChanged(e);
+                                embryo.notifyListeners();
                             }
                         }
                     }
@@ -84,13 +88,11 @@ public class RadiusControlPanel extends JPanel implements InvalidationListener {
                 if (o instanceof double[]){
                     setValues((double[])o);
                 }
-                labels[0].setText(nuc.getRadiusLabel(0));
-                labels[1].setText(nuc.getRadiusLabel(1));
-                labels[2].setText(nuc.getRadiusLabel(2));
+
             }
         }
     }
-    
+   
     static int sliderMax = 300;
     Ace3D_Frame frame;
     ImagedEmbryo embryo;

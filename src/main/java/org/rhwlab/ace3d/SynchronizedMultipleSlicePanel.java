@@ -65,7 +65,7 @@ public class SynchronizedMultipleSlicePanel extends JPanel implements ChangeList
                 // track the selected nucleus forward
                 List<Nucleus> next = this.embryo.nextNuclei(selected);
                 if (next.size() > 0){
-                    this.embryo.setSelectedNUcleus(next.get(0));
+                    this.embryo.setSelectedNucleus(next.get(0));
 
                     if (next.size()>1){
                         // nucleus has divided
@@ -85,7 +85,7 @@ public class SynchronizedMultipleSlicePanel extends JPanel implements ChangeList
                 // track the selected nucleus back in time
                 Nucleus prev = this.embryo.previousNucleus(selected);
                 if (prev != null){
-                    embryo.setSelectedNUcleus(prev);
+                    embryo.setSelectedNucleus(prev);
                     this.changePosition(prev.getCenter());
                 }
             }            

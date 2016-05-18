@@ -97,6 +97,9 @@ public class Cell  implements Comparable {
     public Nucleus firstNucleus(){
         return nuclei.firstEntry().getValue();
     }
+    public Nucleus lastNucleus(){
+        return nuclei.lastEntry().getValue();
+    }
     // unlink this cell from its parent
     public void unlink(){
         if (parent != null){

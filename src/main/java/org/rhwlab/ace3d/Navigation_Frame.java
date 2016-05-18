@@ -51,7 +51,7 @@ public class Navigation_Frame extends JFrame implements PlugIn,InvalidationListe
                 if (cell != null){
                     int time = cell.firstTime();
                     Nucleus nuc = cell.getNucleus(time);
-                    nucFile.setSelected(nuc);
+                    emb.setSelectedNucleus(nuc);
                     panel.changeTime(time);
                     panel.changePosition(nuc.getCenter());
                 }
@@ -71,7 +71,7 @@ public class Navigation_Frame extends JFrame implements PlugIn,InvalidationListe
                     String nuc = (String)node.getUserObject();
                     int time = Integer.valueOf((String)((DefaultMutableTreeNode)node.getParent()).getUserObject());
                     NucleusFile nucFile = embryo.getNucleusFile();
-                    nucFile.setSelected(time, nuc);
+                    embryo.setSelectedNucleus(nucFile.getNucleus(nuc));
                     panel.changeTime(time);
                     panel.changePosition(nucFile.getNucleus(nuc).getCenter());
                 }

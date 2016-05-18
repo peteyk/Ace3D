@@ -30,6 +30,7 @@ public class TGMM_NucleusFile extends Ace3DNucleusFile{
         }
     }
     public void open()throws Exception {
+        this.opening = true;
         Pattern p = Pattern.compile(".+(\\d{4}).xml");
         File dirFile = new File(dir);
         SAXBuilder saxBuilder = new SAXBuilder();
@@ -100,6 +101,8 @@ public class TGMM_NucleusFile extends Ace3DNucleusFile{
                 }
             }
         }
+        this.opening = false;
+        this.notifyListeners();
     }
     String dir;
 }

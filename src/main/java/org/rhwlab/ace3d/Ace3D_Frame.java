@@ -521,7 +521,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
     static TreeMap<String,LUT> dataSetLuts = new TreeMap<>();
     
     static TreeMap<String,DataSetProperties> dataSetProperties = new TreeMap<>();
-    static public double R=40.0;
+    static public double R=15.0;
     
     static public void main(String[] args) {
         EventQueue.invokeLater(new Runnable(){

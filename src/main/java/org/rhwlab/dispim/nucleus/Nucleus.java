@@ -199,7 +199,23 @@ public class Nucleus implements Comparable {
             return 1;
         }
         return 2;
-    }     
+    } 
+    public void setAdjustment(Object o){
+        
+    }
+    public Object getAdjustment(){
+        return null;
+    }
+    public String getRadiusLabel(int i){
+        switch(i){
+            case 0:
+                return "X";
+            case 1:
+                return "Y";
+            default:
+                return "Z";
+        }
+    }
     int time;
     String name;
     long xC;

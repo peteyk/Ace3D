@@ -9,6 +9,7 @@ import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Ellipse2D;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.DiagonalMatrix;
 import org.apache.commons.math3.linear.EigenDecomposition;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
@@ -25,7 +26,7 @@ public class TGMMNucleus extends Nucleus {
         super(time,name(time,gmm),center(gmm),10.0);  // for now make all radii the same
         id = gmm.getAttributeValue("id");
         parent = gmm.getAttributeValue("parent");
-        a = precision(gmm);      
+        double[][] a = precision(gmm);      
         scale = scale(gmm);
         double yz = a[y][z] + a[z][y];
         double xz = a[x][z] + a[z][x];
@@ -34,6 +35,62 @@ public class TGMMNucleus extends Nucleus {
         delZ = Math.sqrt((4.0*a[x][x]*a[y][y] - xy*xy)/denom);
         delY = Math.sqrt((4.0*a[x][x]*a[z][z] - xz*xz)/denom);
         delX = Math.sqrt((4.0*a[y][y]*a[z][z] - yz*yz)/denom);
+        A = new Array2DRowRealMatrix(a);
+        eigenA = new EigenDecomposition(A);
+        adjustedA = A.copy();
+        R = new double[3];
+        R[0] = 1.0;
+        R[1] = 1.0;
+        R[2] = 1.0;
+    }
+    @Override
+    public void setAdjustment(Object o){
+        double[] v = (double[])o;
+        R[0] = v[0];
+        R[1] = v[1];
+        R[2] = v[2];
+        adjustedA = adjustPrecision();
+        double[][]a = adjustedA.getData();
+        double yz = a[y][z] + a[z][y];
+        double xz = a[x][z] + a[z][x];
+        double xy = a[x][y] + a[y][x];
+        denom = 4.0*a[x][x]*a[y][y]*a[z][z] + xy*xz*yz - a[x][x]*yz*yz - a[z][z]*xy*xy - a[y][y]*xz*xz;
+        delZ = Math.sqrt((4.0*a[x][x]*a[y][y] - xy*xy)/denom);
+        delY = Math.sqrt((4.0*a[x][x]*a[z][z] - xz*xz)/denom);
+        delX = Math.sqrt((4.0*a[y][y]*a[z][z] - yz*yz)/denom);        
+    }
+    public Object getAdjustment(){
+        return this.R;
+    }
+    public RealMatrix adjustPrecision(){
+       
+        DiagonalMatrix D = new DiagonalMatrix(eigenA.getRealEigenvalues());
+//        this.printMat("D", D);;
+//        System.out.print("lambda: ");
+        for (int i=0 ; i<R.length ; ++i){
+            double lambda = D.getEntry(i,i);
+ //           System.out.printf("%f\t",lambda);
+            D.setEntry(i,i,lambda/(R[i]*R[i]));
+        }
+//        System.out.println();
+ //       this.printMat("Adjusted D", D);
+//        this.printMat("V",eigenA.getV());
+//        RealMatrix vd = eigenA.getV().multiply(D);
+//        this.printMat("V x D", vd);
+//        this.printMat("VT",eigenA.getVT());
+        RealMatrix ret = eigenA.getV().multiply(D.multiply(eigenA.getVT()));
+//        this.printMat("ret", ret);
+//        this.printMat("A", A);
+        return ret;
+    }
+    public void printMat(String label,RealMatrix m){
+        System.out.println(label);
+        for (int r=0 ; r<m.getRowDimension() ; ++r){
+            for (int c=0 ; c<m.getColumnDimension() ; ++c){
+                System.out.printf("%f\t",m.getEntry(r, c));
+            }
+            System.out.println();
+        }
     }
     @Override
     public Shape getShape(long slice,int dim,int bufW,int bufH){
@@ -90,21 +147,11 @@ public class TGMMNucleus extends Nucleus {
         Coeff coef = coef(xi,yi,zi,v);
         return ellipse(xi,yi,zi,coef);
     }
-    /*
-    public Coeff zPlaneCoeff(double v){
-        return coef(0,1,2,v);
-    }
-    public Coeff yPlaneCoeff(double v){
-        return coef(0,2,1,v);
-    }
-    public Coeff xPlaneCoeff(double v){
-        return coef(1,2,0,v);
-    }
-    */
+
     public Coeff coef(int xi,int yi,int zi,double v){
         Coeff c = new Coeff();
         long[] ce = this.getCenter();
-        
+        double[][] a = adjustedA.getData();
         v = v-ce[zi];
         c.A = Ace3D_Frame.R*a[xi][xi];
         c.B = Ace3D_Frame.R*(a[xi][yi] + a[yi][xi]);
@@ -146,7 +193,7 @@ public class TGMMNucleus extends Nucleus {
         double detA33 = eigenDecomp.getDeterminant();
         double[] eigenValues = eigenDecomp.getRealEigenvalues();
 //System.out.printf("Eigenvalues: %f,%f\n",eigenValues[0],eigenValues[1])        ;
-//        RealVector eigenvector0 = eigenDecomp.getEigenvector(0);
+        RealVector eigenvector0 = eigenDecomp.getEigenvector(0);
 //        RealVector eigenvector1 = eigenDecomp.getEigenvector(1)       ;
         
         
@@ -164,9 +211,9 @@ public class TGMMNucleus extends Nucleus {
 /*        
         e.a = 1.0/Math.sqrt(eigenValues[0]);
         e.b = 1.0/Math.sqrt(eigenValues[1]);
-        e.cosine = eigenvector0.getEntry(0);
-        e.sine = eigenvector0.getEntry(1);   
-*/      
+*/        
+  
+      
         double dd =  coef.B*coef.B - 4.0*coef.A*coef.C;
         double xc = ( 2.0*coef.C*coef.D - coef.B*coef.E)/dd;
  //       double xcn = ( 2.0*coef.C*coef.d - coef.B*coef.e)/dd;
@@ -199,6 +246,10 @@ System.out.printf("Test: gamma=%f, a2=%f, b2=%f , a=%f , b=%f\n",gamma,a2,b2,an,
         double f = -detQ/detA33;
         e.a = 1.0/Math.sqrt(eigenValues[0]/f);
         e.b = 1.0/Math.sqrt(eigenValues[1]/f);
+        e.cosine = eigenvector0.getEntry(0);
+        e.sine = eigenvector0.getEntry(1);         
+ //       e.a = 1.0/Math.sqrt(R[xi]*eigenA.getRealEigenvalues()[xi]);
+ //       e.b = 1.0/Math.sqrt(R[yi]*eigenA.getRealEigenvalues()[yi]);
         e.low[xi] = (long)(e.x - e.a);
         e.low[yi] = (long)(e.y - e.b);
         e.low[zi] = 0;
@@ -221,8 +272,10 @@ System.out.printf("Test: gamma=%f, a2=%f, b2=%f , a=%f , b=%f\n",gamma,a2,b2,an,
         double [][] ret = new double[3][3];
         String[] tokens = gmm.getAttributeValue("W").split(" ");
         for (int i=0 ; i<3 ; ++i){
-            for (int j=0 ; j<3 ; ++j){
+            for (int j=i ; j<3 ; ++j){
                 ret[i][j] = Double.valueOf(tokens[3*i+j]);
+                ret[j][i] = ret[i][j];
+                
             }
         }
         return ret;
@@ -248,6 +301,29 @@ System.out.printf("Test: gamma=%f, a2=%f, b2=%f , a=%f , b=%f\n",gamma,a2,b2,an,
     public String getParent(){
         return name(this.time-1,parent);
     }
+    public String getRadiusLabel(int i){
+        RealVector v = eigenA.getEigenvector(i);
+        return String.format("(%.2f,%.2f,%.2f)", v.getEntry(0),v.getEntry(1),v.getEntry(2));
+    }
+    static int x=0;
+    static int y=1;
+    static int z=2;
+    double denom;
+    double delX;
+    double delY;
+    double delZ;
+    String id;
+    String parent;
+    
+    RealMatrix A;
+    EigenDecomposition eigenA;
+    double[] R;
+    RealMatrix adjustedA;
+    
+    float[] scale;
+    RealMatrix Q;
+    double detQ;
+    
     public class Coeff {
         double A;
         double B;
@@ -271,18 +347,6 @@ System.out.printf("Test: gamma=%f, a2=%f, b2=%f , a=%f , b=%f\n",gamma,a2,b2,an,
         long[] low = new long[3];
         long[] high = new long[3];
     }
-    static int x=0;
-    static int y=1;
-    static int z=2;
-    double denom;
-    double delX;
-    double delY;
-    double delZ;
-    String id;
-    String parent;
-    double[][] a;
-    float[] scale;
-    RealMatrix Q;
-    double detQ;
+
 }
 

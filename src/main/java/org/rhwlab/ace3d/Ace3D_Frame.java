@@ -195,7 +195,18 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
                 }
             }
         });
-        fileMenu.add(nucSaveAs);  
+        fileMenu.add(nucSaveAs); 
+        
+        JMenuItem calcExp = new JMenuItem("Calculate Expression");
+        calcExp.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (Ace3D_Frame.this.source != null && Ace3D_Frame.this.nucFile != null){
+                    Ace3D_Frame.this.imagedEmbryo.calculateExpression();
+                }
+            }
+        });
+        fileMenu.add(calcExp);
         fileMenu.addSeparator();
 
         JMenuItem exit = new JMenuItem("Exit");
@@ -287,8 +298,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
             dataSetProperties.put(dataset,new DataSetProperties());
             TimePointImage.getSingleImage(dataset,source.getMinTime());
         }   
-        contrastDialog = new ContrastDialog(this,"Select DataSets/Adjust Contrast and Color",0,Short.MAX_VALUE);
-        contrastDialog.setVisible(true);
+
                
         imagedEmbryo = new ImagedEmbryo(source);
         panel.setEmbryo(imagedEmbryo);
@@ -299,6 +309,9 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
                 ((StarryNiteNucleusFile)nucFile).adjustCoordinates((int)coords[0],(int)coords[1],(int)coords[2]);
             }
         }
+        contrastDialog = new ContrastDialog(this,imagedEmbryo,"Select DataSets/Adjust Contrast and Color",0,Short.MAX_VALUE);
+        contrastDialog.setVisible(true);
+        
         navFrame = new Navigation_Frame(imagedEmbryo,panel);
         navFrame.run(null);
                 

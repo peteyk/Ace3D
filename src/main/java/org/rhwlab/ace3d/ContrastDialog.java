@@ -10,6 +10,7 @@ import java.awt.Container;
 import javax.swing.BoxLayout;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+import org.rhwlab.dispim.ImagedEmbryo;
 
 
 
@@ -18,7 +19,7 @@ import javax.swing.JPanel;
  * @author gevirl
  */
 public class ContrastDialog extends JFrame {
-    public ContrastDialog(Ace3D_Frame owner,String title,int sliderMin,int sliderMax){
+    public ContrastDialog(Ace3D_Frame owner,ImagedEmbryo embryo,String title,int sliderMin,int sliderMax){
         super(title);
         this.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         this.setLocationRelativeTo(owner);
@@ -33,6 +34,8 @@ public class ContrastDialog extends JFrame {
         content.add(contrastPanel,BorderLayout.CENTER);
         
         RadiusControlPanel radiusPanel = new RadiusControlPanel(owner);
+        radiusPanel.setEmbryo(embryo);
+        embryo.addListener(radiusPanel);
         content.add(radiusPanel,BorderLayout.EAST);
         this.pack();
     }

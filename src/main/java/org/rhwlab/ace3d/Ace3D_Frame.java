@@ -247,7 +247,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
         view.add(segmentedNuclei);
         
         sisters = new JCheckBoxMenuItem("Sister indicator");
-        sisters.setSelected(true);
+        sisters.setSelected(false);
         sisters.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {

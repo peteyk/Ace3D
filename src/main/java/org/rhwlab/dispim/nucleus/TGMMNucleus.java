@@ -25,10 +25,11 @@ public class TGMMNucleus extends Nucleus {
     public TGMMNucleus(int time,Element gmm){
         super(time,name(time,gmm),center(gmm),10.0);  // for now make all radii the same
         id = gmm.getAttributeValue("id");
-        System.out.println(this.getName());
+//        System.out.println(this.getName());
         parent = gmm.getAttributeValue("parent");
         double[][] a = precision(gmm);      
         scale = scale(gmm);
+/*        
         double yz = a[y][z] + a[z][y];
         double xz = a[x][z] + a[z][x];
         double xy = a[x][y] + a[y][x];
@@ -36,8 +37,10 @@ public class TGMMNucleus extends Nucleus {
         delZ = Math.sqrt((4.0*a[x][x]*a[y][y] - xy*xy)/denom);
         delY = Math.sqrt((4.0*a[x][x]*a[z][z] - xz*xz)/denom);
         delX = Math.sqrt((4.0*a[y][y]*a[z][z] - yz*yz)/denom);
+        */
         A = new Array2DRowRealMatrix(a);
         eigenA = new EigenDecomposition(A);
+//        System.out.println(Math.log(eigenA.getDeterminant()));
         adjustedA = A.copy();
         adjustedEigenA = new EigenDecomposition(adjustedA);
         R = new double[3];
@@ -54,13 +57,15 @@ public class TGMMNucleus extends Nucleus {
         adjustedA = adjustPrecision();
         adjustedEigenA = new EigenDecomposition(adjustedA);
         double[][]a = adjustedA.getData();
+/*        
         double yz = a[y][z] + a[z][y];
         double xz = a[x][z] + a[z][x];
         double xy = a[x][y] + a[y][x];
         denom = 4.0*a[x][x]*a[y][y]*a[z][z] + xy*xz*yz - a[x][x]*yz*yz - a[z][z]*xy*xy - a[y][y]*xz*xz;
         delZ = Math.sqrt((4.0*a[x][x]*a[y][y] - xy*xy)/denom);
         delY = Math.sqrt((4.0*a[x][x]*a[z][z] - xz*xz)/denom);
-        delX = Math.sqrt((4.0*a[y][y]*a[z][z] - yz*yz)/denom);        
+        delX = Math.sqrt((4.0*a[y][y]*a[z][z] - yz*yz)/denom);  
+        */
     }
     public Object getAdjustment(){
         return this.R;
@@ -97,7 +102,7 @@ public class TGMMNucleus extends Nucleus {
     }
     @Override
     public Shape getShape(long slice,int dim,int bufW,int bufH){
-//System.out.printf("%s dim=%d  slice=%d\n",this.getName(),dim,slice);
+
 //System.out.printf("Ellipsoid center = (%d,%d,%d)\n",this.xC,this.yC,this.zC);
         Ellipse2d e;
         switch(dim){
@@ -112,6 +117,7 @@ public class TGMMNucleus extends Nucleus {
                 break;                 
         }
         if (e != null){
+//System.out.printf("%s dim=%d  slice=%d\n",this.getName(),dim,slice);
             AffineTransform toOrigin = AffineTransform.getTranslateInstance(-e.x,-e.y);
             AffineTransform back = AffineTransform.getTranslateInstance(e.x, e.y);
             AffineTransform xform = AffineTransform.getRotateInstance(e.cosine, e.sine);
@@ -123,28 +129,28 @@ public class TGMMNucleus extends Nucleus {
             shape = toOrigin.createTransformedShape(shape);
             shape =  xform.createTransformedShape(shape);
             shape = back.createTransformedShape(shape);
-//System.out.printf("scrX:%d scrY:%d e.x:%f e.y:%f\n",scrX,scrY,e.x,e.y);
+//System.out.printf("e.a:%f e.b:%f e.x:%f e.y:%f\n",e.a,e.b,e.x,e.y);
             return shape;
         }
         return null;
     }
     public Ellipse2d zPlaneEllipse(double v){
-        if (Math.abs(v-this.zC) < delZ){
+//        if (Math.abs(v-this.zC) < delZ){
             return ellipse(0,1,2,v);
-        }
-        return null;
+//        }
+//        return null;
     }
     public Ellipse2d yPlaneEllipse(double v){
-        if (Math.abs(v-this.yC) < delY){
+ //       if (Math.abs(v-this.yC) < delY){
             return ellipse(0,2,1,v);
-        }
-        return null;
+//        }
+//        return null;
     }
     public Ellipse2d xPlaneEllipse(double v){
-        if (Math.abs(v-this.xC) < delX){
+//        if (Math.abs(v-this.xC) < delX){
             return ellipse(1,2,0,v);
-        }
-        return null;
+//        }
+ //       return null;
     }
     public Ellipse2d ellipse(int xi,int yi,int zi,double v){
         Coeff coef = coef(xi,yi,zi,v);
@@ -155,13 +161,14 @@ public class TGMMNucleus extends Nucleus {
         Coeff c = new Coeff();
         long[] ce = this.getCenter();
         double[][] a = adjustedA.getData();
+        double ff = - Math.log(eigenA.getDeterminant());
         v = v-ce[zi];
-        c.A = Ace3D_Frame.R*a[xi][xi];
-        c.B = Ace3D_Frame.R*(a[xi][yi] + a[yi][xi]);
-        c.C = Ace3D_Frame.R*a[yi][yi];
-        c.D = Ace3D_Frame.R*v*(a[xi][zi] + a[zi][xi]);
-        c.E = Ace3D_Frame.R*v*(a[yi][zi] + a[zi][yi]);
-        c.F = Ace3D_Frame.R*a[zi][zi]*v*v-1.0;
+        c.A = ff*a[xi][xi];
+        c.B = ff*(a[xi][yi] + a[yi][xi]);
+        c.C = ff*a[yi][yi];
+        c.D = ff*v*(a[xi][zi] + a[zi][xi]);
+        c.E = ff*v*(a[yi][zi] + a[zi][yi]);
+        c.F = ff*a[zi][zi]*v*v-1.0;
         
         c.x = ce[xi];
         c.y = ce[yi];
@@ -247,8 +254,14 @@ System.out.printf("Test: gamma=%f, a2=%f, b2=%f , a=%f , b=%f\n",gamma,a2,b2,an,
         }
  */       
         double f = -detQ/detA33;
-        e.a = 1.0/Math.sqrt(eigenValues[0]/f);
-        e.b = 1.0/Math.sqrt(eigenValues[1]/f);
+        double a = eigenValues[0]/f;
+        double b = eigenValues[1]/f;
+        if (a <=0.0 || b<=0.0){
+            return null;
+        }
+        e.a = 1.0/Math.sqrt(a);
+        e.b = 1.0/Math.sqrt(b);
+//System.out.printf("eigenValues (%f,%f), f=%f\n",eigenValues[0],eigenValues[1],f);
         e.cosine = eigenvector0.getEntry(0);
         e.sine = eigenvector0.getEntry(1);         
  //       e.a = 1.0/Math.sqrt(R[xi]*eigenA.getRealEigenvalues()[xi]);

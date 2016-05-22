@@ -10,6 +10,8 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
@@ -19,6 +21,8 @@ import javax.swing.event.ChangeListener;
 import org.rhwlab.dispim.ImagedEmbryo;
 import org.rhwlab.dispim.nucleus.Cell;
 import org.rhwlab.dispim.nucleus.CellImage;
+import org.rhwlab.dispim.nucleus.CellImage.CellLocation;
+import org.rhwlab.dispim.nucleus.Nucleus;
 import org.rhwlab.dispim.nucleus.NucleusFile;
 
 /**
@@ -31,12 +35,35 @@ public class NavigationTreePanel extends JPanel implements ChangeListener{
         embryo = emb;
         lut.min = 0;
         lut.max = 255;
+        this.addMouseListener(new MouseAdapter(){
+            @Override
+            public void mouseClicked(MouseEvent e){
+                int x = e.getX();
+                int y = e.getY();
+                CellLocation cellLoc = cellImage.cellAtLocation(x, y);
+                if (cellLoc != null){
+                    Cell cell = embryo.getNucleusFile().getCell(cellLoc.name);
+                    double f = (y-cellLoc.y0)/(cellLoc.y1-cellLoc.y0);
+                    int t = cell.firstTime() + (int)(f*(cell.lastTime()-cell.firstTime()));
+                    Nucleus nuc = cell.getNucleus(t);
+                    embryo.setSelectedNucleus(nuc);
+                }
+            }
+        });
     }
     @Override
     public void stateChanged(ChangeEvent e) {
         NavigationHeaderPanel headPanel = (NavigationHeaderPanel)e.getSource();
         String rootCellName = headPanel.getRoot();
         rootCell = embryo.getNucleusFile().getCell(rootCellName);
+        cellImage = new CellImage();
+        buffered = cellImage.getImage(rootCell,headPanel.getMaxTime(),lut,headPanel.labelNodes(),headPanel.labelLeaves(),
+                headPanel.getTimeScale(),headPanel.getCellWidth());
+        int h = buffered.getHeight();
+        int w = buffered.getWidth(); 
+        this.setSize(w,h);
+        this.setPreferredSize(new Dimension(w,h));
+        this.invalidate();
         this.repaint();
     }
     @Override
@@ -53,13 +80,10 @@ public class NavigationTreePanel extends JPanel implements ChangeListener{
             return;
         }
         Graphics2D g2 = (Graphics2D) g;
-        CellImage cellImage = new CellImage();
-        BufferedImage buffered = cellImage.getImage(rootCell,lut);
-        int h = buffered.getHeight();
-        int w = buffered.getWidth();
+
         Dimension d = this.getSize();
-        double scale = Math.min((double)d.width/(double)w, (double)d.height/(double)h);
-        
+//        double scale = Math.min((double)d.width/(double)w, (double)d.height/(double)h);
+  //      System.out.printf("Scale=%f,d.w=%d,d.h=%d,w=%d.h=%d)",scale,d.width,d.height,w,h);
         // clear the panel
         Color save = g2.getColor();
         g2.setColor(Color.white);
@@ -67,11 +91,13 @@ public class NavigationTreePanel extends JPanel implements ChangeListener{
         g2.fillRect(0,0,d.width,d.height);
         g2.setColor(save);
         
-        AffineTransform xForm = AffineTransform.getScaleInstance(scale, scale);
+//        AffineTransform xForm = AffineTransform.getScaleInstance(scale, scale);
+        AffineTransform xForm = new AffineTransform();
         g2.drawImage(buffered,new AffineTransformOp(xForm,AffineTransformOp.TYPE_NEAREST_NEIGHBOR),0,0);      
     }
     LUT lut;
     ImagedEmbryo embryo;
+    BufferedImage buffered;
     Cell rootCell;
-    int maxTime;
+    CellImage cellImage;
 }

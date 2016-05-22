@@ -7,6 +7,8 @@ package org.rhwlab.ace3d;
 
 import java.awt.BorderLayout;
 import java.util.List;
+import javafx.beans.InvalidationListener;
+import javafx.beans.Observable;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JPanel;
@@ -22,7 +24,7 @@ import org.rhwlab.dispim.nucleus.Nucleus;
  *
  * @author gevirl
  */
-public class SynchronizedMultipleSlicePanel extends JPanel implements ChangeListener {
+public class SynchronizedMultipleSlicePanel extends JPanel implements ChangeListener,InvalidationListener  {
     public SynchronizedMultipleSlicePanel(int n){
         this.nDims = n;
         position = new long[n];
@@ -159,6 +161,8 @@ public class SynchronizedMultipleSlicePanel extends JPanel implements ChangeList
         slider.setMinimum(emb.getMinTime());
         slider.setMaximum(emb.getMaxTime());
         slider.setValue( (emb.getMaxTime()+emb.getMinTime())/2);
+//        embryo.addListener(this);
+        embryo.setPanel(this);
     }
     public long[] getPosition(){
         return this.position;
@@ -177,6 +181,13 @@ public class SynchronizedMultipleSlicePanel extends JPanel implements ChangeList
         }
     }    
 
+    @Override
+    public void invalidated(Observable observable) {
+        ChangeEvent e = new ChangeEvent(observable);
+        for (SingleSlicePanel p : panels){
+            p.stateChanged(e);
+        }
+    }
     int nDims;
     JSlider slider;
     int time;
@@ -185,5 +196,6 @@ public class SynchronizedMultipleSlicePanel extends JPanel implements ChangeList
     TitledBorder titledBorder;
     SingleSlicePanel[] panels;
     long[] position;
+
 
 }

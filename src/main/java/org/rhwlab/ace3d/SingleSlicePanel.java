@@ -200,12 +200,9 @@ public class SingleSlicePanel extends JPanel implements ChangeListener {
                 
                 long [] pos = imageCoordinates(e.getX(),e.getY());
                 if (e.getButton() == MouseEvent.BUTTON1){
-                    if (parent != null )parent.changePosition(pos);                 
-                } 
-                else if (e.getButton() == MouseEvent.BUTTON3){
                     int mask = MouseEvent.SHIFT_DOWN_MASK;
-                    if (( e.getModifiersEx()&mask) == mask){   // right shift mouse button adds a nucleus
-                        // making a new nucleus
+                    if (( e.getModifiersEx()&mask) == mask){
+                        // making a new nucleus  - shift left button
                         long[] parentPos = parent.getPosition();
                         long[] center = new long[parentPos.length];
                         double radius = 0.0;
@@ -216,22 +213,38 @@ public class SingleSlicePanel extends JPanel implements ChangeListener {
                         }
                         radius = Math.sqrt(radius);
                         embryo.addNucleus(new Nucleus(timePointImage.getTime(),center,radius));
-                        parent.repaint();
-                    } else {  // right mouse button selects a nucleus
-                        // selecting the closest nucleus
-                        Set<Nucleus> nucs = embryo.getNuclei(timePointImage.getTime());
-                        double min = Double.MAX_VALUE;
-                        Nucleus closest = null;
-                        for (Nucleus nuc : nucs){
-                            double d = nuc.distanceSqaured(pos);
-                            if (d < min){
-                                closest = nuc;
-                                min = d;
-                            }
-                        }
-                        embryo.setSelectedNucleus(closest);
-                        parent.repaint();
+                        parent.repaint();                        
                     }
+                    else if (parent != null ){
+                        parent.changePosition(pos);  // left button moves to location
+                    }                 
+                } 
+                else if (e.getButton() == MouseEvent.BUTTON3){
+                    // finding the closest nucleus
+                    Set<Nucleus> nucs = embryo.getNuclei(timePointImage.getTime());
+                    double min = Double.MAX_VALUE;
+                    Nucleus closest = null;
+                    for (Nucleus nuc : nucs){
+                        double d = nuc.distanceSqaured(pos);
+                        if (d < min){
+                            closest = nuc;
+                            min = d;
+                        }
+                    }                    
+                    int mask = MouseEvent.SHIFT_DOWN_MASK;
+                    if (( e.getModifiersEx()&mask) == mask){   // right shift toggles the marked statrus of the nucleus
+                        boolean mark = closest.getMarked();
+                        if (mark){
+                            closest.setMarked(false);
+                        } else {
+                            closest.setMarked(true);
+                        }
+                    }
+                    else {  // right mouse button selects a nucleus
+                        embryo.setSelectedNucleus(closest);
+                       
+                    }
+                     parent.repaint();
                 }
             }
         });        
@@ -371,7 +384,11 @@ public class SingleSlicePanel extends JPanel implements ChangeListener {
            if (nucShape != null){
                 if (nuc == this.embryo.selectedNucleus()){
                     g2.setColor(Color.RED);
-                }else {
+                }
+                else if (nuc.getMarked()){
+                    g2.setColor(Color.BLUE);
+                }
+                else {
                     g2.setColor(Color.GREEN);
                 }
                 g2.draw(nucShape);               

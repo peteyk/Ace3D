@@ -81,7 +81,8 @@ public class Navigation_Frame extends JFrame implements PlugIn,InvalidationListe
         this.getContentPane().add(nucsScroll,BorderLayout.EAST);  
         
         NavigationTreePanel treePanel = new NavigationTreePanel(embryo);
-        this.add(treePanel,BorderLayout.CENTER);
+        JScrollPane treeScroll = new JScrollPane(treePanel);
+        this.add(treeScroll,BorderLayout.CENTER);
         
         NavigationHeaderPanel headPanel = new NavigationHeaderPanel(treePanel);
         this.add(headPanel,BorderLayout.NORTH);

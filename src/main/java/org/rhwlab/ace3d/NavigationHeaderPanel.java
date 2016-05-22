@@ -10,6 +10,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
@@ -45,6 +46,45 @@ public class NavigationHeaderPanel extends JPanel {
         });
         this.add(maxTime);
         
+        labelNodes = new JCheckBox("Label Nodes");
+        labelNodes.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                treePanel.stateChanged(new ChangeEvent(NavigationHeaderPanel.this));
+            }
+        });        
+        this.add(labelNodes);
+        
+        labelLeaves = new JCheckBox("Label Leaves");
+        labelLeaves.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                treePanel.stateChanged(new ChangeEvent(NavigationHeaderPanel.this));
+            }
+        });        
+        this.add(labelLeaves);
+        
+        this.add(new JLabel("Time Scale:"));
+        timeScale = new JTextField("5.0");
+        timeScale.setColumns(10);
+        timeScale.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                treePanel.stateChanged(new ChangeEvent(NavigationHeaderPanel.this));
+            }
+        });
+        this.add(timeScale);  
+        
+        this.add(new JLabel("Cell Width:"));
+        cellWidth = new JTextField("10.0");
+        cellWidth.setColumns(10);
+        cellWidth.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                treePanel.stateChanged(new ChangeEvent(NavigationHeaderPanel.this));
+            }
+        });
+        this.add(cellWidth);        
     }
 
     public String getRoot(){
@@ -53,8 +93,23 @@ public class NavigationHeaderPanel extends JPanel {
     public int getMaxTime(){
         return Integer.valueOf(maxTime.getText().trim());
     }
-    
+    public boolean labelLeaves(){
+        return labelLeaves.isSelected();
+    }
+    public boolean labelNodes(){
+        return labelNodes.isSelected();
+    }
+    public double getTimeScale(){
+        return Double.valueOf(timeScale.getText().trim());
+    }
+    public double getCellWidth(){
+        return Double.valueOf(cellWidth.getText().trim());
+    }
     NavigationTreePanel treePanel;
     JTextField rootField;
     JTextField maxTime;
+    JCheckBox labelNodes;
+    JCheckBox labelLeaves;
+    JTextField timeScale;
+    JTextField cellWidth;
 }

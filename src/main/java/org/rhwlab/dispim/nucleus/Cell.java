@@ -70,13 +70,23 @@ public class Cell  implements Comparable {
     // return the later cell
     public Cell split(int time){
         Nucleus nuc = nuclei.get(time);
+        
+        // put all the distal nuclei into the new cell
         Cell ret = new Cell(nuc.getName());
+        int t= time;
         while (nuc != null){
             ret.addNucleus(nuc);
-            ++time;
-            nuc = nuclei.get(time);
+            ++t;
+            nuc = nuclei.get(t);
         }
-        // relink children cells
+        
+        TreeMap<Integer,Nucleus> prox = new TreeMap<>();
+        for (t=this.firstTime() ; t<time;++t){
+            prox.put(t,nuclei.get(t));
+        }
+        nuclei = prox;
+        
+        // relink children cells to the distal cell
         for (Cell child : children){
             ret.addChild(child);
         }
@@ -195,7 +205,10 @@ public class Cell  implements Comparable {
     @Override
     public int compareTo(Object o) {
         return name.compareTo(((Cell)o).name);
-    }    
+    }  
+    public boolean isLeaf(){
+        return children.isEmpty();
+    }
 
     String name;
     Cell parent;  // the parent cell - can be null

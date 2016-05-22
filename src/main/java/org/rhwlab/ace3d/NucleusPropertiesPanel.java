@@ -93,6 +93,12 @@ public class NucleusPropertiesPanel extends JPanel implements InvalidationListen
             }
         }
     }
+    public String getChild1(){
+        return child1.getText();
+    }
+    public String getChild2(){
+        return child2.getText();
+    }
     static String initial = "None Selected";
     JLabel name = new JLabel(initial);
     JLabel center = new JLabel(initial);

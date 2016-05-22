@@ -80,9 +80,10 @@ public class Ace3DNucleusFile implements NucleusFile   {
             this.notifyListeners();
         }
     }
-    
+/*    
     // unlink a nucleus from the next time point
     public void unlinkNextTime(Nucleus unlinkNuc){
+        if (unlinkNuc.cell == null) return;
         Cell unlinkCell = this.getCell(unlinkNuc.cell.getName());
         if (unlinkCell == null)  return;  // nucleus is not in a cell so it is unlinked
         
@@ -101,8 +102,11 @@ public class Ace3DNucleusFile implements NucleusFile   {
         }
         this.notifyListeners();
     }
+    // unlink the given nucleus from the previous nucleus
+    // makes the given nucleus a new root
     public void unlinkPreviousTime(Nucleus unlinkNuc){
-        Cell unlinkCell = this.getCell(unlinkNuc.getName());
+        if (unlinkNuc.cell == null) return;
+        Cell unlinkCell = this.getCell(unlinkNuc.cell.getName());
         if (unlinkCell == null)  return;  // nucleus is not in a cell so it is unlinked 
         
         // is the nucleus at the begining of a cell
@@ -117,10 +121,39 @@ public class Ace3DNucleusFile implements NucleusFile   {
         }
         this.notifyListeners();
     }
-    
+ */ 
+    public void unlink(Nucleus from,Nucleus to){
+        Cell fromCell = from.cell;
+        Cell toCell = to.cell; 
+        if (fromCell == null || toCell == null) return;  // they can't be linked if one is unlinked 
+        
+        if (fromCell.getName().equals(toCell.getName())){
+            // not a division - both nuclei in the same cell
+            // split the from cell and make a new root with the to nucleus
+            Cell splitCell = fromCell.split(to.getTime());
+            this.addRoot(splitCell,false);
+        } else {
+            Nucleus keep = null;
+            Cell[] children = fromCell.getChildren();
+            if (children[0].getName().equals(toCell.getName())){
+                keep = children[1].firstNucleus();
+            } else if (children[1].getName().equals(toCell.getName())){
+                keep = children[0].firstNucleus();
+            }
+            if (keep != null){
+            // unlink the children cells
+                for (Cell child : fromCell.getChildren()){
+                    child.setParent(null);
+                    this.addRoot(child,false);                
+                }
+                fromCell.clearChildren(); 
+                linkInTime(from,keep);
+            }
+        }
+        this.notifyListeners();
+    }
     public void linkInTime(Nucleus from,Nucleus to){
-        this.unlinkNextTime(from);
-        this.unlinkPreviousTime(to);
+
         
         Cell fromCell = from.cell;
         Cell toCell = to.cell;
@@ -149,9 +182,7 @@ public class Ace3DNucleusFile implements NucleusFile   {
     }
     
     public void linkDivision(Nucleus from,Nucleus to1,Nucleus to2){
-        this.unlinkNextTime(from);
-        this.unlinkPreviousTime(to1);
-        this.unlinkPreviousTime(to2);
+
         
         Cell fromCell = from.cell;
         if (fromCell == null){

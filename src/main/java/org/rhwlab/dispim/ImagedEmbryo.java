@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import org.rhwlab.dispim.nucleus.Nucleus;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 import javafx.beans.InvalidationListener;
 import javafx.beans.Observable;
 import net.imglib2.Cursor;
@@ -16,6 +17,7 @@ import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.imageplus.ShortImagePlus;
 import org.rhwlab.ace3d.Ace3D_Frame;
+import org.rhwlab.ace3d.SynchronizedMultipleSlicePanel;
 import org.rhwlab.dispim.nucleus.NucleusFile;
 
 /**
@@ -51,6 +53,10 @@ public class ImagedEmbryo implements Observable {
     }
     public void setSelectedNucleus(Nucleus toSelect){
         nucFile.setSelected(toSelect);
+        if (panel != null) {
+            panel.changeTime(toSelect.getTime());
+            panel.changePosition(toSelect.getCenter());
+        }
         notifyListeners();
     }
     public List<Nucleus> nextNuclei(Nucleus source){
@@ -127,7 +133,20 @@ public class ImagedEmbryo implements Observable {
     public void removeListener(InvalidationListener listener) {
         listeners.remove(listener);
     }
-    
+    public Set<Nucleus> getMarkedNuclei(int time){
+        Set<Nucleus> all = nucFile.getNuclei(time);
+        TreeSet<Nucleus> ret = new TreeSet<>();
+        for (Nucleus nuc : all){
+            if (nuc.getMarked()){
+                ret.add(nuc);
+            }
+        }
+        return ret;
+    }
+    public void setPanel(SynchronizedMultipleSlicePanel panel){
+        this.panel = panel;
+    }
+    SynchronizedMultipleSlicePanel panel;
     ArrayList<InvalidationListener> listeners = new ArrayList<>();
     NucleusFile nucFile;
     ImageSource source;    

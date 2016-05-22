@@ -105,14 +105,14 @@ public class Nucleus implements Comparable {
         }
         return name;
     }
-/*
-    public void setSelected(boolean s){
-        this.selected = s;
+
+    public void setMarked(boolean s){
+        this.marked = s;
     }
-    public boolean getSelected(){
-        return this.selected;
+    public boolean getMarked(){
+        return this.marked;
     }
-*/
+
     public double distanceSqaured(long[] p){
         double d = 0.0;
         long[] c = this.getCenter();
@@ -224,7 +224,7 @@ public class Nucleus implements Comparable {
     double radius;
     Cell cell;  // the cell to which this nucleus belongs - can be null
     
-    boolean selected = false;
+    boolean marked = false;
     boolean labeled = false;
     static Random rnd;
 

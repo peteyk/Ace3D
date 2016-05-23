@@ -126,10 +126,12 @@ public class Cell  implements Comparable {
     public void combineWith(Cell other){
         for (Nucleus nuc : other.nuclei.values()){
             this.addNucleus(nuc);
-            for (Cell child : other.getChildren()){
-                this.addChild(child);
-            }
         }
+        for (Cell child : other.getChildren()){
+            this.addChild(child);
+        }
+        other.clearChildren();
+        
     }
     public Cell getSister(){
         Cell ret = null;
@@ -170,6 +172,20 @@ public class Cell  implements Comparable {
         return ret;
     }
 
+    // find the leaves of a cell up to a max time
+    public List<Cell> leaves(int maxTime){
+        ArrayList<Cell> ret = new ArrayList<>();
+        if (this.lastTime() >= maxTime || this.isLeaf()){
+            ret.add(this);
+        }
+        else if (!this.children.isEmpty()){
+            for (Cell child : children){
+                ret.addAll(child.leaves(maxTime));
+            }
+        }
+        
+        return ret;        
+    }
     public int getMaxExpression(){
         int ret = Integer.MIN_VALUE;
         for (Cell child : children){

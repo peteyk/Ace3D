@@ -63,7 +63,7 @@ public class SynchronizedMultipleSlicePanel extends JPanel implements ChangeList
     public void incrementTime(){
         if (time < slider.getMaximum()){
             Nucleus selected = this.embryo.selectedNucleus();
-            if (selected != null){
+            if (selected != null && selected.getTime()==time){
                 // track the selected nucleus forward
                 List<Nucleus> next = this.embryo.nextNuclei(selected);
                 if (next.size() > 0){
@@ -76,8 +76,9 @@ public class SynchronizedMultipleSlicePanel extends JPanel implements ChangeList
                     }
                     this.changePosition(next.get(0).getCenter());
                 }
+            } else {
+                slider.setValue(time+1);
             }
-            slider.setValue(time+1);
         }
     }
     public void decrementTime(){

@@ -174,7 +174,8 @@ public class Ace3DNucleusFile implements NucleusFile   {
                 fromCell.addNucleus(to);
             } else {
                 // both fromNuc and toNuc are in cells - combine the two cells
-                roots.remove(toCell);
+                Set<Cell> rootSet = roots.get(toCell.firstTime());
+                rootSet.remove(toCell);
                 fromCell.combineWith(toCell);
             }
         }

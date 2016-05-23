@@ -27,7 +27,7 @@ public class CellImage {
         this.timeScale = timeScale;
         this.cellWidth = cellWidth;
         int h = (int)(timeScale*(maxTime - cell.firstTime() +1));
-        int w = (int)(cellWidth*(cell.leaves().size()+1));
+        int w = (int)(cellWidth*(cell.leaves(maxTime).size()+1));
         BufferedImage image = new BufferedImage((int)w+20,(int)h,BufferedImage.TYPE_INT_ARGB);
         g2 = image.createGraphics();
         BasicStroke stroke = new BasicStroke(strokeWidth);
@@ -50,8 +50,8 @@ public class CellImage {
             double childY0  = yStart + (timeScale*(1+cell.lastTime()-cell.firstTime()));
             if (!cell.children.isEmpty()){
                 //draw the children
-                int n1 = cell.children.get(1).leaves().size();
-                int n0 = cell.children.get(0).leaves().size();
+                int n1 = cell.children.get(1).leaves(maxTime).size();
+                int n0 = cell.children.get(0).leaves(maxTime).size();
                 double f = (double)n0/(double)(n0+n1);
                 int w0 = (int)(f*(double)width);
                 int w1 = width - w0;

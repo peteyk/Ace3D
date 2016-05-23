@@ -76,7 +76,7 @@ public class NavigationHeaderPanel extends JPanel {
         this.add(timeScale);  
         
         this.add(new JLabel("Cell Width:"));
-        cellWidth = new JTextField("10.0");
+        cellWidth = new JTextField("30.0");
         cellWidth.setColumns(10);
         cellWidth.addActionListener(new ActionListener(){
             @Override

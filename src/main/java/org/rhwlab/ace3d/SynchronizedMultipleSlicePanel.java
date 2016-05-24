@@ -84,15 +84,16 @@ public class SynchronizedMultipleSlicePanel extends JPanel implements ChangeList
     public void decrementTime(){
         if (time > 1){
             Nucleus selected = this.embryo.selectedNucleus();
-            if (selected!= null){
+            if (selected!= null && selected.getTime()==time){
                 // track the selected nucleus back in time
                 Nucleus prev = this.embryo.previousNucleus(selected);
                 if (prev != null){
                     embryo.setSelectedNucleus(prev);
                     this.changePosition(prev.getCenter());
                 }
-            }            
-            slider.setValue(time-1);
+            }  else {          
+                slider.setValue(time-1);
+            }
         }
     }
     public void moveSelectedNucleus(int dim,int value){

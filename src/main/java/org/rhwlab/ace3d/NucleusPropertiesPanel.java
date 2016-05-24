@@ -21,8 +21,14 @@ import org.rhwlab.dispim.nucleus.Nucleus;
 public class NucleusPropertiesPanel extends JPanel implements InvalidationListener  {
     public NucleusPropertiesPanel(){
         this.setLayout(new GridLayout(9,2));
-        this.add(new JLabel("Name"));
+        this.add(new JLabel("Selected Nucleus"));
         this.add(name);
+        this.add(new JLabel("Parent Nucleus"));
+        this.add(parent);
+        this.add(new JLabel("Child1 Nucleus"));
+        this.add(child1);
+        this.add(new JLabel("Child2 Nucleus"));
+        this.add(child2);        
         this.add(new JLabel("Center"));
         this.add(center);
         this.add(new JLabel("a Radius"));
@@ -31,14 +37,9 @@ public class NucleusPropertiesPanel extends JPanel implements InvalidationListen
         this.add(bRadius);
         this.add(new JLabel("c Radius"));
         this.add(cRadius);
-        this.add(new JLabel("Cell"));
+        this.add(new JLabel("In Cell"));
         this.add(cell);
-        this.add(new JLabel("Parent"));
-        this.add(parent);
-        this.add(new JLabel("Child1"));
-        this.add(child1);
-        this.add(new JLabel("Child2"));
-        this.add(child2);
+
         
     }
 
@@ -47,6 +48,9 @@ public class NucleusPropertiesPanel extends JPanel implements InvalidationListen
         if (observable instanceof ImagedEmbryo ){
             ImagedEmbryo embryo = (ImagedEmbryo)observable;
             Nucleus selected = embryo.selectedNucleus();
+            if (selected == null) {
+                return;
+            }
             name.setText(selected.getName());
             long[] c = selected.getCenter();
             center.setText(String.format("(%d,%d,%d)",c[0],c[1],c[2]));

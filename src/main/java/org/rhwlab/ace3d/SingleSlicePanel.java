@@ -232,12 +232,12 @@ public class SingleSlicePanel extends JPanel implements ChangeListener {
                         }
                     }                    
                     int mask = MouseEvent.SHIFT_DOWN_MASK;
-                    if (( e.getModifiersEx()&mask) == mask){   // right shift toggles the marked statrus of the nucleus
+                    if (( e.getModifiersEx()&mask) == mask){   // right shift toggles the marked status of the nucleus
                         boolean mark = closest.getMarked();
                         if (mark){
-                            closest.setMarked(false);
+                            embryo.setMarked(closest, false);
                         } else {
-                            closest.setMarked(true);
+                            embryo.setMarked(closest, true);
                         }
                     }
                     else {  // right mouse button selects a nucleus

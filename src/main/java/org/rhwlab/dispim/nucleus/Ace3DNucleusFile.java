@@ -69,6 +69,9 @@ public class Ace3DNucleusFile implements NucleusFile   {
     }    
 
     public void addNucleus(Nucleus nuc,boolean notify){
+        if (nuc.getName().equals("200_013")){
+            int fhas = 0;
+        }
         Set<Nucleus> timeSet = byTime.get(nuc.getTime());
         if (timeSet == null){
             timeSet = new TreeSet<Nucleus>();

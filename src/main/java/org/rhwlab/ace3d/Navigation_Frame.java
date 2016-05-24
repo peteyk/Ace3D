@@ -52,8 +52,8 @@ public class Navigation_Frame extends JFrame implements PlugIn,InvalidationListe
                     int time = cell.firstTime();
                     Nucleus nuc = cell.getNucleus(time);
                     emb.setSelectedNucleus(nuc);
-                    panel.changeTime(time);
-                    panel.changePosition(nuc.getCenter());
+ //                   panel.changeTime(time);
+ //                   panel.changePosition(nuc.getCenter());
                 }
             }
         });
@@ -68,12 +68,12 @@ public class Navigation_Frame extends JFrame implements PlugIn,InvalidationListe
             public void valueChanged(TreeSelectionEvent e) {
                 DefaultMutableTreeNode node = (DefaultMutableTreeNode)nucsTree.getLastSelectedPathComponent();
                 if (node.isLeaf()){
-                    String nuc = (String)node.getUserObject();
-                    int time = Integer.valueOf((String)((DefaultMutableTreeNode)node.getParent()).getUserObject());
+                    String nucID = (String)node.getUserObject();
                     NucleusFile nucFile = embryo.getNucleusFile();
-                    embryo.setSelectedNucleus(nucFile.getNucleus(nuc));
-                    panel.changeTime(time);
-                    panel.changePosition(nucFile.getNucleus(nuc).getCenter());
+                    Nucleus nuc = nucFile.getNucleus(nucID);
+                    embryo.setSelectedNucleus(nuc);
+//                    panel.changeTime(time);
+//                    panel.changePosition(nucFile.getNucleus(nuc).getCenter());
                 }
             }
         });
@@ -106,11 +106,13 @@ public class Navigation_Frame extends JFrame implements PlugIn,InvalidationListe
         for (Integer time : times){
             Set<Cell> roots = nucFile.getRoots(time);
             if (roots!=null){
-                DefaultMutableTreeNode timeNode = new DefaultMutableTreeNode(Integer.toString(time));
-                rootsRoot.add(timeNode);
-                for (Cell cell : roots){
-                    addCellToNode(cell,timeNode);
-    
+                if (!roots.isEmpty()){
+                    DefaultMutableTreeNode timeNode = new DefaultMutableTreeNode(Integer.toString(time));
+                    rootsRoot.add(timeNode);
+                    for (Cell cell : roots){
+                        addCellToNode(cell,timeNode);
+
+                    }
                 }
             }
             Set<Nucleus> nucs = nucFile.getNuclei(time);

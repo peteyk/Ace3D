@@ -59,6 +59,10 @@ public class ImagedEmbryo implements Observable {
         }
         notifyListeners();
     }
+    public void setMarked(Nucleus toMark,boolean value){
+        toMark.setMarked(value);
+        notifyListeners();
+    }
     public List<Nucleus> nextNuclei(Nucleus source){
         return nucFile.linkedForward(source);
     }
@@ -145,6 +149,7 @@ public class ImagedEmbryo implements Observable {
     }
     public void setPanel(SynchronizedMultipleSlicePanel panel){
         this.panel = panel;
+        this.addListener(panel);
     }
     SynchronizedMultipleSlicePanel panel;
     ArrayList<InvalidationListener> listeners = new ArrayList<>();

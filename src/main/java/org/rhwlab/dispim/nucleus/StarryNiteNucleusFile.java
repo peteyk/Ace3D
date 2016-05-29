@@ -22,10 +22,13 @@ public class StarryNiteNucleusFile extends Ace3DNucleusFile {
     public void adjustCoordinates(int xMin,int yMin,int zMin){
         for (Set<Nucleus> nucSet : this.byTime.values()){
             for (Nucleus nuc : nucSet){
-                nuc.xC = nuc.xC + xMin;
-                nuc.yC = nuc.yC + yMin;
-                nuc.zC = nuc.zC + zMin;
+                long[] c = nuc.getCenter();
+                c[0] = c[0] + xMin;
+                c[1] = c[1] + yMin;
+                c[2] = c[2] + zMin;
+                nuc.setCenter(c);
             }
+            
         }
     }
     public void open()throws Exception {
@@ -51,7 +54,7 @@ public class StarryNiteNucleusFile extends Ace3DNucleusFile {
     // then creates any children cells
     public Cell makeCell(TimePointNucleus starting){
         Cell cell = new Cell(starting.getName());
-        this.cellMap.put(cell.getName(), cell);
+//        this.cellMap.put(cell.getName(), cell);
         TimePointNucleus tpn = starting;
         
         // add all the nuclei
@@ -76,7 +79,7 @@ public class StarryNiteNucleusFile extends Ace3DNucleusFile {
                     break;                     
             }
         }
-        this.cellMap.put(cell.getName(), cell);
+//        this.cellMap.put(cell.getName(), cell);
         return cell;
     }    
     String fileName;

@@ -108,9 +108,10 @@ public class SynchronizedMultipleSlicePanel extends JPanel implements ChangeList
     public void changeRadiusSelectedNucleus(int value){
         Nucleus selected = this.embryo.selectedNucleus();
         if (selected!= null){
-            double v = selected.getRadius() + value;
-            selected.setRadius(v);
-            repaintPanels();
+            throw new UnsupportedOperationException("Not supported yet.");
+//            double v = selected.getRadius() + value;
+//            selected.setRadius(v);
+  //          repaintPanels();
         }        
     }
     public void repaintPanels(){
@@ -189,6 +190,9 @@ public class SynchronizedMultipleSlicePanel extends JPanel implements ChangeList
         for (SingleSlicePanel p : panels){
             p.stateChanged(e);
         }
+    }
+    public int getTime(){
+        return this.time;
     }
     int nDims;
     JSlider slider;

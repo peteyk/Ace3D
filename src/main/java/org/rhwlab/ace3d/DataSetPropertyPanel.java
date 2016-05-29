@@ -22,13 +22,15 @@ import javax.swing.JSlider;
 import javax.swing.JTextField;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import org.rhwlab.dispim.ImagedEmbryo;
+import org.rhwlab.dispim.nucleus.Expression;
 
 /**
  *
  * @author gevirl
  */
-public class ContrastColorPanel extends JPanel {
-    public ContrastColorPanel(Ace3D_Frame frame,String dataset,int sliderMin,int sliderMax){
+public class DataSetPropertyPanel extends JPanel {
+    public DataSetPropertyPanel(Ace3D_Frame frame,String dataset,int sliderMin,int sliderMax){
         this.frame = frame;
         this.dataset = dataset;
 
@@ -123,6 +125,8 @@ public class ContrastColorPanel extends JPanel {
 
         this.add(colorButton,BorderLayout.EAST);
         
+        JPanel datasetPanel = new JPanel();
+        datasetPanel.setLayout(new BoxLayout(datasetPanel,BoxLayout.Y_AXIS));
         box = new JCheckBox();
         box.setSelected(true);   
         box.addActionListener(new ActionListener(){
@@ -132,7 +136,21 @@ public class ContrastColorPanel extends JPanel {
                 notifyChange();
             }
         });
-        this.add(box,BorderLayout.WEST);
+        datasetPanel.add(box);
+        JButton express = new JButton("Calc Exp");
+        express.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                ImagedEmbryo emb = frame.getEmbryo();
+                Expression express = new Expression(emb);
+                Thread thread = new Thread(express,"Expression");
+                thread.start();
+  //              emb.calculateExpression();
+            }
+        });
+        datasetPanel.add(express);
+        
+        this.add(datasetPanel,BorderLayout.WEST);
     }
     private void setAllEnabled(boolean value){
         minSlider.setEnabled(value);

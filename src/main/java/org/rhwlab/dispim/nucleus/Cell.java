@@ -5,13 +5,16 @@
  */
 package org.rhwlab.dispim.nucleus;
 
-import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.TreeMap;
 import javax.json.Json;
+import javax.json.JsonArray;
 import javax.json.JsonArrayBuilder;
+import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
+import javax.json.JsonString;
 
 /**
  *
@@ -20,6 +23,28 @@ import javax.json.JsonObjectBuilder;
 public class Cell  implements Comparable {
     public Cell(String name){
         this.name = name;
+    }
+
+    public Cell(JsonObject jsonObj,Cell parent,Map<String,Nucleus> nucMap){
+        this(jsonObj.getJsonString("Name").getString()); 
+        this.parent = parent;
+        
+        JsonObject child = jsonObj.getJsonObject("Child0");
+        if (child != null){
+            children.add(new Cell(child,this,nucMap));
+        }
+        child = jsonObj.getJsonObject("Child1");
+        if (child != null){
+            children.add(new Cell(child,this,nucMap));
+        }
+        JsonArray jsonNuclei = jsonObj.getJsonArray("Nuclei");
+        for (int i=0 ; i<jsonNuclei.size() ; ++i){
+            String nucID = ((JsonString)jsonNuclei.get(i)).getString();
+            Nucleus nuc = nucMap.get(nucID);
+            if (nuc != null){
+                nuclei.put(nuc.getTime(),nuc);
+            }
+        }
     }
     public JsonObjectBuilder asJson(){
         JsonObjectBuilder builder = Json.createObjectBuilder();
@@ -35,10 +60,7 @@ public class Cell  implements Comparable {
         }
         JsonArrayBuilder arrayBuilder = Json.createArrayBuilder();
         for (Nucleus nuc : nuclei.values()){
-            JsonObjectBuilder nucBuilder = Json.createObjectBuilder();
-            nucBuilder.add("Time",nuc.getTime());
-            nucBuilder.add("Name",nuc.getName());
-            arrayBuilder.add(nucBuilder);
+            arrayBuilder.add(nuc.getName());
         }
         builder.add("Nuclei", arrayBuilder);
         return builder;
@@ -195,7 +217,7 @@ public class Cell  implements Comparable {
             }
         }
         for (Nucleus nuc : nuclei.values()){
-            int v = nuc.getExpression();
+            int v = (int)nuc.getExpression();
             if (v > ret){
                 ret = v;
             }
@@ -211,7 +233,7 @@ public class Cell  implements Comparable {
             }
         }
         for (Nucleus nuc : nuclei.values()){
-            int v = nuc.getExpression();
+            int v = (int)nuc.getExpression();
             if (v < ret){
                 ret = v;
             }

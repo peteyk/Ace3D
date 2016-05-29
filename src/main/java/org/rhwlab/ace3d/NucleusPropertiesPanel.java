@@ -20,7 +20,7 @@ import org.rhwlab.dispim.nucleus.Nucleus;
  */
 public class NucleusPropertiesPanel extends JPanel implements InvalidationListener  {
     public NucleusPropertiesPanel(){
-        this.setLayout(new GridLayout(9,2));
+        this.setLayout(new GridLayout(10,2));
         this.add(new JLabel("Selected Nucleus"));
         this.add(name);
         this.add(new JLabel("Parent Nucleus"));
@@ -39,7 +39,8 @@ public class NucleusPropertiesPanel extends JPanel implements InvalidationListen
         this.add(cRadius);
         this.add(new JLabel("In Cell"));
         this.add(cell);
-
+        this.add(new JLabel("Expression"));
+        this.add(express);
         
     }
 
@@ -52,6 +53,7 @@ public class NucleusPropertiesPanel extends JPanel implements InvalidationListen
                 return;
             }
             name.setText(selected.getName());
+            express.setText(String.format("%.2f",selected.getExpression()));
             long[] c = selected.getCenter();
             center.setText(String.format("(%d,%d,%d)",c[0],c[1],c[2]));
             aRadius.setText(selected.getRadiusLabel(0));
@@ -113,4 +115,5 @@ public class NucleusPropertiesPanel extends JPanel implements InvalidationListen
     JLabel parent = new JLabel(initial);
     JLabel child1 = new JLabel(initial);
     JLabel child2 = new JLabel(initial);
+    JLabel express = new JLabel(initial);
 }

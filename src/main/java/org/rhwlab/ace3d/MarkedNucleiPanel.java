@@ -55,8 +55,13 @@ public class MarkedNucleiPanel extends JPanel implements InvalidationListener {
     public void invalidated(Observable observable) {
         if (observable instanceof ImagedEmbryo){
             embryo = (ImagedEmbryo)observable;
+            Nucleus sel = embryo.selectedNucleus();
+            int firstTime = embryo.getMinTime();
+            if (sel != null){
+                firstTime = sel.getTime();
+            }
             DefaultListModel model = new DefaultListModel();
-            for (int t=embryo.getMinTime() ; t<=embryo.getMaxTime();++t){
+            for (int t=firstTime ; t<=embryo.getMaxTime();++t){
                 Set<Nucleus> marked = embryo.getMarkedNuclei(t);
                 for (Nucleus nuc : marked){
                     model.addElement(nuc.getName());

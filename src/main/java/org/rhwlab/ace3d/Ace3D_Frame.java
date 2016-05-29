@@ -309,7 +309,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
                 ((StarryNiteNucleusFile)nucFile).adjustCoordinates((int)coords[0],(int)coords[1],(int)coords[2]);
             }
         }
-        contrastDialog = new ContrastDialog(this,imagedEmbryo,"Select DataSets/Adjust Contrast and Color",0,Short.MAX_VALUE);
+        contrastDialog = new DataSetsDialog(this,imagedEmbryo,0,Short.MAX_VALUE);
         contrastDialog.setVisible(true);
         
         navFrame = new Navigation_Frame(imagedEmbryo,panel);
@@ -333,9 +333,19 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
             }
         }
     }
+    public int getCurrentTime(){
+        return panel.getTime();
+    }
     private void openNucFile()throws Exception {
+        String f = props.getProperty("NucFile");
+        if (f != null){
+            nucChooser.setSelectedFile(new File(f));
+        }         
         if (nucChooser.showOpenDialog(panel) == JFileChooser.APPROVE_OPTION){
             nucFile = new Ace3DNucleusFile(nucChooser.getSelectedFile());
+            nucFile.addListener(navFrame);
+            nucFile.open();
+            props.setProperty("NucFile",nucFile.getFile().getPath());            
             if (imagedEmbryo != null){
                 imagedEmbryo.setNucleusFile(nucFile);
             }
@@ -497,6 +507,9 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
     static public LUT getLUT(String dataSet){
         return dataSetLuts.get(dataSet);
     }
+    public ImagedEmbryo getEmbryo(){
+        return this.imagedEmbryo;
+    }
     Properties props = new Properties();
     JMenu dataset;
     JMenu contrast;
@@ -508,7 +521,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
     SynchronizedMultipleSlicePanel panel;
     JFileChooser nucChooser;
     JFileChooser imageChooser;
-    ContrastDialog contrastDialog;
+    DataSetsDialog contrastDialog;
     Navigation_Frame navFrame;
     LookUpTables lookUpTables = new LookUpTables();
     
@@ -521,7 +534,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
     static TreeMap<String,LUT> dataSetLuts = new TreeMap<>();
     
     static TreeMap<String,DataSetProperties> dataSetProperties = new TreeMap<>();
-    static public double R=15.0;
+//    static public double R=15.0;
     
     static public void main(String[] args) {
         EventQueue.invokeLater(new Runnable(){

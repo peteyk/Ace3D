@@ -8,6 +8,7 @@ package org.rhwlab.ace3d;
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.List;
 import javafx.beans.InvalidationListener;
 import javafx.beans.Observable;
 import javax.swing.BoxLayout;
@@ -15,6 +16,7 @@ import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import org.rhwlab.dispim.ImagedEmbryo;
+import org.rhwlab.dispim.TimePointImage;
 import org.rhwlab.dispim.nucleus.Ace3DNucleusFile;
 import org.rhwlab.dispim.nucleus.Cell;
 import org.rhwlab.dispim.nucleus.Nucleus;
@@ -49,6 +51,27 @@ public class SelectedNucleusFrame extends JFrame   {
         
         JPanel buttonPanel = new JPanel();
         buttonPanel.setLayout(new BoxLayout(buttonPanel,BoxLayout.X_AXIS));
+        
+        JButton calcExp = new JButton("Calc Expression");
+        calcExp.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                List<String> datasets = Ace3D_Frame.datasetsSelected();
+                if (datasets.isEmpty()) return;
+                Nucleus nuc = embryo.selectedNucleus();
+                TimePointImage tpi = embryo.getTimePointImage(datasets.get(0), nuc.getTime());
+                double[][] eigen = nuc.getEigenVectors();
+                try {
+                double exp = embryo.calculateExpression(nuc,tpi,eigen);
+                embryo.setExpression(nuc, exp);
+                } catch (Exception exc){
+                    exc.printStackTrace();
+                }
+  //              System.out.printf("V exp: %f\n",exp);
+               
+            }
+        });
+        buttonPanel.add(calcExp);
         
         JButton child1 = new JButton("Unlink Child1");
         child1.addActionListener(new ActionListener(){

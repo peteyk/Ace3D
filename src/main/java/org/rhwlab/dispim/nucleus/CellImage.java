@@ -72,7 +72,7 @@ public class CellImage {
             double y1 = y0 + timeScale;
             Line2D.Double line = new Line2D.Double(x0,y0,x0,y1);
 
-            int exp = nuc.getExpression();
+            int exp = (int)nuc.getExpression();
             int rgb = lut.getRGB(exp);
             Color c = new Color(rgb);
             g2.setColor(c);

@@ -6,13 +6,21 @@
 package org.rhwlab.dispim.nucleus;
 
 import java.awt.Shape;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Ellipse2D;
 import java.io.PrintStream;
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.Random;
 import javax.json.Json;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.ArrayRealVector;
+import org.apache.commons.math3.linear.DiagonalMatrix;
+import org.apache.commons.math3.linear.EigenDecomposition;
+import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.linear.RealVector;
 import org.rhwlab.ace3d.SingleSlicePanel;
 import org.rhwlab.starrynite.TimePointNucleus;
 
@@ -21,23 +29,32 @@ import org.rhwlab.starrynite.TimePointNucleus;
  * @author gevirl
  */
 public class Nucleus implements Comparable {
-
     public Nucleus(JsonObject jsonObj){
         this.time = jsonObj.getInt("Time");
         this.name = jsonObj.getString("Name");
-        this.radius = jsonObj.getJsonNumber("Radius").doubleValue();
+        String precString = jsonObj.getJsonString("Precision").getString();
+        this.A = precisionFromString(precString);
         this.xC = jsonObj.getJsonNumber("X").longValue();
         this.yC = jsonObj.getJsonNumber("Y").longValue();
         this.zC = jsonObj.getJsonNumber("Z").longValue();
+        this.exp = jsonObj.getJsonNumber("Expression").longValue();
+        R = new double[3];
+        R[0] = R[1] = R[2] =1.0;
+        
+        this.eigenA = new EigenDecomposition(A);
+        this.adjustedA = this.A.copy();
+        this.adjustedEigenA = new EigenDecomposition(adjustedA);
+        this.setAdjustment(R);
     }
+    // contruct the Nucleus from a StarryNite Nucleus
     public Nucleus(TimePointNucleus data){
         this.time = data.getTime();
         this.name = data.getName();
         this.xC = data.getX();
         this.yC = data.getY();
         this.zC = (long)data.getZ();
-        this.radius = data.getRadius();
-    }
+ //       this.radius = data.getRadius();
+    }    
     public Nucleus(String[] headings,String[] data){
         for (int i=0 ; i<headings.length ; ++i){
             if (headings[i].equalsIgnoreCase("Time")){
@@ -51,7 +68,7 @@ public class Nucleus implements Comparable {
             } else if (headings[i].equalsIgnoreCase("Z")){
                 zC = Long.valueOf(data[i]);
             } else if (headings[i].equalsIgnoreCase("Radius")){
-                radius = Double.valueOf(data[i]);
+//                radius = Double.valueOf(data[i]);
             }
         }
     }
@@ -64,8 +81,99 @@ public class Nucleus implements Comparable {
         this.xC = center[0];
         this.yC = center[1];
         this.zC = center[2];
-        this.radius = radius;
+//        this.radius = radius;
     } 
+    public Nucleus.Ellipse2d zPlaneEllipse(double v){
+        return ellipse(0,1,2,v);
+    }
+    public Nucleus.Ellipse2d yPlaneEllipse(double v){
+        return ellipse(0,2,1,v);
+    }
+    public Nucleus.Ellipse2d xPlaneEllipse(double v){
+        return ellipse(1,2,0,v);
+    }
+    public Nucleus.Ellipse2d ellipse(int xi,int yi,int zi,double v){
+        Nucleus.Coeff coef = coef(xi,yi,zi,v);
+        return ellipse(xi,yi,zi,coef);
+    } 
+    public Coeff coef(int xi,int yi,int zi,double v){
+        Coeff c = new Coeff();
+        long[] ce = this.getCenter();
+        double[][] a = adjustedA.getData();
+  //      double ff = - Math.log(eigenA.getDeterminant());
+        v = v-ce[zi];
+        c.A = ff*a[xi][xi];
+        c.B = ff*(a[xi][yi] + a[yi][xi]);
+        c.C = ff*a[yi][yi];
+        c.D = ff*v*(a[xi][zi] + a[zi][xi]);
+        c.E = ff*v*(a[yi][zi] + a[zi][yi]);
+        c.F = ff*a[zi][zi]*v*v-1.0;
+        return c;
+    }   
+    public  Ellipse2d ellipse(int xi,int yi,int zi,Coeff coef){
+        Array2DRowRealMatrix Q =  new Array2DRowRealMatrix(3,3);
+        Q.setEntry(0,0,coef.A);
+        Q.setEntry(1,0,coef.B/2);
+        Q.setEntry(0,1,coef.B/2);
+        Q.setEntry(1,1,coef.C);
+        Q.setEntry(2,0,coef.D/2);
+        Q.setEntry(0,2,coef.D/2);
+        Q.setEntry(2,1,coef.E/2);
+        Q.setEntry(1,2,coef.E/2);
+        Q.setEntry(2,2,coef.F);
+        EigenDecomposition ed = new EigenDecomposition(Q);
+        double detQ = ed.getDeterminant();
+        
+        RealMatrix rm = new Array2DRowRealMatrix(2,2);
+        rm.setEntry(0,0, coef.A);
+        rm.setEntry(1,1, coef.C);
+        rm.setEntry(0,1,coef.B/2.0);
+        rm.setEntry(1,0,coef.B/2.0);
+        EigenDecomposition eigenDecomp = new EigenDecomposition(rm);
+        double detA33 = eigenDecomp.getDeterminant();
+        double[] eigenValues = eigenDecomp.getRealEigenvalues();
+//System.out.printf("Eigenvalues: %f,%f\n",eigenValues[0],eigenValues[1])        ;
+        RealVector eigenvector0 = eigenDecomp.getEigenvector(0);
+        Ellipse2d e = new Ellipse2d();
+        double cot2theta  = (coef.A-coef.C)/coef.B;
+        if (Double.isFinite(cot2theta)){
+            double d= Math.sqrt(1.0+cot2theta*cot2theta);
+            double cos2theta = cot2theta/d;
+            e.cosine = Math.sqrt((1.0 + cos2theta)/2.0);
+            e.sine = Math.sqrt((1.0 - cos2theta)/2.0);
+        } else {
+            e.cosine = 1.0;
+            e.sine = 0.0;            
+        }
+       
+        double dd =  coef.B*coef.B - 4.0*coef.A*coef.C;
+        double xc = ( 2.0*coef.C*coef.D - coef.B*coef.E)/dd;
+        double yc = ( 2.0*coef.A*coef.E - coef.B*coef.D)/dd;
+// System.out.printf("dd=%f,xc=%f,xcn=%f,yc=%f,ycn%f\n",dd,xc,xcn,yc,ycn);
+        long[] ce = this.getCenter();
+        e.x = ce[xi] + xc;
+        e.y = ce[yi] + yc;
+       
+        double f = -detQ/detA33;
+        double a = eigenValues[0]/f;
+        double b = eigenValues[1]/f;
+        if (a <=0.0 || b<=0.0){
+            return null;
+        }
+        e.a = 1.0/Math.sqrt(a);
+        e.b = 1.0/Math.sqrt(b);
+//System.out.printf("eigenValues (%f,%f), f=%f\n",eigenValues[0],eigenValues[1],f);
+        e.cosine = eigenvector0.getEntry(0);
+        e.sine = eigenvector0.getEntry(1);         
+        e.low[xi] = (long)(e.x - e.a);
+        e.low[yi] = (long)(e.y - e.b);
+        e.low[zi] = 0;
+        e.high[xi] = (long)(e.x + e.a);
+        e.high[yi] = (long)(e.y + e.b);
+        e.high[zi] = 0;
+//System.out.printf("Ellipse: a=%f,b=%f,x=%f,y=%f\n", e.a,e.b,e.x,e.y);
+        return e;
+    }    
     static public String randomName(){
         if (rnd == null){
             rnd = new Random();
@@ -81,12 +189,14 @@ public class Nucleus implements Comparable {
     public int getTime(){
         return this.time;
     }
+/*    
     public double getRadius(){
         return radius;
     }
     public void setRadius(double r){
         this.radius = r;
     }
+*/    
     public long[] getCenter(){
         long[] center = new long[3];
         center[0] = xC;
@@ -129,10 +239,11 @@ public class Nucleus implements Comparable {
         builder.add("X", xC);
         builder.add("Y", yC);
         builder.add("Z", zC);
-        builder.add("Radius", radius);
+        builder.add("Precision",precisionAsString(adjustedA));
         if (cell != null){
             builder.add("Cell", cell.getName());
         }
+        builder.add("Expression",this.exp);
         return builder;
     }
     public void setCell(Cell cell){
@@ -151,19 +262,29 @@ public class Nucleus implements Comparable {
     public void setLabeled(boolean lab){
         this.labeled = lab;
     }
-        public int getExpression(){
-        return 100;
+    public double getExpression(){
+        return exp;
     }
-    public boolean isVisible(long slice,int dim){
-        switch(dim){
-            case 0:
-                return Math.abs(slice-xC)<radius;
-            case 1:
-                return Math.abs(slice-yC)<radius;
-        }
-       return Math.abs(slice-zC)<radius;
+    public void setExpression(double e){
+        this.exp = e;
     }
     
+    public boolean isVisible(long slice,int dim){
+        Ellipse2d e;
+        switch(dim){
+            case 0:
+                e = xPlaneEllipse((double)slice);
+                break;
+            case 1:
+                e = yPlaneEllipse((double)slice);
+                break;            
+            default:
+                e = zPlaneEllipse((double)slice);
+                break;                 
+        }
+        return e!=null;
+    }
+/*    
     public Shape getShape(long slice,int dim,int bufW,int bufH){
             long[] center = getCenter();  // image corrdinates
             double r = getRadius();   // image corrdinates
@@ -188,6 +309,40 @@ public class Nucleus implements Comparable {
             }
         return null;
     }
+*/
+    public Shape getShape(long slice,int dim,int bufW,int bufH){
+
+//System.out.printf("Ellipsoid center = (%d,%d,%d)\n",this.xC,this.yC,this.zC);
+        Ellipse2d e;
+        switch(dim){
+            case 0:
+                e = xPlaneEllipse((double)slice);
+                break;
+            case 1:
+                e = yPlaneEllipse((double)slice);
+                break;            
+            default:
+                e = zPlaneEllipse((double)slice);
+                break;                 
+        }
+        if (e != null){
+//System.out.printf("%s dim=%d  slice=%d\n",this.getName(),dim,slice);
+            AffineTransform toOrigin = AffineTransform.getTranslateInstance(-e.x,-e.y);
+            AffineTransform back = AffineTransform.getTranslateInstance(e.x, e.y);
+            AffineTransform xform = AffineTransform.getRotateInstance(e.cosine, e.sine);
+            int scrX = SingleSlicePanel.screenX(e.low,dim,bufW);
+            int scrY = SingleSlicePanel.screenY(e.low,dim,bufH);
+            int scrHighX = SingleSlicePanel.screenX(e.high,dim,bufW);
+            int scrHighY = SingleSlicePanel.screenY(e.high,dim,bufH);
+            Shape shape = new Ellipse2D.Double(scrX,scrY,scrHighX-scrX,scrHighY-scrY); 
+            shape = toOrigin.createTransformedShape(shape);
+            shape =  xform.createTransformedShape(shape);
+            shape = back.createTransformedShape(shape);
+//System.out.printf("e.a:%f e.b:%f e.x:%f e.y:%f\n",e.a,e.b,e.x,e.y);
+            return shape;
+        }
+        return null;
+    }    
     public int imageXDirection(int dim){
         if (dim==0){
             return 1;
@@ -200,12 +355,28 @@ public class Nucleus implements Comparable {
         }
         return 2;
     } 
-    public void setAdjustment(Object o){
-        
-    }
     public Object getAdjustment(){
-        return null;
+        return this.R;
     }
+    public void setAdjustment(Object o){
+        double[] v = (double[])o;
+        R[0] = v[0];
+        R[1] = v[1];
+        R[2] = v[2];
+        adjustedA = adjustPrecision();
+        adjustedEigenA = new EigenDecomposition(adjustedA);
+        double[][]a = adjustedA.getData();
+        ff = - Math.log(adjustedEigenA.getDeterminant());
+    }       
+    public RealMatrix adjustPrecision(){
+        DiagonalMatrix D = new DiagonalMatrix(eigenA.getRealEigenvalues());
+        for (int i=0 ; i<R.length ; ++i){
+            double lambda = D.getEntry(i,i);
+            D.setEntry(i,i,lambda/(R[i]*R[i]));
+        }
+        RealMatrix ret = eigenA.getV().multiply(D.multiply(eigenA.getVT()));
+        return ret;
+    } 
     public String getRadiusLabel(int i){
         switch(i){
             case 0:
@@ -216,17 +387,96 @@ public class Nucleus implements Comparable {
                 return "Z";
         }
     }
-    int time;
-    String name;
-    long xC;
-    long yC;
-    long zC;
-    double radius;
-    Cell cell;  // the cell to which this nucleus belongs - can be null
+
+
+    static public String precisionAsString(RealMatrix m){
+        StringBuffer buf = new StringBuffer();
+        for (int r=0 ; r<m.getRowDimension() ; ++r){
+            for (int c=0 ; c<m.getColumnDimension() ; ++c){
+                if (r !=0 || c!=0){
+                    buf.append(" ");
+                }
+                buf.append(Double.toString(m.getEntry(r, c)));
+            }
+        }
+        return buf.toString();
+    }
+    public static RealMatrix precisionFromString(String s){
+        double [][] ret = new double[3][3];
+        String[] tokens = s.split(" ");
+        for (int i=0 ; i<3 ; ++i){
+            for (int j=i ; j<3 ; ++j){
+                ret[i][j] = Double.valueOf(tokens[3*i+j]);
+                ret[j][i] = ret[i][j];
+            }
+        }
+        return new Array2DRowRealMatrix(ret);
+    }
+    // probability the given position (relative to the center)  belongs to this nucleus
+    public double prob(double[] p){
+
+        RealVector v = new ArrayRealVector(p);
+        double d2 = Math.sqrt(this.adjustedEigenA.getDeterminant());
+        double ex = -0.5*v.dotProduct(adjustedA.operate(v));
+        return d2 * Math.exp(ex); 
+    }
+    public double getRadius(int d){
+
+        double eigenVal = adjustedEigenA.getRealEigenvalue(d);
+ //       double r = 1.0/Math.sqrt(Ace3D_Frame.R*eigenVal); 
+        double r = 1.0/Math.sqrt(eigenVal*ff);
+        return r;
+    } 
+    public long[] getRadii(){
+        long[] radii = new long[3];
+        
+        radii[0] = (long)getRadius(0);
+        radii[1] = (long)getRadius(1);
+        radii[2] = (long)getRadius(2);
+        return radii;
+    }
     
-    boolean marked = false;
-    boolean labeled = false;
+    public double[][] getEigenVectors(){
+        return adjustedEigenA.getV().getData();
+    }
+    public double[][] getEigenVectorsT(){
+        return adjustedEigenA.getVT().getData();
+    }   
+    private int time;
+    private String name;
+    private long xC;
+    private long yC;
+    private long zC;
+    private Cell cell;  // the cell to which this nucleus belongs - can be null
+    
+    private boolean marked = false;
+    private boolean labeled = false;
     static Random rnd;
-
-
+    double exp=100.0;
+    
+    RealMatrix A;  // unadjusted precision matrix
+    EigenDecomposition eigenA;  // eigendecompensation of the unadjusted precsion matrix
+    EigenDecomposition adjustedEigenA; 
+    double[] R;  // the adjustments to apply to the axis of the ellipsoid
+    RealMatrix adjustedA;  // the adjusted precsion matrix  
+    double ff;
+    
+    public class Coeff {
+        double A;
+        double B;
+        double C;
+        double D;
+        double E;
+        double F; 
+    }
+    public class Ellipse2d {
+        double x;
+        double y;
+        double sine;
+        double cosine;
+        double a;
+        double b;
+        long[] low = new long[3];
+        long[] high = new long[3];
+    }
 }

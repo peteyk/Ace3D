@@ -338,10 +338,8 @@ public class SingleSlicePanel extends JPanel implements ChangeListener {
         return 2;
     }  
     private boolean visible(Nucleus nuc){
-        long[] center = nuc.getCenter();  // image corrdinates
-        double r = nuc.getRadius();   // image corrdinates
-        double delta = Math.abs(slice-center[dim]);   // image corrdinates
-        return delta <= r;       
+        return nuc.isVisible(slice, dim);
+       
     }
     final private void setSlice(long p){
         slice = p;

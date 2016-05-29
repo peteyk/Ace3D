@@ -12,10 +12,18 @@ import java.util.Set;
 import java.util.TreeSet;
 import javafx.beans.InvalidationListener;
 import javafx.beans.Observable;
-import net.imglib2.Cursor;
-import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.img.imageplus.ShortImagePlus;
+import net.imglib2.RealRandomAccessible;
+import net.imglib2.algorithm.region.localneighborhood.EllipsoidCursor;
+import net.imglib2.algorithm.region.localneighborhood.EllipsoidNeighborhood;
+import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
+import net.imglib2.realtransform.AffineTransform3D;
+import net.imglib2.realtransform.RealTransformRandomAccessible;
+import net.imglib2.realtransform.RealViews;
+import net.imglib2.realtransform.Translation3D;
+import net.imglib2.type.numeric.integer.UnsignedShortType;
+import net.imglib2.view.IntervalView;
+import net.imglib2.view.Views;
 import org.rhwlab.ace3d.Ace3D_Frame;
 import org.rhwlab.ace3d.SynchronizedMultipleSlicePanel;
 import org.rhwlab.dispim.nucleus.NucleusFile;
@@ -69,14 +77,7 @@ public class ImagedEmbryo implements Observable {
     public Nucleus previousNucleus(Nucleus source){
         return nucFile.linkedBack(source);
     }
-/*    
-    public void clearSelected(int time){
-        Set<Nucleus> nucs = nucFile.getNuclei(time);
-        for (Nucleus nuc : nucs){
-            nuc.setSelected(false);
-        }        
-    }
-*/
+
     public void clearLabeled(int time){
         Set<Nucleus> nucs = nucFile.getNuclei(time);
         for (Nucleus nuc : nucs){
@@ -102,26 +103,66 @@ public class ImagedEmbryo implements Observable {
             }
         }
     }
+    // calculate the expression for all the nuclei at a given time using the given dataset images
     public void calculateExpression(String dataset,int time){
         Set<Nucleus> nuclei = nucFile.getNuclei(time);
-        TimePointImage tpi = source.getImage(dataset, time);
-        RandomAccessibleInterval img = tpi.getImage();
-        ShortImagePlus sip = (ShortImagePlus)img;
-        Cursor cursor = sip.cursor();
-        RandomAccess access = img.randomAccess();
-        cursor.fwd();
-        while(cursor.hasNext()){
-            int[] position = new int[sip.numDimensions()];
-            cursor.localize(position);
-            for (int i=0 ; i<position.length ; ++i){
-                System.out.printf("%d\t",position[i]);
+        TimePointImage tpi = source.getImage(dataset,time);
+        for (Nucleus nuc : nuclei){
+            double[][] e = nuc.getEigenVectors();
+            try {
+            double exp = calculateExpression(nuc,tpi,e);
+            nuc.setExpression(exp);
+            } catch (Exception exc){
+                System.err.printf("%s nucleus:%s time:%d\n",exc.getMessage(),nuc.getName(),nuc.getTime());
             }
-            System.out.println();
-            cursor.fwd();
         }
-                
+        notifyListeners();
     }
 
+    public double calculateExpression(Nucleus nuc ,TimePointImage tpi,double[][] e)throws Exception {
+        long[] center = nuc.getCenter();
+        
+        long[] radii = nuc.getRadii();
+        long[] min = {-2*radii[0]-1,-2*radii[1]-1,-2*radii[2]-1};
+        long[] max = {2*radii[0]+1,2*radii[1]+1,2*radii[2]+1};
+        
+        RandomAccessibleInterval img = tpi.getImage(); 
+        RealRandomAccessible interpolated = Views.interpolate(img, new NLinearInterpolatorFactory() );
+
+        Translation3D translation = new Translation3D(-center[0],-center[1],-center[2]);
+        RealTransformRandomAccessible trans = RealViews.transform(interpolated, translation);
+        
+        AffineTransform3D rotation = new AffineTransform3D();
+        rotation.set(e[0][0], e[0][1], e[0][2], 0, e[1][0], e[1][1], e[1][2], 0, e[2][0], e[2][1], e[2][2], 0);
+        RealTransformRandomAccessible rotate = RealViews.transform(trans, rotation);
+        
+        IntervalView originView = Views.interval(rotate,min,max);
+        
+        double[] position = new double[3];
+        
+        long[] origin = {0,0,0};
+
+        EllipsoidNeighborhood ellipse = new EllipsoidNeighborhood(originView,origin,radii);
+        EllipsoidCursor  cursor = ellipse.cursor();
+
+        double exp = 0.0;
+        int count = 0;
+        while (cursor.hasNext()){
+            
+            cursor.fwd();
+            UnsignedShortType pix = (UnsignedShortType)cursor.get();
+            cursor.localize(position);
+            exp = exp + pix.getInteger()*nuc.prob(position);
+            ++count;
+ //           System.out.printf("(%f,%f,%f) %d\n", position[0],position[1],position[2],pix.getInteger());;
+            
+        }
+        return 1000.0*exp/count;
+    }
+    public void setExpression(Nucleus nuc,double exp){
+        nuc.setExpression(exp);
+        notifyListeners();
+    }
     public void notifyListeners(){
         for (InvalidationListener listener : listeners){
             listener.invalidated(this);
@@ -150,6 +191,9 @@ public class ImagedEmbryo implements Observable {
     public void setPanel(SynchronizedMultipleSlicePanel panel){
         this.panel = panel;
         this.addListener(panel);
+    }
+    public TimePointImage getTimePointImage(String dataset,int time){
+        return source.getImage(dataset, time);
     }
     SynchronizedMultipleSlicePanel panel;
     ArrayList<InvalidationListener> listeners = new ArrayList<>();

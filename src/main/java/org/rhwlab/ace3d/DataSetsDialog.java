@@ -18,9 +18,9 @@ import org.rhwlab.dispim.ImagedEmbryo;
  *
  * @author gevirl
  */
-public class ContrastDialog extends JFrame {
-    public ContrastDialog(Ace3D_Frame owner,ImagedEmbryo embryo,String title,int sliderMin,int sliderMax){
-        super(title);
+public class DataSetsDialog extends JFrame {
+    public DataSetsDialog(Ace3D_Frame owner,ImagedEmbryo embryo,int sliderMin,int sliderMax){
+        super("DataSets");
         this.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         this.setLocationRelativeTo(owner);
         Container content = this.getContentPane();
@@ -29,7 +29,7 @@ public class ContrastDialog extends JFrame {
         JPanel contrastPanel = new JPanel();
         contrastPanel .setLayout(new BoxLayout(contrastPanel,BoxLayout.Y_AXIS));
         for (String dataset : Ace3D_Frame.getAllDatsets()){
-            contrastPanel.add(new ContrastColorPanel(owner,dataset,sliderMin,sliderMax));
+            contrastPanel.add(new DataSetPropertyPanel(owner,dataset,sliderMin,sliderMax));
         }
         content.add(contrastPanel,BorderLayout.CENTER);
         

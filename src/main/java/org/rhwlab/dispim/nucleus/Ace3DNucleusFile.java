@@ -31,10 +31,10 @@ public class Ace3DNucleusFile implements NucleusFile   {
     }
     public Ace3DNucleusFile(File file)throws Exception {
         this.file =file;
-        open();
     }
     @Override
     public void open() throws Exception {
+        this.opening = true;
         JsonReader reader = Json.createReader(new FileReader(file));
         JsonObject obj = reader.readObject();
         JsonArray jsonNucs = obj.getJsonArray("Nuclei");
@@ -43,7 +43,14 @@ public class Ace3DNucleusFile implements NucleusFile   {
             Nucleus nuc = new Nucleus(jsonNuc);
             this.addNucleus(nuc,false);
         }
+        JsonArray jsonRoots = obj.getJsonArray("Roots");
+        for (int n=0 ; n<jsonRoots.size() ; ++n){
+            JsonObject rootObj  = jsonRoots.getJsonObject(n);
+            Cell root = new Cell(rootObj,null,this.byName);
+            this.addRoot(root,false);
+        }
         reader.close();
+        this.opening = false;
         this.notifyListeners();
     }
     public void addRoot(Cell cell){
@@ -57,9 +64,15 @@ public class Ace3DNucleusFile implements NucleusFile   {
             roots.put(t,rootSet);
         }
         rootSet.add(cell);
-        cellMap.put(cell.getName(),cell);
+        addCell(cell);
         if (notify)        {
             this.notifyListeners();
+        }
+    }
+    private void addCell(Cell cell){
+        cellMap.put(cell.getName(),cell);
+        for (Cell child : cell.getChildren()){
+            addCell(child);
         }
     }
     // add a new nucleus with no cell links
@@ -69,9 +82,7 @@ public class Ace3DNucleusFile implements NucleusFile   {
     }    
 
     public void addNucleus(Nucleus nuc,boolean notify){
-        if (nuc.getName().equals("200_013")){
-            int fhas = 0;
-        }
+
         Set<Nucleus> timeSet = byTime.get(nuc.getTime());
         if (timeSet == null){
             timeSet = new TreeSet<Nucleus>();
@@ -126,8 +137,8 @@ public class Ace3DNucleusFile implements NucleusFile   {
     }
  */ 
     public void unlink(Nucleus from,Nucleus to){
-        Cell fromCell = from.cell;
-        Cell toCell = to.cell; 
+        Cell fromCell = from.getCell();
+        Cell toCell = to.getCell(); 
         if (fromCell == null || toCell == null) return;  // they can't be linked if one is unlinked 
         
         if (fromCell.getName().equals(toCell.getName())){
@@ -158,8 +169,8 @@ public class Ace3DNucleusFile implements NucleusFile   {
     public void linkInTime(Nucleus from,Nucleus to){
 
         
-        Cell fromCell = from.cell;
-        Cell toCell = to.cell;
+        Cell fromCell = from.getCell();
+        Cell toCell = to.getCell();
         if (fromCell == null){
             if (toCell == null){
                 // make a new cell with the two unlinked nuclei
@@ -188,18 +199,18 @@ public class Ace3DNucleusFile implements NucleusFile   {
     public void linkDivision(Nucleus from,Nucleus to1,Nucleus to2){
 
         
-        Cell fromCell = from.cell;
+        Cell fromCell = from.getCell();
         if (fromCell == null){
             fromCell = new Cell(from.getName());
             fromCell.addNucleus(from);
             this.addRoot(fromCell,false);
         }
-        Cell to1Cell = to1.cell;
+        Cell to1Cell = to1.getCell();
         if (to1Cell == null){
             to1Cell = new Cell(to1.getName());
             to1Cell.addNucleus(to1);
         }
-        Cell to2Cell = to2.cell;
+        Cell to2Cell = to2.getCell();
         if (to2Cell == null){
             to2Cell = new Cell(to2.getName());
             to2Cell.addNucleus(to2);
@@ -275,7 +286,7 @@ public class Ace3DNucleusFile implements NucleusFile   {
     @Override
     public List<Nucleus> linkedForward(Nucleus nuc) {
         ArrayList ret = new ArrayList<Nucleus>();
-        Cell cell = cellMap.get(nuc.cell.getName());
+        Cell cell = cellMap.get(nuc.getCell().getName());
         if (cell != null){
             Nucleus nextNuc = cell.getNucleus(nuc.getTime()+1);
             if (nextNuc != null){
@@ -291,7 +302,7 @@ public class Ace3DNucleusFile implements NucleusFile   {
     @Override
     public Nucleus linkedBack(Nucleus nuc) {
         Nucleus ret = null;
-        Cell cell = cellMap.get(nuc.cell.getName());
+        Cell cell = cellMap.get(nuc.getCell().getName());
         if (cell != null){
             Nucleus nextNuc = cell.getNucleus(nuc.getTime()-1);
             if (nextNuc != null){
@@ -356,7 +367,7 @@ public class Ace3DNucleusFile implements NucleusFile   {
     @Override
     public void setSelected(int time, String name) {
         Nucleus toSelect = byName.get(name);
-        if (toSelect != null && toSelect.time==time){
+        if (toSelect != null && toSelect.getTime()==time){
             Set<Nucleus> nucs = byTime.get(time);
             for (Nucleus nuc : nucs){
                 if (nuc.getName().equals(name)){

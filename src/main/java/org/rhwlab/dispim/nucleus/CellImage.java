@@ -9,6 +9,7 @@ import ij.process.LUT;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Line2D;
 import java.awt.image.BufferedImage;
 import java.util.HashSet;
@@ -20,6 +21,7 @@ import java.util.Set;
  */
 public class CellImage {
     public BufferedImage getImage(Cell cell,int maxTime,LUT lut,boolean nodes,boolean leaves,double timeScale,double cellWidth){
+        
         this.lut = lut;
         this.maxTime = maxTime;
         this.labelNodes = nodes;
@@ -101,7 +103,15 @@ public class CellImage {
     }
     private void labelCell(Cell cell, double x,double y){
         g2.setColor(Color.BLACK);
-        g2.drawString(cell.getName(),(float)x, (float)y);
+        AffineTransform save = g2.getTransform();
+        AffineTransform xform = (AffineTransform)save.clone();
+       
+        xform.translate(5.0+x,y);
+        xform.rotate(-Math.PI/4.0);
+        g2.setTransform(xform);
+        float zero = (float)0.0;
+        g2.drawString(cell.getName(),zero,zero);
+        g2.setTransform(save);
     }
     public CellLocation cellAtLocation(int x,int y){
         CellLocation ret = null;

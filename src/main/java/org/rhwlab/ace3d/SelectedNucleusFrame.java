@@ -62,13 +62,11 @@ public class SelectedNucleusFrame extends JFrame   {
                 TimePointImage tpi = embryo.getTimePointImage(datasets.get(0), nuc.getTime());
                 double[][] eigen = nuc.getEigenVectors();
                 try {
-                double exp = embryo.calculateExpression(nuc,tpi,eigen);
-                embryo.setExpression(nuc, exp);
+                    double exp = embryo.calculateExpression(nuc,tpi,eigen);
+                    embryo.setExpression(nuc, exp);
                 } catch (Exception exc){
                     exc.printStackTrace();
                 }
-  //              System.out.printf("V exp: %f\n",exp);
-               
             }
         });
         buttonPanel.add(calcExp);
@@ -106,7 +104,21 @@ public class SelectedNucleusFrame extends JFrame   {
         link.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
-                throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+                String[] marked = nucPanel.getMarkedNuclei();
+                if (marked.length==1){
+                    Ace3DNucleusFile file = (Ace3DNucleusFile)embryo.getNucleusFile();
+                    Nucleus markedNuc = file.getNucleus(marked[0]);
+                    String childName = npPanel.getChild1();
+                    Nucleus childNuc = file.getNucleus(childName);
+                    if (childNuc == null) {
+                        file.linkInTime(embryo.selectedNucleus(), markedNuc);
+                    } 
+                    childName = npPanel.getChild2();
+                    childNuc = file.getNucleus(childName);  
+                    if (childNuc == null){
+                        file.linkDivision(embryo.selectedNucleus(), markedNuc);
+                    }
+                }
             }
         });
         

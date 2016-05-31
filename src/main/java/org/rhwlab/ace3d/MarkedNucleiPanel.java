@@ -72,6 +72,13 @@ public class MarkedNucleiPanel extends JPanel implements InvalidationListener {
             
         }
     }
+    public String[] getMarkedNuclei(){
+        String[] ret = new String[list.getModel().getSize()];
+        for (int i=0 ; i<ret.length ; ++i){
+            ret[i] = (String)list.getModel().getElementAt(i);
+        }
+        return ret;
+    }
     JList list;
     ImagedEmbryo embryo;
 }

@@ -147,6 +147,8 @@ public class Ace3DNucleusFile implements NucleusFile   {
             Cell splitCell = fromCell.split(to.getTime());
             this.addRoot(splitCell,false);
         } else {
+            // unlinking a division - the division goes away and the child to keep merges with her parent
+            // the child not keeping in the path is made a new root
             Nucleus keep = null;
             Cell[] children = fromCell.getChildren();
             if (children[0].getName().equals(toCell.getName())){
@@ -154,13 +156,16 @@ public class Ace3DNucleusFile implements NucleusFile   {
             } else if (children[1].getName().equals(toCell.getName())){
                 keep = children[0].firstNucleus();
             }
+            // keep is the child cell to keep linked
             if (keep != null){
-            // unlink the children cells
+                // unlink the children cells
                 for (Cell child : fromCell.getChildren()){
                     child.setParent(null);
                     this.addRoot(child,false);                
                 }
-                fromCell.clearChildren(); 
+                fromCell.clearChildren();
+                
+                // merge the keep cell to her parent
                 linkInTime(from,keep);
             }
         }
@@ -196,7 +201,29 @@ public class Ace3DNucleusFile implements NucleusFile   {
         this.notifyListeners();
     }
     
-    public void linkDivision(Nucleus from,Nucleus to1,Nucleus to2){
+    // create a new division by linking a nucleus to a parent nucleus that is already linked in time
+    public void linkDivision(Nucleus from,Nucleus to){
+        if (from.getTime() != to.getTime()-1) return; // can only link nuclei separated by one unit of time
+        
+        Cell fromCell = from.getCell();
+        Cell toCell = to.getCell();
+        if (fromCell.getName().equals(toCell.getName())) return; // can only link nuclei in different cells
+        
+        
+        // split the from cell
+        Cell splitCell = fromCell.split(to.getTime());
+        fromCell.addChild(splitCell);
+        fromCell.addChild(toCell);
+
+        // to cell is no longer a root
+        int time = to.getTime();
+        Set<Cell> rootCells = roots.get(time);
+        rootCells.remove(toCell);
+        
+        this.notifyListeners(); 
+    }
+    
+   public void linkDivision(Nucleus from,Nucleus to1,Nucleus to2){
 
         
         Cell fromCell = from.getCell();
@@ -224,7 +251,6 @@ public class Ace3DNucleusFile implements NucleusFile   {
         rootCells.remove(to2Cell);
         this.notifyListeners(); 
     }
-
     @Override
     public void saveAs(File file)throws Exception {
         this.file = file;

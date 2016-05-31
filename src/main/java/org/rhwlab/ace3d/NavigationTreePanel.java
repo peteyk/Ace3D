@@ -56,6 +56,7 @@ public class NavigationTreePanel extends JPanel implements ChangeListener{
         NavigationHeaderPanel headPanel = (NavigationHeaderPanel)e.getSource();
         String rootCellName = headPanel.getRoot();
         rootCell = embryo.getNucleusFile().getCell(rootCellName);
+        if (rootCell == null)return;
         cellImage = new CellImage();
         buffered = cellImage.getImage(rootCell,headPanel.getMaxTime(),lut,headPanel.labelNodes(),headPanel.labelLeaves(),
                 headPanel.getTimeScale(),headPanel.getCellWidth());

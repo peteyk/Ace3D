@@ -6,6 +6,7 @@
 package org.rhwlab.ace3d;
 
 import ij.ImageJ;
+import ij.macro.Interpreter;
 import ij.plugin.PlugIn;
 import ij.process.LUT;
 import java.awt.EventQueue;
@@ -541,6 +542,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
             @Override
             public void run() {
                 new ImageJ();
+                Interpreter.batchMode=true;
                 try {
                     Ace3D_Frame   frame = new Ace3D_Frame();
                     

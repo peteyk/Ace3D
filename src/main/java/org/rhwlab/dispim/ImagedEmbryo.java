@@ -151,13 +151,17 @@ public class ImagedEmbryo implements Observable {
             
             cursor.fwd();
             UnsignedShortType pix = (UnsignedShortType)cursor.get();
+            exp = exp + pix.getInteger();
+/*            
             cursor.localize(position);
             exp = exp + pix.getInteger()*nuc.prob(position);
+*/
             ++count;
  //           System.out.printf("(%f,%f,%f) %d\n", position[0],position[1],position[2],pix.getInteger());;
             
         }
-        return 1000.0*exp/count;
+//        return 1000.0*exp/count;
+        return exp/count;
     }
     public void setExpression(Nucleus nuc,double exp){
         nuc.setExpression(exp);

@@ -6,10 +6,16 @@
 package org.rhwlab.ace3d;
 
 import java.awt.GridLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import javafx.beans.InvalidationListener;
 import javafx.beans.Observable;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JTextField;
 import org.rhwlab.dispim.ImagedEmbryo;
 import org.rhwlab.dispim.nucleus.Cell;
 import org.rhwlab.dispim.nucleus.Nucleus;
@@ -19,7 +25,7 @@ import org.rhwlab.dispim.nucleus.Nucleus;
  * @author gevirl
  */
 public class NucleusPropertiesPanel extends JPanel implements InvalidationListener  {
-    public NucleusPropertiesPanel(){
+    public NucleusPropertiesPanel() {
         this.setLayout(new GridLayout(10,2));
         this.add(new JLabel("Selected Nucleus"));
         this.add(name);
@@ -39,15 +45,30 @@ public class NucleusPropertiesPanel extends JPanel implements InvalidationListen
         this.add(cRadius);
         this.add(new JLabel("In Cell"));
         this.add(cell);
+        cell.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                renameCell();
+            }
+        });
         this.add(new JLabel("Expression"));
         this.add(express);
+
         
     }
 
+    public void renameCell(){
+        if (embryo == null) return;
+        
+        Nucleus selected = embryo.selectedNucleus();
+        Cell sel = selected.getCell();
+        sel.setName(this.cell.getText().trim());
+        sel.nameChildren(null);
+    }
     @Override
     public void invalidated(Observable observable) {
         if (observable instanceof ImagedEmbryo ){
-            ImagedEmbryo embryo = (ImagedEmbryo)observable;
+            embryo = (ImagedEmbryo)observable;
             Nucleus selected = embryo.selectedNucleus();
             if (selected == null) {
                 return;
@@ -105,13 +126,15 @@ public class NucleusPropertiesPanel extends JPanel implements InvalidationListen
     public String getChild2(){
         return child2.getText();
     }
+    ImagedEmbryo embryo;
     static String initial = "None Selected";
     JLabel name = new JLabel(initial);
     JLabel center = new JLabel(initial);
     JLabel aRadius = new JLabel(initial);
     JLabel bRadius = new JLabel(initial);
     JLabel cRadius = new JLabel(initial); 
-    JLabel cell = new JLabel(initial);
+//    JLabel cell = new JLabel(initial);
+    JTextField cell = new JTextField(initial);
     JLabel parent = new JLabel(initial);
     JLabel child1 = new JLabel(initial);
     JLabel child2 = new JLabel(initial);

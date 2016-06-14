@@ -34,38 +34,55 @@ import org.rhwlab.dispim.nucleus.NucleusFile;
  * encapsulates all the images and metadata for a dispim imaging experiment
  */
 public class ImagedEmbryo implements Observable {
-    public ImagedEmbryo(ImageSource src){
-        this.source=src;
+    public ImagedEmbryo(){
+        sources = new ArrayList<ImageSource>();
+    }
+    public void addSource(ImageSource src){
+        sources.add(src);
+        notifyListeners();
     }
     public CompositeTimePointImage getImage(int time){
         return new CompositeTimePointImage(time);
     }
 
     public int getTimes(){
-        return source.getTimes();
+        int ret = Integer.MAX_VALUE;
+        for (ImageSource source : sources){
+            int t = source.getTimes();
+            if (t < ret) ret = t;
+        }
+        return ret;
     }
     public int getMinTime(){
-        return source.getMinTime();
+        int ret = Integer.MIN_VALUE;
+        for (ImageSource source : sources){
+            int t = source.getMinTime();
+            if (t > ret) ret = t;
+        }
+        return ret;        
     }
     public int getMaxTime(){
-        return source.getMaxTime();
+        int ret = Integer.MAX_VALUE;
+        for (ImageSource source : sources) {
+            int t = source.getMaxTime();
+            if (t < ret) {
+                ret = t;
+            }
+        }
+        return ret;
     }
     public void setNucleusFile(NucleusFile file){
         nucFile = file;
     }
     public Nucleus selectedNucleus(){
         if (nucFile != null){
-            return nucFile.getSelected();    
+            return this.nucFile.getSelected();
         }
         return null;
     }
     public void setSelectedNucleus(Nucleus toSelect){
-        nucFile.setSelected(toSelect);
-        if (panel != null) {
-            panel.changeTime(toSelect.getTime());
-            panel.changePosition(toSelect.getCenter());
-        }
-        notifyListeners();
+        this.nucFile.setSelected(toSelect);
+
     }
     public void setMarked(Nucleus toMark,boolean value){
         toMark.setMarked(value);
@@ -89,6 +106,9 @@ public class ImagedEmbryo implements Observable {
     }
 
     public Set<Nucleus> getNuclei(int time){
+        if (nucFile == null){
+            return new TreeSet<>();
+        }
         return nucFile.getNuclei(time);
     }
     public void addNucleus(Nucleus nuc){
@@ -106,7 +126,7 @@ public class ImagedEmbryo implements Observable {
     // calculate the expression for all the nuclei at a given time using the given dataset images
     public void calculateExpression(String dataset,int time){
         Set<Nucleus> nuclei = nucFile.getNuclei(time);
-        TimePointImage tpi = source.getImage(dataset,time);
+        TimePointImage tpi = sourceForDataset(dataset).getImage(dataset,time);
         for (Nucleus nuc : nuclei){
             double[][] e = nuc.getEigenVectors();
             try {
@@ -183,11 +203,13 @@ public class ImagedEmbryo implements Observable {
         listeners.remove(listener);
     }
     public Set<Nucleus> getMarkedNuclei(int time){
-        Set<Nucleus> all = nucFile.getNuclei(time);
         TreeSet<Nucleus> ret = new TreeSet<>();
-        for (Nucleus nuc : all){
-            if (nuc.getMarked()){
-                ret.add(nuc);
+        if (nucFile != null){
+            Set<Nucleus> all = nucFile.getNuclei(time);
+            for (Nucleus nuc : all){
+                if (nuc.getMarked()){
+                    ret.add(nuc);
+                }
             }
         }
         return ret;
@@ -197,10 +219,22 @@ public class ImagedEmbryo implements Observable {
         this.addListener(panel);
     }
     public TimePointImage getTimePointImage(String dataset,int time){
-        return source.getImage(dataset, time);
+        
+        return sourceForDataset(dataset).getImage(dataset, time);
+    }
+    public ImageSource sourceForDataset(String dataset){
+        for (ImageSource source : sources){
+            for (DataSetDesc desc : source.getDataSets()){
+                if (dataset.equals(desc.getName())){
+                    return source;
+                }
+            }
+        }
+        return null;
     }
     SynchronizedMultipleSlicePanel panel;
     ArrayList<InvalidationListener> listeners = new ArrayList<>();
     NucleusFile nucFile;
-    ImageSource source;    
+    List<ImageSource>  sources; 
+//    Nucleus selectedNuc;
 }

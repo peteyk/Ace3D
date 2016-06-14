@@ -41,6 +41,7 @@ import org.rhwlab.dispim.TimePointImage;
 import org.rhwlab.dispim.nucleus.NucleusFile;
 import org.rhwlab.dispim.nucleus.StarryNiteNucleusFile;
 import org.rhwlab.dispim.nucleus.TGMM_NucleusFile;
+import org.rhwlab.imagesource.TGMMSuperVoxelSource;
 
 /**
  *
@@ -48,9 +49,19 @@ import org.rhwlab.dispim.nucleus.TGMM_NucleusFile;
  */
 public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
     public  Ace3D_Frame()  {
-        nucFile = new Ace3DNucleusFile();
+        
+        imagedEmbryo = new ImagedEmbryo();
+        TimePointImage.setEmbryo(imagedEmbryo);
+        
         panel = new SynchronizedMultipleSlicePanel(3);
+        imagedEmbryo.addListener(panel);
         this.add(panel);
+        
+        navFrame = new Navigation_Frame(imagedEmbryo,panel);
+        navFrame.run(null);
+        
+        selectedNucFrame = new SelectedNucleusFrame(this,imagedEmbryo);
+        selectedNucFrame.setVisible(true);        
         buildMenu();
         this.pack();
         buildChooser();
@@ -96,6 +107,25 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
             }
         });
         fileMenu.add(hyper);
+
+        JMenuItem superVoxel = new JMenuItem("Open TGMM SuperVoxel Binary Files");
+        superVoxel.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String svFile = props.getProperty("TGMMSuperVoxelBinaryFile");
+                if (svFile != null){
+                    sourceChooser.setSelectedFile(new File(svFile));
+                } 
+                if (sourceChooser.showOpenDialog(panel) == JFileChooser.APPROVE_OPTION){
+                    props.setProperty("TGMMSuperVoxelBinaryFile",sourceChooser.getSelectedFile().getPath()); 
+                    source = new TGMMSuperVoxelSource(sourceChooser.getSelectedFile().getPath());
+                    source.open();
+                    initToSource();
+                }
+                int fhsduis=0;
+            }
+        });
+        fileMenu.add(superVoxel);
         
         JMenuItem open = new JMenuItem("Open Images from HDF5");
         open.addActionListener(new ActionListener(){
@@ -290,18 +320,22 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
     }
    
     private void initToSource(){
+        
                 // set up the dataset properties map
-        dataSetProperties.clear();
+//        dataSetProperties.clear();
         Iterator<DataSetDesc> iter = source.getDataSets().iterator();
-        TimePointImage.setSource(source);
         while (iter.hasNext()){
             String dataset = iter.next().getName();
             dataSetProperties.put(dataset,new DataSetProperties());
-            TimePointImage.getSingleImage(dataset,source.getMinTime());
         }   
-
-               
-        imagedEmbryo = new ImagedEmbryo(source);
+        imagedEmbryo.addSource(source);
+        
+        iter = source.getDataSets().iterator();
+        while (iter.hasNext()){
+            String dataset = iter.next().getName();
+            TimePointImage.getSingleImage(dataset,source.getMinTime());
+        } 
+        
         panel.setEmbryo(imagedEmbryo);
         if (nucFile != null){
             imagedEmbryo.setNucleusFile(nucFile);
@@ -310,14 +344,11 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
                 ((StarryNiteNucleusFile)nucFile).adjustCoordinates((int)coords[0],(int)coords[1],(int)coords[2]);
             }
         }
+        if (contrastDialog != null){
+            contrastDialog.setVisible(false);
+        }
         contrastDialog = new DataSetsDialog(this,imagedEmbryo,0,Short.MAX_VALUE);
         contrastDialog.setVisible(true);
-        
-        navFrame = new Navigation_Frame(imagedEmbryo,panel);
-        navFrame.run(null);
-        
-        SelectedNucleusFrame selectedNucFrame = new SelectedNucleusFrame(this,imagedEmbryo);
-        selectedNucFrame.setVisible(true);
                 
     }
     private void moveToTime(){
@@ -343,7 +374,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
             nucChooser.setSelectedFile(new File(f));
         }         
         if (nucChooser.showOpenDialog(panel) == JFileChooser.APPROVE_OPTION){
-            nucFile = new Ace3DNucleusFile(nucChooser.getSelectedFile());
+            nucFile = new Ace3DNucleusFile(nucChooser.getSelectedFile(),panel,selectedNucFrame);
             nucFile.addListener(navFrame);
             nucFile.open();
             props.setProperty("NucFile",nucFile.getFile().getPath());            
@@ -361,7 +392,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
             nucChooser.setSelectedFile(new File(starry));
         }
         if (nucChooser.showOpenDialog(panel) == JFileChooser.APPROVE_OPTION){
-            nucFile = new StarryNiteNucleusFile(nucChooser.getSelectedFile().getPath());
+            nucFile = new StarryNiteNucleusFile(nucChooser.getSelectedFile(),panel,selectedNucFrame);
             nucFile.addListener(navFrame);
             nucFile.open();
             props.setProperty("StarryNite",nucFile.getFile().getPath());
@@ -378,13 +409,14 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
             nucChooser.setSelectedFile(new File(tgmm));
         } 
         if (nucChooser.showOpenDialog(panel) == JFileChooser.APPROVE_OPTION){
-            nucFile = new TGMM_NucleusFile(nucChooser.getSelectedFile().getPath());
+            nucFile = new TGMM_NucleusFile(nucChooser.getSelectedFile(),panel,selectedNucFrame);
+            if (imagedEmbryo != null){
+                imagedEmbryo.setNucleusFile(nucFile);
+            }             
             nucFile.addListener(navFrame);
             nucFile.open();
             props.setProperty("TGMM",nucFile.getFile().getPath());
-            if (imagedEmbryo != null){
-                imagedEmbryo.setNucleusFile(nucFile);
-            }            
+           
         }
         
     }
@@ -520,8 +552,9 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
     NucleusFile nucFile;
     ImagedEmbryo imagedEmbryo;
     SynchronizedMultipleSlicePanel panel;
+    SelectedNucleusFrame selectedNucFrame;
     JFileChooser nucChooser;
-    JFileChooser imageChooser;
+    JFileChooser sourceChooser = new JFileChooser();
     DataSetsDialog contrastDialog;
     Navigation_Frame navFrame;
     LookUpTables lookUpTables = new LookUpTables();

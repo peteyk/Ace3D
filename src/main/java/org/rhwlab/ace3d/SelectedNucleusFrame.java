@@ -9,24 +9,24 @@ import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.List;
-import javafx.beans.InvalidationListener;
-import javafx.beans.Observable;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import org.rhwlab.dispim.ImagedEmbryo;
 import org.rhwlab.dispim.TimePointImage;
 import org.rhwlab.dispim.nucleus.Ace3DNucleusFile;
-import org.rhwlab.dispim.nucleus.Cell;
 import org.rhwlab.dispim.nucleus.Nucleus;
 
 /**
  *
  * @author gevirl
  */
-public class SelectedNucleusFrame extends JFrame   {
-    public SelectedNucleusFrame(Ace3D_Frame owner,ImagedEmbryo embryo){
+public class SelectedNucleusFrame extends JFrame implements ChangeListener    {
+    public SelectedNucleusFrame(Ace3D_Frame owner,ImagedEmbryo emb){
+        this.embryo = emb;
         this.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         this.setLocationRelativeTo(owner);        
         this.setTitle("Selected Nucleus");
@@ -40,7 +40,7 @@ public class SelectedNucleusFrame extends JFrame   {
         embryo.addListener(npPanel);
         panel.add(npPanel);
         
-        RadiusControlPanel radiusControl = new RadiusControlPanel(owner);
+        radiusControl = new RadiusControlPanel(owner);
         radiusControl.setEmbryo(embryo);
         embryo.addListener(radiusControl);
         panel.add(radiusControl);
@@ -127,7 +127,16 @@ public class SelectedNucleusFrame extends JFrame   {
         this.setContentPane(content);
         pack();
     }
+
+    @Override
+    public void stateChanged(ChangeEvent e) {
+        npPanel.invalidated(embryo);
+        radiusControl.invalidated(embryo);
+    }
+    
     ImagedEmbryo embryo;  
     NucleusPropertiesPanel npPanel;
+    RadiusControlPanel radiusControl;
+
             
 }

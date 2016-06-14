@@ -29,4 +29,7 @@ public class DataSetDescImpl implements DataSetDesc{
     {
         return this.angle;
     }
+    public void setName(String n){
+        this.name = n;
+    }
 }

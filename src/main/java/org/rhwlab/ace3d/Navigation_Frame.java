@@ -69,6 +69,7 @@ public class Navigation_Frame extends JFrame implements PlugIn,InvalidationListe
             @Override
             public void valueChanged(TreeSelectionEvent e) {
                 DefaultMutableTreeNode node = (DefaultMutableTreeNode)nucsTree.getLastSelectedPathComponent();
+                if (node == null)return;
                 if (node.isLeaf()){
                     String nucID = (String)node.getUserObject();
                     NucleusFile nucFile = embryo.getNucleusFile();
@@ -113,7 +114,7 @@ public class Navigation_Frame extends JFrame implements PlugIn,InvalidationListe
                     rootsRoot.add(timeNode);
                     for (Cell cell : roots){
                         addCellToNode(cell,timeNode);
-                        System.out.printf("Root Cell: %s\n", cell.getName());
+//                        System.out.printf("Root Cell: %s\n", cell.getName());
                     }
                 }
             }

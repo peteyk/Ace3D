@@ -11,6 +11,7 @@ import java.util.List;
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccess;
 import net.imglib2.display.ColorTable8;
+import net.imglib2.type.numeric.integer.AbstractIntegerType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
@@ -66,7 +67,8 @@ public class CompositeTimePointImage  {
             }
         }
         while (cursor.hasNext()){
-            UnsignedShortType pix = (UnsignedShortType)cursor.get();
+ //           UnsignedShortType pix = (UnsignedShortType)cursor.get();
+            AbstractIntegerType pix = (AbstractIntegerType)cursor.get();
             int[] cursorPos = new int[2];
             cursor.localize(cursorPos);        
             double v = Math.max(0.0, pix.getRealDouble() - pixMin[0]);
@@ -79,7 +81,8 @@ public class CompositeTimePointImage  {
             // fuse over all the images the current cursor location
             for (int i=1 ; i<datasets.size() ; ++i){
                 access[i].setPosition(cursorPos);
-                pix = (UnsignedShortType)access[i].get();
+//                pix = (UnsignedShortType)access[i].get();
+                pix = (AbstractIntegerType)access[i].get();
                 v = Math.max(0.0,pix.getRealDouble() - pixMin[i]);
                 r = r + Rfactor[i]*v;
                 g = g + Gfactor[i]*v;
@@ -96,18 +99,23 @@ public class CompositeTimePointImage  {
         return time;
     }
     public double minPosition(int d){
+        TimePointImage.initCache();
         return TimePointImage.timePointCache.get(0).minPosition(d);
     }
     public double maxPosition(int d){
+        TimePointImage.initCache();
         return TimePointImage.timePointCache.get(0).maxPosition(d);
     } 
     public int numDimensions(){
+        TimePointImage.initCache();
         return TimePointImage.timePointCache.get(0).getDims().length;
     }
     public double[] getMinPosition(){
+        TimePointImage.initCache();
         return TimePointImage.timePointCache.get(0).getMinPosition();
     }
     public double[] getMaxPosition(){
+        TimePointImage.initCache();
         return TimePointImage.timePointCache.get(0).getMaxPosition();
     }
     int time;

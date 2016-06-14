@@ -151,7 +151,7 @@ public class  Hdf5ImageSource implements ImageSource {
         long[] viewDims = new long[nDim];
         view.dimensions(viewDims);
 //        return new TimePointImage(view,minmax,time,xformDims,dataset);
-        return new TimePointImage(view,minmax,time,viewDims,dataset);
+        return new TimePointImage(view,minmax,time,dataset);
     }
     public void setAngle(int a){
         this.angle = a;

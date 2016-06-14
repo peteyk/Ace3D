@@ -73,7 +73,7 @@ public class TifDirectoryImageSource implements ImageSource {
             float[] mm = new float[2];           
             float[] minmax = FusionHelper.minMax(img);
             
-            return new TimePointImage(img.getImg(),mm,time,dims,dataset);
+            return new TimePointImage(img.getImg(),mm,time,dataset);
         } catch (ImgIOException ex) {
             Logger.getLogger(TifDirectoryImageSource.class.getName()).log(Level.SEVERE, null, ex);
         }

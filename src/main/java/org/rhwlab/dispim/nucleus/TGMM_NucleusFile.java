@@ -16,26 +16,28 @@ import java.util.regex.Pattern;
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.input.SAXBuilder;
+import org.rhwlab.ace3d.SelectedNucleusFrame;
+import org.rhwlab.ace3d.SynchronizedMultipleSlicePanel;
 
 /**
  *
  * @author gevirl
  */
 public class TGMM_NucleusFile extends Ace3DNucleusFile{
-    public TGMM_NucleusFile(String dir){
-        this.dir = dir;
-        file = new File(dir);
-        if (!file.isDirectory()){
-            this.dir = file.getParent();
-        }
+    public TGMM_NucleusFile(File f,SynchronizedMultipleSlicePanel panel,SelectedNucleusFrame frame) {
+        super(f,panel,frame);
+
     }
+    @Override
     public void open()throws Exception {
+        if (!file.isDirectory()){
+            this.file = file.getParentFile();
+        }        
         this.opening = true;
         Pattern p = Pattern.compile(".+(\\d{4}).xml");
-        File dirFile = new File(dir);
         SAXBuilder saxBuilder = new SAXBuilder();
 
-        File[] files = dirFile.listFiles();
+        File[] files = file.listFiles();
 
         for (File file : files){
             if (!file.isDirectory() && file.getName().endsWith("xml")){
@@ -104,5 +106,4 @@ public class TGMM_NucleusFile extends Ace3DNucleusFile{
         this.opening = false;
         this.notifyListeners();
     }
-    String dir;
 }

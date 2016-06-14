@@ -36,7 +36,7 @@ public class ImageJHyperstackSource implements ImageSource {
         }
         float[] minmax = new float[2];
         img = ImageJFunctions.wrap(new ImagePlus("",stack));
-        return new TimePointImage(img,minmax,time,longDims,dataset);
+        return new TimePointImage(img,minmax,time,dataset);
     }
 
     @Override

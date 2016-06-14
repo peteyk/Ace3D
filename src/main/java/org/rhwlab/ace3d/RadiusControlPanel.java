@@ -60,8 +60,9 @@ public class RadiusControlPanel extends JPanel  implements InvalidationListener 
                                     r[i] = sliders[i].getValue()/100.0;
                                 }
                                 nuc.setAdjustment(r);
-                                frame.stateChanged(e);
-                                embryo.notifyListeners();
+                                embryo.setSelectedNucleus(nuc);
+//                                frame.stateChanged(e);
+//                                embryo.notifyListeners();
                             }
                         }
                     }
@@ -81,6 +82,7 @@ public class RadiusControlPanel extends JPanel  implements InvalidationListener 
 
     @Override
     public void invalidated(Observable observable) {
+ 
         if (embryo != null){
             Nucleus nuc = embryo.selectedNucleus();
             if (nuc != null){
@@ -93,7 +95,7 @@ public class RadiusControlPanel extends JPanel  implements InvalidationListener 
         }
     }
    
-    static int sliderMax = 300;
+    static int sliderMax = 1000;
     Ace3D_Frame frame;
     ImagedEmbryo embryo;
     JSlider[] sliders;

@@ -8,6 +8,7 @@ package org.rhwlab.dispim;
 import java.util.HashMap;
 import java.util.LinkedList;
 import net.imglib2.RandomAccessibleInterval;
+import org.rhwlab.ace3d.Ace3D_Frame;
 
 /**
  *
@@ -16,12 +17,10 @@ import net.imglib2.RandomAccessibleInterval;
 public class TimePointImage{
 
 
-    public TimePointImage(RandomAccessibleInterval img,float[] mm,int time,long[] dims,String dataset){
+    public TimePointImage(RandomAccessibleInterval img,float[] mm,int time,String dataset){
         this.image = img;
         this.minmax = mm;
         this.time = time;
-        this.dims = new long[img.numDimensions()];
-        img.dimensions(this.dims);
         this.dataset = dataset;
     }
 
@@ -39,7 +38,9 @@ public class TimePointImage{
         return minmax[1];
     }
     public long[] getDims(){
-        return this.dims;
+        long[] ret = new long[image.numDimensions()];
+        image.dimensions(ret);
+        return ret;
     }
 
     @Override
@@ -73,6 +74,7 @@ public class TimePointImage{
     }
     static public double[] getMinPosition2D(int excludeDim){
         double[] ret = new double[2];
+        initCache();
         RandomAccessibleInterval img = timePointCache.get(0).getImage();
         switch (excludeDim) {
             case 0:
@@ -92,6 +94,7 @@ public class TimePointImage{
     }
     static public double[] getMaxPosition2D(int excludeDim){
         double[] ret = new double[2];
+        initCache();
         RandomAccessibleInterval img = timePointCache.get(0).getImage();
         switch (excludeDim) {
             case 0:
@@ -117,10 +120,12 @@ public class TimePointImage{
         return image.realMax(d);
     } 
     static public double getMinPosition(int d){
+        initCache();
         RandomAccessibleInterval img = timePointCache.get(0).getImage(); 
         return img.realMin(d);
     }
     static public double getMaxPosition(int d){
+        initCache();
         RandomAccessibleInterval img = timePointCache.get(0).getImage(); 
         return img.realMax(d);
     }    
@@ -141,7 +146,7 @@ public class TimePointImage{
 
     }
     static private TimePointImage addToCache(String dataset,int time){
-        TimePointImage tpi = source.getImage(dataset,time);
+        TimePointImage tpi = embryo.sourceForDataset(dataset).getImage(dataset,time);
         if (timePointCache.size()==cacheSize){
             
             // cache is full, remove the last
@@ -152,25 +157,34 @@ public class TimePointImage{
         timePointCache.addFirst(tpi);
         return tpi;
     }
-    static public void setSource(ImageSource s){
-        source = s;
-    }
+
 
     static public long[] getMinCoordinate(){
-        
+        initCache();
         TimePointImage tpi = timePointCache.get(0);
         long[] ret = new long[tpi.getImage().numDimensions()];
         tpi.getImage().min(ret);
         return ret;
     }
+    static public void setEmbryo(ImagedEmbryo emb){
+        TimePointImage.embryo = emb;
+    }
+    static void initCache(){
+        if (timePointCache.isEmpty()){
+            String dataset = Ace3D_Frame.getAllDatsets().get(0);
+            ImageSource src = embryo.sourceForDataset(dataset);
+            int minTime = src.getMinTime();
+            addToCache(dataset,minTime);
+        }
+    }
     String dataset;
     int time;
     private RandomAccessibleInterval image;
     float[] minmax;
-    long[] dims;
-    
+//    long[] dims;
+    static ImagedEmbryo embryo;
     static int cacheSize = 20;
-    static ImageSource source;
+//    static ImageSource source;
     static LinkedList<TimePointImage> timePointCache = new LinkedList<>();    
     static HashMap<String,HashMap<Integer,TimePointImage>> imageIndex = new HashMap<>();
 }

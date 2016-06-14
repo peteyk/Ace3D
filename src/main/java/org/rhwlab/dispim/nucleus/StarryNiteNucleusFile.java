@@ -7,6 +7,8 @@ package org.rhwlab.dispim.nucleus;
 
 import java.io.File;
 import java.util.Set;
+import org.rhwlab.ace3d.SelectedNucleusFrame;
+import org.rhwlab.ace3d.SynchronizedMultipleSlicePanel;
 import org.rhwlab.starrynite.SeriesNuclei;
 import org.rhwlab.starrynite.TimePointNuclei;
 import org.rhwlab.starrynite.TimePointNucleus;
@@ -16,8 +18,9 @@ import org.rhwlab.starrynite.TimePointNucleus;
  * @author gevirl
  */
 public class StarryNiteNucleusFile extends Ace3DNucleusFile {
-    public StarryNiteNucleusFile(String fn)throws Exception {
-        this.fileName = fn;
+
+    public StarryNiteNucleusFile(File f,SynchronizedMultipleSlicePanel panel,SelectedNucleusFrame frame)throws Exception {
+        super(f,panel,frame);
     }
     public void adjustCoordinates(int xMin,int yMin,int zMin){
         for (Set<Nucleus> nucSet : this.byTime.values()){
@@ -33,7 +36,6 @@ public class StarryNiteNucleusFile extends Ace3DNucleusFile {
     }
     public void open()throws Exception {
         SeriesNuclei seriesNucs = new SeriesNuclei("");
-        this.file = new File(fileName);
         seriesNucs.readZipFile(this.file);
         
         for (int t=1 ; t<seriesNucs.getMaxTime() ; ++t){
@@ -82,5 +84,4 @@ public class StarryNiteNucleusFile extends Ace3DNucleusFile {
 //        this.cellMap.put(cell.getName(), cell);
         return cell;
     }    
-    String fileName;
 }

@@ -20,17 +20,19 @@ import javax.json.JsonArrayBuilder;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonReader;
+import org.rhwlab.ace3d.SelectedNucleusFrame;
+import org.rhwlab.ace3d.SynchronizedMultipleSlicePanel;
 
 /**
  *
  * @author gevirl
  */
-public class Ace3DNucleusFile implements NucleusFile   {
-    public Ace3DNucleusFile(){
-        
-    }
-    public Ace3DNucleusFile(File file)throws Exception {
+public class Ace3DNucleusFile implements NucleusFile,javafx.beans.Observable   {
+
+    public Ace3DNucleusFile(File file,SynchronizedMultipleSlicePanel panel,SelectedNucleusFrame frame){
         this.file =file;
+        this.panel = panel;
+        this.frame = frame;
     }
     @Override
     public void open() throws Exception {
@@ -94,48 +96,7 @@ public class Ace3DNucleusFile implements NucleusFile   {
             this.notifyListeners();
         }
     }
-/*    
-    // unlink a nucleus from the next time point
-    public void unlinkNextTime(Nucleus unlinkNuc){
-        if (unlinkNuc.cell == null) return;
-        Cell unlinkCell = this.getCell(unlinkNuc.cell.getName());
-        if (unlinkCell == null)  return;  // nucleus is not in a cell so it is unlinked
-        
-        // is the nucleus at the last time of a cell
-        if (unlinkNuc.getTime() == unlinkCell.lastTime()){
-            
-            // unlink the children cells
-            for (Cell child : unlinkCell.getChildren()){
-                child.setParent(null);
-                this.addRoot(child,false);                
-            }
-            unlinkCell.clearChildren();
-        } else {
-            // split the unlinkCell and make a new root 
-            this.addRoot(unlinkCell.split(unlinkNuc.getTime()),false);
-        }
-        this.notifyListeners();
-    }
-    // unlink the given nucleus from the previous nucleus
-    // makes the given nucleus a new root
-    public void unlinkPreviousTime(Nucleus unlinkNuc){
-        if (unlinkNuc.cell == null) return;
-        Cell unlinkCell = this.getCell(unlinkNuc.cell.getName());
-        if (unlinkCell == null)  return;  // nucleus is not in a cell so it is unlinked 
-        
-        // is the nucleus at the begining of a cell
-        if (unlinkNuc.getTime() == unlinkCell.firstTime()){
-            // unlink the cell from its parent and make it a new root
-            unlinkCell.unlink();
-            this.addRoot(unlinkCell,false);
-        } else {
-            // split the unlink cell and make a new root
-            Cell splitCell = unlinkCell.split(unlinkNuc.getTime());
-            this.addRoot(splitCell,false);
-        }
-        this.notifyListeners();
-    }
- */ 
+ 
     public void unlink(Nucleus from,Nucleus to){
         Cell fromCell = from.getCell();
         Cell toCell = to.getCell(); 
@@ -311,7 +272,7 @@ public class Ace3DNucleusFile implements NucleusFile   {
     }
     @Override
     public List<Nucleus> linkedForward(Nucleus nuc) {
-        ArrayList ret = new ArrayList<Nucleus>();
+        ArrayList ret = new ArrayList<>();
         Cell cell = cellMap.get(nuc.getCell().getName());
         if (cell != null){
             Nucleus nextNuc = cell.getNucleus(nuc.getTime()+1);
@@ -357,7 +318,6 @@ public class Ace3DNucleusFile implements NucleusFile   {
     }
     @Override
     public Set<Cell> getRoots(int time) {
-    
         return roots.get(time);
     }    
 
@@ -389,7 +349,7 @@ public class Ace3DNucleusFile implements NucleusFile   {
     public Nucleus getNucleus(String name) {
         return byName.get(name);
     }  
-
+/*
     @Override
     public void setSelected(int time, String name) {
         Nucleus toSelect = byName.get(name);
@@ -397,19 +357,31 @@ public class Ace3DNucleusFile implements NucleusFile   {
             Set<Nucleus> nucs = byTime.get(time);
             for (Nucleus nuc : nucs){
                 if (nuc.getName().equals(name)){
-                    selectedNucleus = nuc;
+                    setSelected(nuc);
+                    return;
                 }
             }
         }
     }
+ */   
+    @Override
     public void setSelected(Nucleus toSelect){
         this.selectedNucleus = toSelect;
+        if (panel != null) {
+            panel.changeTime(toSelect.getTime());
+            panel.changePosition(toSelect.getCenter());
+        }
+        if (frame != null){
+            frame.stateChanged(null);
+        }
+    //    this.notifyListeners();
     }
     @Override
     public Nucleus getSelected(){
         return this.selectedNucleus;
     }
- 
+    SynchronizedMultipleSlicePanel panel;
+    SelectedNucleusFrame frame;
     boolean opening = true;
     File file;
     Nucleus selectedNucleus;

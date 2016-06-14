@@ -9,9 +9,11 @@ import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Ellipse2D;
 import java.io.PrintStream;
-import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Random;
+import javafx.beans.InvalidationListener;
 import javax.json.Json;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
@@ -442,6 +444,7 @@ public class Nucleus implements Comparable {
     public double[][] getEigenVectorsT(){
         return adjustedEigenA.getVT().getData();
     }   
+   
     private int time;
     private String name;
     private long xC;
@@ -460,6 +463,8 @@ public class Nucleus implements Comparable {
     double[] R;  // the adjustments to apply to the axis of the ellipsoid
     RealMatrix adjustedA;  // the adjusted precsion matrix  
     double ff;
+    List<InvalidationListener> listeners = new ArrayList<>();
+
     
     public class Coeff {
         double A;

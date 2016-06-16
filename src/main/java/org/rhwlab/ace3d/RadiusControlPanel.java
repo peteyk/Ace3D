@@ -22,7 +22,7 @@ import org.rhwlab.dispim.nucleus.Nucleus;
  *
  * @author gevirl
  */
-public class RadiusControlPanel extends JPanel  implements InvalidationListener {
+public class RadiusControlPanel extends JPanel implements InvalidationListener   {
     public RadiusControlPanel(Ace3D_Frame frame){
         this.frame = frame;
         this.setLayout(new BorderLayout());
@@ -54,14 +54,14 @@ public class RadiusControlPanel extends JPanel  implements InvalidationListener 
                     if (!slider.getValueIsAdjusting()){
                         if (embryo != null){
                             Nucleus nuc = embryo.selectedNucleus();
-                            if (nuc != null){
+                            if (nuc != null && adjustNucleus){
                                 double[] r = new double[sliders.length];
                                 for (int i=0 ; i<r.length ; ++i){
                                     r[i] = sliders[i].getValue()/100.0;
                                 }
                                 nuc.setAdjustment(r);
-                                embryo.setSelectedNucleus(nuc);
-//                                frame.stateChanged(e);
+//                                embryo.setSelectedNucleus(nuc);
+                                frame.stateChanged(e);
 //                                embryo.notifyListeners();
                             }
                         }
@@ -82,7 +82,7 @@ public class RadiusControlPanel extends JPanel  implements InvalidationListener 
 
     @Override
     public void invalidated(Observable observable) {
- 
+        adjustNucleus = false;
         if (embryo != null){
             Nucleus nuc = embryo.selectedNucleus();
             if (nuc != null){
@@ -93,8 +93,10 @@ public class RadiusControlPanel extends JPanel  implements InvalidationListener 
 
             }
         }
+        adjustNucleus = true;
     }
    
+    boolean adjustNucleus = false;
     static int sliderMax = 1000;
     Ace3D_Frame frame;
     ImagedEmbryo embryo;

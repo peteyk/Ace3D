@@ -30,6 +30,8 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import org.rhwlab.BHC.BHCTree;
+import org.rhwlab.ace3d.dialogs.BHCTreeCutDialog;
 import org.rhwlab.dispim.DataSetDesc;
 import org.rhwlab.dispim.Hdf5ImageSource;
 import org.rhwlab.dispim.ImageJHyperstackSource;
@@ -40,6 +42,7 @@ import org.rhwlab.dispim.TifDirectoryImageSource;
 import org.rhwlab.dispim.TimePointImage;
 import org.rhwlab.dispim.nucleus.NucleusFile;
 import org.rhwlab.dispim.nucleus.StarryNiteNucleusFile;
+import org.rhwlab.dispim.nucleus.TGMM_NucleusDirectory;
 import org.rhwlab.dispim.nucleus.TGMM_NucleusFile;
 import org.rhwlab.imagesource.TGMMSuperVoxelSource;
 
@@ -262,7 +265,37 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
             }
         });
         navigate.add(toTime);
+        
         menuBar.add(navigate);
+        JMenuItem setMinTime = new JMenuItem("Set the First Time");
+        setMinTime.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                setMinTime();
+            }
+        });
+        navigate.add(setMinTime);
+        
+        JMenu segment = new JMenu("Segmentation");
+        menuBar.add(segment);
+        JMenuItem microClusterItem = new JMenuItem("Form Micro Clusters");
+        segment.add(microClusterItem);
+        JMenuItem bhcItem = new JMenuItem("Run Gaussian Model");
+        segment.add(bhcItem);
+        JMenuItem cutItem = new JMenuItem("Cut Tree");
+        cutItem.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    cutTree();
+                } catch (Exception exc){
+                    exc.printStackTrace();
+                }
+            }
+        });
+        
+        segment.add(cutItem);
+        
         
         JMenu view = new JMenu("Annotations");
         menuBar.add(view);
@@ -365,6 +398,20 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
             }
         }
     }
+    private void setMinTime(){
+        boolean valid = false;
+        while (!valid) {
+            String timeStr = JOptionPane.showInputDialog("Enter the first time value:");
+            if (timeStr == null) return;
+            try {
+                int firstTime = Integer.valueOf(timeStr);
+                source.setFirstTime(firstTime);
+                valid = true;
+            } catch (Exception exc){
+                JOptionPane.showMessageDialog(this,"Not a valid time entry");
+            }
+        }        
+    }
     public int getCurrentTime(){
         return panel.getTime();
     }
@@ -409,7 +456,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
             nucChooser.setSelectedFile(new File(tgmm));
         } 
         if (nucChooser.showOpenDialog(panel) == JFileChooser.APPROVE_OPTION){
-            nucFile = new TGMM_NucleusFile(nucChooser.getSelectedFile(),panel,selectedNucFrame);
+            nucFile = new TGMM_NucleusDirectory(nucChooser.getSelectedFile(),panel,selectedNucFrame);
             if (imagedEmbryo != null){
                 imagedEmbryo.setNucleusFile(nucFile);
             }             
@@ -420,7 +467,18 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
         }
         
     }
-    
+    private void cutTree()throws Exception {
+        int time = this.getCurrentTime();
+        TGMM_NucleusDirectory tgmmDirectory = (TGMM_NucleusDirectory)nucFile;
+        TGMM_NucleusFile tgmmFile = tgmmDirectory.getFileforTime(time);
+        File bhcFile = tgmmFile.getBHCTreeFile();
+        BHCTree tree = new BHCTree(bhcFile.getPath());
+        if (treeCutDialog == null){
+            treeCutDialog = new BHCTreeCutDialog(this,this.nucFile);
+        }
+        treeCutDialog.setBHCTree(tree);
+        treeCutDialog.setVisible(true);
+    }
     private void saveAsNucFile()throws Exception {
         buildChooser();
         if (nucFile != null){
@@ -558,6 +616,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
     DataSetsDialog contrastDialog;
     Navigation_Frame navFrame;
     LookUpTables lookUpTables = new LookUpTables();
+    BHCTreeCutDialog treeCutDialog;
     
     static JCheckBoxMenuItem segmentedNuclei;
     static JCheckBoxMenuItem sisters;
@@ -575,7 +634,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
             @Override
             public void run() {
                 new ImageJ();
-                Interpreter.batchMode=true;
+                Interpreter.batchMode=false;
                 try {
                     Ace3D_Frame   frame = new Ace3D_Frame();
                     

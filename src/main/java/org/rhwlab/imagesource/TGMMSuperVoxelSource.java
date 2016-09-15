@@ -208,4 +208,9 @@ public class TGMMSuperVoxelSource implements ImageSource {
     int nSV; // number of super voxels
     SuperVoxel[] superVoxels;
     SegmentationNode[] nodes;
+
+    @Override
+    public void setFirstTime(int minTime) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
 }

@@ -19,15 +19,16 @@ public class TGMMNucleus extends Nucleus {
         super(time,name(time,gmm),center(gmm),10.0);  // for now make all radii the same
         id = gmm.getAttributeValue("id");
         parent = gmm.getAttributeValue("parent");
+        if (parent != null && parent.equals("-1")){
+            parent = null;
+        }
         scale = scale(gmm);
         A = precisionFromString(gmm.getAttributeValue("W"));
         eigenA = new EigenDecomposition(A);
         adjustedA = A.copy();
         adjustedEigenA = new EigenDecomposition(adjustedA);
         R = new double[3];
-        R[0] = 1.0;
-        R[1] = 1.0;
-        R[2] = 1.0;
+        R[0] = R[1] = R[2] = 2.5;
         this.setAdjustment(R);
     }
 
@@ -53,9 +54,12 @@ public class TGMMNucleus extends Nucleus {
 
     static float[] scale(Element gmm){
         float[] ret = new float[3];
-        String[] tokens = gmm.getAttributeValue("scale").split(" ");
-        for (int i=0 ; i<3 ; ++i){
-            ret[i] = Float.valueOf(tokens[i]);
+        String scaleAtt = gmm.getAttributeValue("scale");
+        if (scaleAtt != null){
+            String[] tokens = scaleAtt.split(" ");
+            for (int i=0 ; i<3 ; ++i){
+                ret[i] = Float.valueOf(tokens[i]);
+            }
         }
         return ret;        
     }
@@ -69,8 +73,11 @@ public class TGMMNucleus extends Nucleus {
     public String getID(){
         return id;
     }
-    public String getParent(){
-        return name(this.getTime()-1,parent);
+    public String getParentName(){
+        if (parent != null)
+            return name(this.getTime()-1,parent);
+        else 
+            return null;
     }
     public String getRadiusLabel(int i){
         // find the adjusted eigenvector closest to the original unadjusted eigenvector for dimension i

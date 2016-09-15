@@ -40,13 +40,15 @@ public class Nucleus implements Comparable {
         this.yC = jsonObj.getJsonNumber("Y").longValue();
         this.zC = jsonObj.getJsonNumber("Z").longValue();
         this.exp = jsonObj.getJsonNumber("Expression").longValue();
-        R = new double[3];
-        R[0] = R[1] = R[2] =1.0;
+
         
         this.eigenA = new EigenDecomposition(A);
         this.adjustedA = this.A.copy();
         this.adjustedEigenA = new EigenDecomposition(adjustedA);
-        this.setAdjustment(R);
+        
+        double[] adj = new double[3];
+        adj[0] = adj[1] = adj[2] =1.0;        
+        this.setAdjustment(adj);
     }
     // contruct the Nucleus from a StarryNite Nucleus
     public Nucleus(TimePointNucleus data){
@@ -156,6 +158,7 @@ public class Nucleus implements Comparable {
         e.x = ce[xi] + xc;
         e.y = ce[yi] + yc;
        
+ //       double f = -detQ/detA33 * 2;
         double f = -detQ/detA33;
         double a = eigenValues[0]/f;
         double b = eigenValues[1]/f;
@@ -164,7 +167,8 @@ public class Nucleus implements Comparable {
         }
         e.a = 1.0/Math.sqrt(a);
         e.b = 1.0/Math.sqrt(b);
-//System.out.printf("eigenValues (%f,%f), f=%f\n",eigenValues[0],eigenValues[1],f);
+System.out.printf("detQ=%e,detA33=%e,f=%f,a=%e,b=%e\n",detQ,detA33,f,e.a,e.b);        
+System.out.printf("eigenValues (%f,%f)\n",eigenValues[0],eigenValues[1]);
         e.cosine = eigenvector0.getEntry(0);
         e.sine = eigenvector0.getEntry(1);         
         e.low[xi] = (long)(e.x - e.a);
@@ -368,7 +372,8 @@ public class Nucleus implements Comparable {
         adjustedA = adjustPrecision();
         adjustedEigenA = new EigenDecomposition(adjustedA);
         double[][]a = adjustedA.getData();
-        ff = - Math.log(adjustedEigenA.getDeterminant());
+        ff = -Math.log(adjustedEigenA.getDeterminant());
+        ff = 1.0;
     }       
     public RealMatrix adjustPrecision(){
         DiagonalMatrix D = new DiagonalMatrix(eigenA.getRealEigenvalues());

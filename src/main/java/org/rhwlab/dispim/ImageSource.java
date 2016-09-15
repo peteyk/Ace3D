@@ -21,5 +21,6 @@ public interface ImageSource {
     public int getMaxTime();
     public String getFile();
     public Collection<DataSetDesc> getDataSets();
+    public void setFirstTime(int minTime);
 
 }

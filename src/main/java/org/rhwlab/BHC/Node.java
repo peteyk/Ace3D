@@ -1,0 +1,33 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package org.rhwlab.BHC;
+
+import java.io.PrintStream;
+import java.util.List;
+import org.apache.commons.math3.dfp.Dfp;
+import org.apache.commons.math3.linear.FieldVector;
+import org.apache.commons.math3.linear.RealVector;
+import org.jdom2.Element;
+import org.rhwlab.dispim.datasource.MicroCluster;
+
+/**
+ *
+ * @author gevirl
+ */
+public interface Node extends Comparable {
+    public Dfp getPosteriorDfp();
+    public double getPosterior();
+    public Node mergeWith(Node cl);
+    public  void getDataAsFieldVector(List<FieldVector> list);
+    public void getDataAsRealVector(List<RealVector> list);
+    public Node getLeft();
+    public Node getRight();
+    public void print(PrintStream stream);
+    public void getDataAsMicroCluster(List<MicroCluster> list);
+    public int saveAsXML(Element root,int id) throws Exception;
+    public  int saveAsXML(Element root,double threshold,int id)throws Exception;
+    public int getN();
+}

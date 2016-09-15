@@ -1,0 +1,111 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package org.rhwlab.dispim.datasource;
+
+import ij.io.Opener;
+import net.imglib2.RandomAccess;
+import net.imglib2.img.ImagePlusAdapter;
+import net.imglib2.img.Img;
+import net.imglib2.type.numeric.integer.AbstractIntegerType;
+import org.apache.commons.math3.linear.ArrayRealVector;
+import org.apache.commons.math3.linear.RealVector;
+
+/**
+ *
+ * @author gevirl
+ */
+public class TiffDataSource implements DataSource{
+    public TiffDataSource(String file){
+        image = ImagePlusAdapter.wrap( new Opener().openImage( file) );
+        sampler = image.randomAccess();
+        dims = new long[image.numDimensions()];
+        image.dimensions(dims);
+        N = 1;
+        for (int d=0 ; d<dims.length ; ++d){
+            N = N * dims[d];
+        }
+    }
+
+    @Override
+    public int getN() {
+        return (int)N;
+    }
+
+    @Override
+    public int getD() {
+        return dims.length;
+    }
+
+    @Override
+    public Voxel get(long i) {
+        long[] pos = this.getCoords(i);
+        sampler.setPosition(pos);
+        AbstractIntegerType obj = (AbstractIntegerType)sampler.get();
+        int intensity = obj.getInteger();
+        return new Voxel(pos,intensity);
+    }
+
+    // return coordinates of a voxel given a linear index 
+    private long[] getCoords(long i){
+        long[] coord = new long[dims.length];
+        long index = i;
+        for (int d =0 ; d<dims.length-1 ; ++d){
+            coord[d] = index % dims[d];
+            index = index - coord[d];
+            index = index/dims[d];
+        }
+        coord[dims.length-1] = index;        
+        return coord;    
+    }
+    public RealVector getMidpoint(){
+        double[] d = new double[dims.length];
+        for (int i=0 ; i< dims.length ; ++i){
+            d[i] = dims[i]/2.0;
+        }
+        ArrayRealVector v = new ArrayRealVector(d);
+        return v;
+    }
+    final Img image;
+    RandomAccess sampler;
+    long N;
+    long[] dims;
+    
+    static public void main(String[] args) throws Exception {
+        
+        
+ /*       
+        TiffDataSource source = new TiffDataSource("/nfs/waterston/pete/Segmentation/Cherryimg75_SimpleSegmentation.tiff");
+        List  cl = source.cluster(source.voxels, 50);
+        OutputStream stream = new FileOutputStream("/nfs/waterston/pete/Segmentation/Cherryimg75_SimpleSegmentation.xml");
+        source.saveClusters(cl, stream);
+        
+        int K = 50;
+        source.setK(K);
+        long[] dims = source.getDims();
+        double[] values= new double[dims.length];
+        for (int i=0 ; i<dims.length ; ++i){
+            values[i] = dims[i]/2.0;
+        }
+        RealVector m0 = new ArrayRealVector(values);
+        GaussianMixture gm = new GaussianMixture();
+        gm.setSource(source);
+        gm.setAlpha0(0.001);
+        gm.setBeta0(.00000001);
+        gm.setNu0(3.0);
+        gm.setMu0(m0);
+        
+        RealMatrix W0 = MatrixUtils.createRealIdentityMatrix(source.getD());
+        W0 = W0.scalarMultiply(0.00000001);  
+        gm.setW0(W0);        
+        gm.init(K);
+        gm.run();
+*/
+    }
+
+
+
+
+}

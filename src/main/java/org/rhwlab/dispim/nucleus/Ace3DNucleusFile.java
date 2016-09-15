@@ -331,7 +331,7 @@ public class Ace3DNucleusFile implements NucleusFile,javafx.beans.Observable   {
         listeners.remove(listener);
     }
     
-    void notifyListeners(){
+    public void notifyListeners(){
         if (opening){
             return;
         }
@@ -380,6 +380,31 @@ public class Ace3DNucleusFile implements NucleusFile,javafx.beans.Observable   {
     public Nucleus getSelected(){
         return this.selectedNucleus;
     }
+    public void removeNucleiAtTime(int time){
+        // make sure all nuclei are unlinked TGMM nuclei
+        Set<Nucleus> nuclei = this.byTime.get(time);
+        for (Nucleus nuc : nuclei){
+            if (nuc instanceof TGMMNucleus){
+                TGMMNucleus tgmm = (TGMMNucleus)nuc;
+                if (tgmm.getParentName() != null){
+                    return;
+                }
+            }
+            else {
+                System.err.println("cannot remove non TGMM nuclei");
+                System.exit(1);
+            }
+        }
+        for (Nucleus nuc : nuclei){
+            String cellName = nuc.getCell().getName();
+            cellMap.remove(cellName);
+            String nucName = nuc.getName();
+            byName.remove(nucName);
+            byTime.remove(time);
+            roots.remove(time);
+        }
+        this.notifyListeners();
+    }    
     SynchronizedMultipleSlicePanel panel;
     SelectedNucleusFrame frame;
     boolean opening = true;

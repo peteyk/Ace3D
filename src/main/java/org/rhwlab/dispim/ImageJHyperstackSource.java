@@ -28,15 +28,16 @@ public class ImageJHyperstackSource implements ImageSource {
 
     @Override
     public TimePointImage getImage(String dataset, int time) {
+        int stackTime = time - minTime + 1;
         int channel = Integer.valueOf(dataset.substring(7));
         ImageStack stack = new ImageStack(dims[0],dims[1],dims[3]);
         for (int slice =1 ; slice<=dims[3] ; ++slice){
-            imagePlus.setPosition(channel, slice, time);
+            imagePlus.setPosition(channel, slice, stackTime);
             stack.setPixels(imagePlus.getProcessor().getPixels(), slice);
         }
         float[] minmax = new float[2];
         img = ImageJFunctions.wrap(new ImagePlus("",stack));
-        return new TimePointImage(img,minmax,time,dataset);
+        return new TimePointImage(img,minmax,stackTime,dataset);
     }
 
     @Override
@@ -46,13 +47,18 @@ public class ImageJHyperstackSource implements ImageSource {
     }
 
     @Override
+    public void setFirstTime(int minTime){
+        this.minTime = minTime;
+        TimePointImage.resetCache();
+    }
+    @Override
     public int getMinTime() {
-        return 1;
+        return this.minTime;
     }
 
     @Override
     public int getMaxTime() {
-        return imagePlus.getNFrames();
+        return this.minTime + imagePlus.getNFrames() - 1;
     }
 
     @Override
@@ -74,4 +80,5 @@ public class ImageJHyperstackSource implements ImageSource {
     long[] longDims;
     ImagePlus imagePlus;
     Img img;
+    int minTime=1;
 }

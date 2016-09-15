@@ -118,5 +118,10 @@ public class TifDirectoryImageSource implements ImageSource {
     int minTime;
     int maxTime;
 
+    @Override
+    public void setFirstTime(int minTime) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
 
 }

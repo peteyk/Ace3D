@@ -198,6 +198,11 @@ public class  Hdf5ImageSource implements ImageSource {
         return timepoints.getTimePointsOrdered().get(timepoints.size()-1).getId();
     }
 
+    @Override
+    public void setFirstTime(int minTime) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
 
 
 

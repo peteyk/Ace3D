@@ -177,6 +177,10 @@ public class TimePointImage{
             addToCache(dataset,minTime);
         }
     }
+    static void resetCache(){
+        timePointCache.clear();
+        initCache();
+    }
     String dataset;
     int time;
     private RandomAccessibleInterval image;

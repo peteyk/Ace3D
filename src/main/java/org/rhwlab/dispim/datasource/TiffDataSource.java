@@ -5,6 +5,8 @@
  */
 package org.rhwlab.dispim.datasource;
 
+import ij.ImagePlus;
+import ij.io.FileSaver;
 import ij.io.Opener;
 import net.imglib2.RandomAccess;
 import net.imglib2.img.ImagePlusAdapter;
@@ -17,9 +19,10 @@ import org.apache.commons.math3.linear.RealVector;
  *
  * @author gevirl
  */
-public class TiffDataSource implements DataSource{
+public class TiffDataSource implements VoxelDataSource{
     public TiffDataSource(String file){
-        image = ImagePlusAdapter.wrap( new Opener().openImage( file) );
+        imagePlus = new Opener().openImage( file);
+        image = ImagePlusAdapter.wrap( imagePlus);
         sampler = image.randomAccess();
         dims = new long[image.numDimensions()];
         image.dimensions(dims);
@@ -27,6 +30,13 @@ public class TiffDataSource implements DataSource{
         for (int d=0 ; d<dims.length ; ++d){
             N = N * dims[d];
         }
+    }
+    public TiffDataSource (TiffDataSource s){
+        this.image = s.image;
+        this.N = s.N;
+        this.dims = s.dims;
+        this.sampler = s.sampler;
+        this.imagePlus = s.imagePlus;
     }
 
     @Override
@@ -48,6 +58,12 @@ public class TiffDataSource implements DataSource{
         return new Voxel(pos,intensity);
     }
 
+    public void setIntensity(long i,int intensity){
+        long[] pos = this.getCoords(i);
+        sampler.setPosition(pos);
+        AbstractIntegerType obj = (AbstractIntegerType)sampler.get();
+        obj.setInteger(intensity);
+    }
     // return coordinates of a voxel given a linear index 
     private long[] getCoords(long i){
         long[] coord = new long[dims.length];
@@ -68,6 +84,11 @@ public class TiffDataSource implements DataSource{
         ArrayRealVector v = new ArrayRealVector(d);
         return v;
     }
+    public void saveAsTiff(String file){
+        FileSaver saver = new FileSaver(imagePlus);
+        saver.saveAsTiff(file);
+    }
+    ImagePlus imagePlus;
     final Img image;
     RandomAccess sampler;
     long N;

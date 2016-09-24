@@ -58,6 +58,9 @@ public class TGMM_NucleusDirectory extends Ace3DNucleusFile{
     public TGMM_NucleusFile getFileforTime(int time){
         return fileMap.get(time);
     }
+    public void putFileForTime(int time,TGMM_NucleusFile file){
+        this.fileMap.put(time,file);
+    }
     static public int getTime(File file){
         Matcher m = p.matcher(file.getName());
         m.matches(); 

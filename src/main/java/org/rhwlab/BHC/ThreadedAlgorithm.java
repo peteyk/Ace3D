@@ -12,6 +12,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.ForkJoinPool;
 import org.apache.commons.math3.dfp.Dfp;
@@ -32,6 +33,7 @@ public class ThreadedAlgorithm implements Runnable {
     public ThreadedAlgorithm(){
     }
     public void init(double alpha)throws Exception {
+        posteriors = new TreeSet(new NodeComparator());
         field= new DfpField(100);
         NodeBase.setDfpField(field);
         MicroCluster.setField(field);
@@ -62,6 +64,16 @@ public class ThreadedAlgorithm implements Runnable {
             MergeAction merge = new MergeAction(clusters,i,i+1,map);
             ForkJoinPool pool = new ForkJoinPool();
             pool.invoke(merge);
+            for (Object obj : map.values()){
+//                Node node = (Node)obj;
+                posteriors.add((Node)obj);
+ /*               
+                if (this.posteriorMap.get(node.getPosterior())!=null){
+                    int aiusdhfuis=0;
+                }
+                this.posteriorMap.put(node.getPosterior(),node);
+*/                
+            }            
             Node clusterI = clusters.get(i);
             pairs.put(clusterI,map);
             System.out.printf("Cluster %d paired\n",i);
@@ -69,6 +81,9 @@ public class ThreadedAlgorithm implements Runnable {
     }
   
     private Node maximumRCluster(){
+        return this.posteriors.last();
+//        return this.posteriorMap.lastEntry().getValue();
+/*        
         Node ret = null;
         Dfp  maxR = field.getZero();
         maxR = field.newDfp(-1.0);
@@ -85,39 +100,94 @@ public class ThreadedAlgorithm implements Runnable {
             }
         }
         return ret;
+        */
     }  
   
     @Override
     public void run() {
+        TimeProfile profile = new TimeProfile();
         while (clusters.size()>1){
-            
+            if (clusters.size()==2724){
+                int asdhfuis=0;
+            }
             System.out.printf("\n%d Clusters\n",clusters.size());
+            profile.report(System.out, "Before maximumRCluster");
             Node T = maximumRCluster();
-
+            profile.report(System.out, "After maximumRCluster");
             if (T == null ){
                 return;
             }   
-
             T.print(System.out);
 
+            Node tLeft = T.getLeft();
+            Node tRight = T.getRight();
+            
             // remove the children of the max r pair
-            pairs.remove(T.getLeft());
-            pairs.remove(T.getRight());
+            Map leftMap = (Map)pairs.remove(T.getLeft());
+            if (leftMap != null){
+                for (Object leftObj : leftMap.values()){
+                    this.posteriors.remove(((Node)leftObj));
+ //                   this.posteriorMap.remove(((Node)leftObj).getPosterior());
+                }
+            }
+            
+            
+            Map rightMap = (Map)pairs.remove(T.getRight());
+            if (rightMap != null){
+                for (Object rightObj : rightMap.values()){
+                    this.posteriors.remove(((Node)rightObj));
+ //                   this.posteriorMap.remove(((Node)rightObj).getPosterior());
+                }  
+            }
+            
             for (Object obj : pairs.values()){
                 Map map = (Map)obj;
-                map.remove(T.getLeft());
-                map.remove(T.getRight());
+                Object nodeObj = map.remove(T.getLeft());
+                if (nodeObj != null){
+                    this.posteriors.remove(((Node)nodeObj));
+//                    posteriorMap.remove(((Node)nodeObj).getPosterior());
+                }
+                nodeObj = map.remove(T.getRight());
+                if (nodeObj != null){
+                    this.posteriors.remove(((Node)nodeObj));
+//                    posteriorMap.remove(((Node)nodeObj).getPosterior());
+                }
             }
-            clusters.remove(T.getLeft());
-            clusters.remove(T.getRight());
-
+            System.out.println("Removed");
             
+           
+            boolean leftRemoved = clusters.remove(T.getLeft());
+            boolean rightRemoved = clusters.remove(T.getRight());
+            
+            if (leftRemoved){
+ //               T.getLeft().print(System.out);
+            } else {
+                int iuashdf=0;
+            }
+            if (rightRemoved){
+ //               T.getRight().print(System.out);
+            }else {
+                int oiashdfio=0;
+            }
+
+
+            profile.report(System.out,"Starting MergeAction");
             // make new pairs with all the clusters
             Map map = Collections.synchronizedMap(new HashMap<>());
             MergeAction merge = new MergeAction(clusters,T,0,clusters.size()-1,map);
             ForkJoinPool pool = new ForkJoinPool();
             pool.invoke(merge);
+            profile.report(System.out,"MergeAction complete");
             pairs.put(T,map);
+            for (Object obj : map.values()){
+/*                
+                if (this.posteriorMap.get(node.getPosterior())!=null){
+                    int aiusdhfuis=0;
+                }     
+*/
+                this.posteriors.add((Node)obj);
+//                this.posteriorMap.put(node.getPosterior(),node);
+            }
             clusters.add(T);
         }
     }
@@ -180,8 +250,9 @@ public class ThreadedAlgorithm implements Runnable {
     List<Node> clusters;
 //    HashMap<Cluster,HashMap<Cluster,Cluster>> pairs;
     Map pairs;
-    
-    int nu = 4;
+//    TreeMap<Double,Node> posteriorMap = new TreeMap<>();
+    TreeSet<Node> posteriors;
+    int nu = 20;
     double s = 100;
     double[] mu;
     double beta = 0.0000001; 

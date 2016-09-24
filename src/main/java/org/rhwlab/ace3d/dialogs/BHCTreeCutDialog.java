@@ -16,10 +16,14 @@ import javax.swing.JDialog;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import org.jdom2.Element;
 import org.rhwlab.BHC.BHCTree;
 import org.rhwlab.ace3d.Ace3D_Frame;
 import org.rhwlab.dispim.nucleus.Ace3DNucleusFile;
 import org.rhwlab.dispim.nucleus.NucleusFile;
+import org.rhwlab.dispim.nucleus.TGMM_NucleusDirectory;
 import org.rhwlab.dispim.nucleus.TGMM_NucleusFile;
 
 /**
@@ -28,13 +32,21 @@ import org.rhwlab.dispim.nucleus.TGMM_NucleusFile;
  */
 public class BHCTreeCutDialog extends JDialog {
     public BHCTreeCutDialog(Ace3D_Frame owner,NucleusFile nucleusFile){
-        this.nucleusFile = (Ace3DNucleusFile)nucleusFile;
+        this.nucleusFile = (TGMM_NucleusDirectory)nucleusFile;
         this.setTitle("Cut the BHC Tree");
         this.setSize(300, 500);
         this.getContentPane().setLayout(new BorderLayout());
         this.setLocationRelativeTo(owner);
         
         jList = new JList();
+        jList.addListSelectionListener(new ListSelectionListener(){
+            @Override
+            public void valueChanged(ListSelectionEvent e) {
+                if (!e.getValueIsAdjusting()){
+                        countClusters();
+                }
+            }
+        });
         JScrollPane scroll = new JScrollPane(jList);
         this.getContentPane().add(scroll, BorderLayout.CENTER);
         
@@ -59,30 +71,66 @@ public class BHCTreeCutDialog extends JDialog {
         this.getContentPane().add(button,BorderLayout.SOUTH);
     }
     private void ok(){
-        Double thresh = (Double)jList.getSelectedValue();
+        Object sel = jList.getSelectedValue();
         String xml = tree.getBaseName() + ".xml";
-        if (thresh != null){
+        if (sel != null){
             nucleusFile.removeNucleiAtTime(tree.getTime());
+            double thresh = ((Posterior)sel).r;
             try {
                 tree.saveCutAtThresholdAsXML(xml, thresh);
                 TGMM_NucleusFile tgmm = new TGMM_NucleusFile();
-                tgmm.open(tree.getTime(),new File(xml), nucleusFile);                
+                tgmm.open(tree.getTime(),new File(xml), nucleusFile);  
+                this.nucleusFile.putFileForTime(tree.getTime(), tgmm);
             } catch (Exception exc){
                 exc.printStackTrace();
             }
             nucleusFile.notifyListeners();
         }
     }
-    public void setBHCTree(BHCTree tree){
+    public void countClusters(){
+        Posterior selected = (Posterior)jList.getSelectedValue();
+        if (selected == null){
+            return;
+        }
+        if (selected.n == -1){
+            Element ele = tree.formXML(selected.r);
+            selected.n = ele.getChildren("GaussianMixtureModel").size();            
+        }
+        jList.repaint();
+    }
+    public void setBHCTree(BHCTree tree,double thresh){
+        Posterior selected = null;
         this.tree = tree;
         DefaultListModel model = new DefaultListModel();
         Set<Double> posts = tree.allPosteriors();
         for (Double post : posts){
-            model.addElement(post);
+            Posterior posterior = new Posterior(post,-1);
+            model.addElement(posterior);
+            if (post == thresh){
+                selected = posterior;
+            }            
         }
         jList.setModel(model);
+        jList.setSelectedValue(selected,true);
     }
-    Ace3DNucleusFile nucleusFile;
+    TGMM_NucleusDirectory nucleusFile;
     BHCTree tree;
     JList jList;
+    class Posterior {
+        public Posterior(double r,int n){
+            this.r = r;
+            this.n = n;
+        }
+        
+        @Override
+        public String toString(){
+            if (n ==-1){
+                return String.format("%f",r);
+            }
+            return String.format("(%d) %f",n,r);
+        }
+        
+        double r;
+        int n;
+    }
 }

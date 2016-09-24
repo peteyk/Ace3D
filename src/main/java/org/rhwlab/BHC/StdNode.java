@@ -180,10 +180,12 @@ public class StdNode extends  NodeBase {
         List<RealVector> data = new ArrayList<>();
         this.getDataAsRealVector(data);
         stream.printf("Size=%d\n", data.size());
+/*        
         for (RealVector vec : data){
             stream.print(vectorAsString(vec));
         }
         stream.println();
+        */
         stream.printf("like=%s\n", Double.toString(likelihood));
         stream.printf("d=%s\n", Double.toString(d));
         stream.printf("dpm=%s\n", Double.toString(dpm));

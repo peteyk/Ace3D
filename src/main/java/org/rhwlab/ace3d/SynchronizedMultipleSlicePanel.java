@@ -197,6 +197,10 @@ public class SynchronizedMultipleSlicePanel extends JPanel implements ChangeList
     public int getTime(){
         return this.time;
     }
+    public void setTimeRange(int minTime, int maxTime){
+        slider.setMinimum(minTime);
+        slider.setMaximum(maxTime);
+    }
     int nDims;
     JSlider slider;
     int time;

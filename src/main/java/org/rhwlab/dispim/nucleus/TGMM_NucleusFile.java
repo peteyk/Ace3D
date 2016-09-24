@@ -20,6 +20,7 @@ import org.jdom2.input.SAXBuilder;
  * @author gevirl
  */
 public class TGMM_NucleusFile {
+    // open a tgmm nucleus file , adding nuclei to the Ace3dNucleusFile
     public void open(int time,File file,Ace3DNucleusFile aceFile)throws Exception {
         this.file = file;
         SAXBuilder saxBuilder = new SAXBuilder();
@@ -28,7 +29,8 @@ public class TGMM_NucleusFile {
         Map<Integer,TGMMNucleus> secondParents = new HashMap<>();                    
 
         Document doc = saxBuilder.build(file); 
-        Element document = doc.getRootElement();  
+        Element document = doc.getRootElement(); 
+        this.cutThreshold = Double.valueOf(document.getAttributeValue("threshold"));
         List<Element> gmmList = document.getChildren("GaussianMixtureModel");
         for (Element gmm : gmmList){
             int parent = Integer.valueOf(gmm.getAttributeValue("parent"));
@@ -84,6 +86,10 @@ public class TGMM_NucleusFile {
         String fileName = file.getName();
         return new File(file.getParent(),fileName.replace(".xml", "BHCTree.xml"));
     }
+    public double getThreshold(){
+        return this.cutThreshold;
+    }
     File file;
     int time;
+    double cutThreshold;
 }

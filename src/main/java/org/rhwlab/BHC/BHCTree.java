@@ -10,6 +10,7 @@ import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import org.jdom2.Document;
 import org.jdom2.Element;
@@ -29,6 +30,8 @@ public class BHCTree {
         time = TGMM_NucleusDirectory.getTime(new File(file));
     }
     
+    
+    
     public void saveCutAtThresholdAsXML(String file,double thresh)throws Exception {
         saveClusterListAsXML(file,roots,thresh);
     }
@@ -44,19 +47,17 @@ public class BHCTree {
         }
         return ret;
     }
+    public void saveClustersAsXML(String file,double threshold)throws Exception {
+        saveClusterListAsXML(file,roots,threshold);
+    }
+    public Element formXML(double threshold){
+        return formXML(this.roots,threshold);
+    }
     // save a list of clusters to an XML file
     // each cluster is saved with it's children clusters
     static void saveClusterListAsXML(String file,List<Node> clusters,double threshold)throws Exception{
-        
-        Element root = new Element("BHCClusterList"); 
-        root.setAttribute("threshold", Double.toString(threshold));
-        int id = 1;
-        for (Node cl : clusters){
-            int used = cl.saveAsXML(root,threshold,id);  // save as a Gaussian Mixture Model
-            if (used != -1){
-                id = used + 1;
-            }
-        }
+        Element root = formXML(clusters,threshold);
+
         File f = new File(file);
         File outFile = new File(f.getParent(),f.getName());
         OutputStream stream = new FileOutputStream(outFile);
@@ -64,6 +65,19 @@ public class BHCTree {
         out.output(root, stream);
         stream.close();        
     }  
+    
+    static public Element formXML(List<Node> clusters,double threshold){
+        Element root = new Element("BHCClusterList"); 
+        root.setAttribute("threshold", Double.toString(threshold));
+        int id = 1;
+        for (Node cl : clusters){
+            int used = cl.saveAsXMLByThreshold(root,threshold,id);  // save as a Gaussian Mixture Model
+            if (used != -1){
+                id = used + 1;
+            }
+        }
+        return root;
+    }
     
     public TreeSet<Double> allPosteriors(){
         TreeSet<Double> ret = new TreeSet<>();
@@ -83,5 +97,5 @@ public class BHCTree {
     String fileName ;
     int time;
     List<Node> roots;
-    
+    TreeMap<Double,Integer> cutCounts = new TreeMap<>();
 }

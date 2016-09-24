@@ -31,6 +31,7 @@ import javax.swing.JOptionPane;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import org.rhwlab.BHC.BHCTree;
+import org.rhwlab.BHC.Nuclei_Identification;
 import org.rhwlab.ace3d.dialogs.BHCTreeCutDialog;
 import org.rhwlab.dispim.DataSetDesc;
 import org.rhwlab.dispim.Hdf5ImageSource;
@@ -276,12 +277,26 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
         });
         navigate.add(setMinTime);
         
-        JMenu segment = new JMenu("Segmentation");
-        menuBar.add(segment);
+        JMenu nuclesuID = new JMenu("NucleusId");
+        menuBar.add(nuclesuID);
+        JMenuItem allTimePnts = new JMenuItem("Submit All Time Points");
+        allTimePnts.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    submitAllTimePoints();
+                } catch (Exception exc){
+                    exc.printStackTrace();
+                }
+            }
+        });
+        nuclesuID.add(allTimePnts);
+        JMenu selectedTimePoint = new JMenu("Selected Time Point");
+        nuclesuID.add(selectedTimePoint);
         JMenuItem microClusterItem = new JMenuItem("Form Micro Clusters");
-        segment.add(microClusterItem);
+        selectedTimePoint.add(microClusterItem);
         JMenuItem bhcItem = new JMenuItem("Run Gaussian Model");
-        segment.add(bhcItem);
+        selectedTimePoint.add(bhcItem);
         JMenuItem cutItem = new JMenuItem("Cut Tree");
         cutItem.addActionListener(new ActionListener(){
             @Override
@@ -294,7 +309,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
             }
         });
         
-        segment.add(cutItem);
+        selectedTimePoint.add(cutItem);
         
         
         JMenu view = new JMenu("Annotations");
@@ -406,6 +421,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
             try {
                 int firstTime = Integer.valueOf(timeStr);
                 source.setFirstTime(firstTime);
+                panel.setTimeRange(firstTime, source.getMaxTime());
                 valid = true;
             } catch (Exception exc){
                 JOptionPane.showMessageDialog(this,"Not a valid time entry");
@@ -467,6 +483,18 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
         }
         
     }
+    private void submitAllTimePoints()throws Exception {
+        JFileChooser fileChooser = new JFileChooser();
+        String segTiff = props.getProperty("SegmentedTIFF");
+        if (segTiff != null){
+            fileChooser.setSelectedFile(new File(segTiff));
+        }
+        if (fileChooser.showOpenDialog(panel) == JFileChooser.APPROVE_OPTION){
+            segTiff = fileChooser.getSelectedFile().getPath();
+//            Nuclei_Identification.submitTimePoints(segTiff,1,2);
+            props.setProperty("SegmentedTIFF",segTiff);
+        }
+    }
     private void cutTree()throws Exception {
         int time = this.getCurrentTime();
         TGMM_NucleusDirectory tgmmDirectory = (TGMM_NucleusDirectory)nucFile;
@@ -476,7 +504,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
         if (treeCutDialog == null){
             treeCutDialog = new BHCTreeCutDialog(this,this.nucFile);
         }
-        treeCutDialog.setBHCTree(tree);
+        treeCutDialog.setBHCTree(tree,tgmmFile.getThreshold());
         treeCutDialog.setVisible(true);
     }
     private void saveAsNucFile()throws Exception {

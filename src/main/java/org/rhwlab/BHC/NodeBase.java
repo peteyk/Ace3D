@@ -71,20 +71,28 @@ abstract public class NodeBase implements Node {
         return nodeCount;
     }    
     // saves the node as GMM and returns the last used id
-    public  int saveAsXML(Element root,double threshold,int id)throws Exception {
+    public  int saveAsXMLByThreshold(Element root,double threshold,int id){
         if (this.getPosterior()>=threshold){
             int used = saveAsXML(root,id);
             return used;
         }
-        int idleft = left.saveAsXML(root, threshold,id);
-        int idright = right.saveAsXML(root, threshold,idleft+1);
-        return idright;
+        int idUsed = left.saveAsXMLByThreshold(root, threshold,id);
+        if (idUsed == -1){
+            idUsed = right.saveAsXMLByThreshold(root, threshold,id);
+        }else {
+            idUsed = right.saveAsXMLByThreshold(root, threshold,idUsed+1);    
+        }
+        if (idUsed == -1){
+            return id;
+        }
+
+        return idUsed;
         
     }    
 
     // save this node to an xml element
     // return -1 if not saved
-    public int saveAsXML(Element root,int id) throws Exception {
+    public int saveAsXML(Element root,int id) {
         List<MicroCluster> micros = new ArrayList<>();
         this.getDataAsMicroCluster(micros);
         RealVector mu = MicroCluster.mean(micros);
@@ -116,6 +124,8 @@ abstract public class NodeBase implements Node {
             clusterEle.setAttribute("W", builder.toString());
             root.addContent(clusterEle);
             return id;
+        }else {
+            MicroCluster.precision(micros, mu);
         }
         return -1;
     }

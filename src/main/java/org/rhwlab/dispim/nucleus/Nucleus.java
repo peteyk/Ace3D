@@ -58,7 +58,8 @@ public class Nucleus implements Comparable {
         this.yC = data.getY();
         this.zC = (long)data.getZ();
  //       this.radius = data.getRadius();
-    }    
+    }   
+/*    
     public Nucleus(String[] headings,String[] data){
         for (int i=0 ; i<headings.length ; ++i){
             if (headings[i].equalsIgnoreCase("Time")){
@@ -76,6 +77,7 @@ public class Nucleus implements Comparable {
             }
         }
     }
+    */
     public Nucleus (int time,long[] center,double radius){
         this(time,randomName(),center,radius);
     }
@@ -102,7 +104,7 @@ public class Nucleus implements Comparable {
     } 
     public Coeff coef(int xi,int yi,int zi,double v){
         Coeff c = new Coeff();
-        long[] ce = this.getCenter();
+        double[] ce = this.getCenter();
         double[][] a = adjustedA.getData();
   //      double ff = - Math.log(eigenA.getDeterminant());
         v = v-ce[zi];
@@ -154,7 +156,7 @@ public class Nucleus implements Comparable {
         double xc = ( 2.0*coef.C*coef.D - coef.B*coef.E)/dd;
         double yc = ( 2.0*coef.A*coef.E - coef.B*coef.D)/dd;
 // System.out.printf("dd=%f,xc=%f,xcn=%f,yc=%f,ycn%f\n",dd,xc,xcn,yc,ycn);
-        long[] ce = this.getCenter();
+        double[] ce = this.getCenter();
         e.x = ce[xi] + xc;
         e.y = ce[yi] + yc;
        
@@ -167,8 +169,8 @@ public class Nucleus implements Comparable {
         }
         e.a = 1.0/Math.sqrt(a);
         e.b = 1.0/Math.sqrt(b);
-System.out.printf("detQ=%e,detA33=%e,f=%f,a=%e,b=%e\n",detQ,detA33,f,e.a,e.b);        
-System.out.printf("eigenValues (%f,%f)\n",eigenValues[0],eigenValues[1]);
+//System.out.printf("detQ=%e,detA33=%e,f=%f,a=%e,b=%e\n",detQ,detA33,f,e.a,e.b);        
+//System.out.printf("eigenValues (%f,%f)\n",eigenValues[0],eigenValues[1]);
         e.cosine = eigenvector0.getEntry(0);
         e.sine = eigenvector0.getEntry(1);         
         e.low[xi] = (long)(e.x - e.a);
@@ -203,8 +205,8 @@ System.out.printf("eigenValues (%f,%f)\n",eigenValues[0],eigenValues[1]);
         this.radius = r;
     }
 */    
-    public long[] getCenter(){
-        long[] center = new long[3];
+    public double[] getCenter(){
+        double[] center = new double[3];
         center[0] = xC;
         center[1] = yC;
         center[2] = zC;
@@ -215,6 +217,11 @@ System.out.printf("eigenValues (%f,%f)\n",eigenValues[0],eigenValues[1]);
         yC = c[1];
         zC = c[2];
     }
+    public void setCenter(double[] c){
+        xC = c[0];
+        yC = c[1];
+        zC = c[2];
+    }    
     public String getName(){
         if (name == null){
             return this.toString();
@@ -231,9 +238,9 @@ System.out.printf("eigenValues (%f,%f)\n",eigenValues[0],eigenValues[1]);
 
     public double distanceSqaured(long[] p){
         double d = 0.0;
-        long[] c = this.getCenter();
+        double[] c = this.getCenter();
         for (int i=0 ; i<p.length ; ++i){
-            long delta = p[i]-c[i];
+            double delta = p[i]-c[i];
             d = d + delta*delta;
         }
         return d;
@@ -366,6 +373,7 @@ System.out.printf("eigenValues (%f,%f)\n",eigenValues[0],eigenValues[1]);
     }
     public void setAdjustment(Object o){
         double[] v = (double[])o;
+        R = new double[v.length];
         R[0] = v[0];
         R[1] = v[1];
         R[2] = v[2];
@@ -452,9 +460,9 @@ System.out.printf("eigenValues (%f,%f)\n",eigenValues[0],eigenValues[1]);
    
     private int time;
     private String name;
-    private long xC;
-    private long yC;
-    private long zC;
+    private double xC;
+    private double yC;
+    private double zC;
     private Cell cell;  // the cell to which this nucleus belongs - can be null
     
     private boolean marked = false;

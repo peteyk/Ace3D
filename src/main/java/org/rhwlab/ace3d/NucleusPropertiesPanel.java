@@ -72,8 +72,8 @@ public class NucleusPropertiesPanel extends JPanel implements InvalidationListen
             }
             name.setText(selected.getName());
             express.setText(String.format("%.2f",selected.getExpression()));
-            long[] c = selected.getCenter();
-            center.setText(String.format("(%d,%d,%d)",c[0],c[1],c[2]));
+            double[] c = selected.getCenter();
+            center.setText(String.format("(%d,%d,%d)",(int)c[0],(int)c[1],(int)c[2]));
             aRadius.setText(selected.getRadiusLabel(0));
             bRadius.setText(selected.getRadiusLabel(1));
             cRadius.setText(selected.getRadiusLabel(2));

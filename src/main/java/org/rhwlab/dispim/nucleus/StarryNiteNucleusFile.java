@@ -25,7 +25,7 @@ public class StarryNiteNucleusFile extends Ace3DNucleusFile {
     public void adjustCoordinates(int xMin,int yMin,int zMin){
         for (Set<Nucleus> nucSet : this.byTime.values()){
             for (Nucleus nuc : nucSet){
-                long[] c = nuc.getCenter();
+                double[] c = nuc.getCenter();
                 c[0] = c[0] + xMin;
                 c[1] = c[1] + yMin;
                 c[2] = c[2] + zMin;

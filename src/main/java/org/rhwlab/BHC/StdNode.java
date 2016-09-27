@@ -41,6 +41,7 @@ public class StdNode extends  NodeBase {
         posterior();
     }
     public StdNode(Element ele){
+        this.label = Integer.valueOf(ele.getAttributeValue("label"));
         this.realR = Double.valueOf(ele.getAttributeValue("posterior"));
         String centerStr = ele.getAttributeValue("center");
         if (centerStr == null){
@@ -304,10 +305,5 @@ public class StdNode extends  NodeBase {
     
     static double alpha;
     static double detS;
-       
     static GammaRatio ratio;
-
-
-
-  
 }

@@ -140,7 +140,7 @@ public class ImagedEmbryo implements Observable {
     }
 
     public double calculateExpression(Nucleus nuc ,TimePointImage tpi,double[][] e)throws Exception {
-        long[] center = nuc.getCenter();
+        double[] center = nuc.getCenter();
         
         long[] radii = nuc.getRadii();
         long[] min = {-2*radii[0]-1,-2*radii[1]-1,-2*radii[2]-1};

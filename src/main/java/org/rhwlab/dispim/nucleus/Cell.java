@@ -115,10 +115,10 @@ public class Cell  implements Comparable {
         
     }
     public Vector3D divisionDirection(){
-        long[] p0 = children.get(0).lastNucleus().getCenter();
+        double[] p0 = children.get(0).lastNucleus().getCenter();
         Vector3D v0 = new Vector3D(p0[0],p0[1],p0[2]);
         
-        long[] p1 = children.get(1).lastNucleus().getCenter();
+        double[] p1 = children.get(1).lastNucleus().getCenter();
         Vector3D v1 = new Vector3D(p1[0],p1[1],p1[2]);
 
         return v1.subtract(v0)        ;

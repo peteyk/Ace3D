@@ -410,8 +410,8 @@ public class Ace3DNucleusFile implements NucleusFile,javafx.beans.Observable   {
     boolean opening = true;
     File file;
     Nucleus selectedNucleus;
-    TreeMap<Integer,Set<Cell>> roots = new TreeMap<>();  // roots indexed by time
-    TreeMap<String,Cell> cellMap = new TreeMap<>();  // map of the all the cells
+    TreeMap<Integer,Set<Cell>> roots = new TreeMap<>();  // root cells indexed by time
+    TreeMap<String,Cell> cellMap = new TreeMap<>();  // map of the all the cells by name
     TreeMap<Integer,Set<Nucleus>> byTime = new TreeMap<>();  // all the nuclei present at a given time
     TreeMap<String,Nucleus> byName = new TreeMap<>();  // map of nuclei indexed by name, map indexed by time
     ArrayList<InvalidationListener> listeners = new ArrayList<>();

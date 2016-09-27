@@ -15,9 +15,7 @@ import org.apache.commons.math3.dfp.Dfp;
 import org.apache.commons.math3.dfp.DfpField;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
-import org.jdom2.Document;
 import org.jdom2.Element;
-import org.jdom2.input.SAXBuilder;
 import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
 import org.rhwlab.dispim.datasource.MicroCluster;
@@ -44,7 +42,7 @@ abstract public class NodeBase implements Node {
         }
     } 
 
-
+    // save a list of root nodes into an xml file
     static public void saveAsTreeListXML(String file, List<Node> nodes)throws Exception {
         OutputStream stream = new FileOutputStream(file);
         Element root = new Element("BHCTrees"); 
@@ -55,9 +53,12 @@ abstract public class NodeBase implements Node {
         out.output(root, stream);
         stream.close();         
     }
+    
+    // save this node and all its children into an xml element
     public int saveAsTreeXML(Element root){
         int nodeCount = 1;
         Element nodeEle = new Element("Node");
+        nodeEle.setAttribute("label", Integer.toString(label));
         nodeEle.setAttribute("posterior",Double.toString(realR));
         if (left != null){
             nodeCount = ((NodeBase)left).saveAsTreeXML(nodeEle);
@@ -71,6 +72,8 @@ abstract public class NodeBase implements Node {
         return nodeCount;
     }    
     // saves the node as GMM and returns the last used id
+    // cuts the tree at the given threshold
+    // saves all nodes below this node as GMM based on given threshold
     public  int saveAsXMLByThreshold(Element root,double threshold,int id){
         if (this.getPosterior()>=threshold){
             int used = saveAsXML(root,id);
@@ -85,14 +88,13 @@ abstract public class NodeBase implements Node {
         if (idUsed == -1){
             return id;
         }
-
         return idUsed;
-        
     }    
 
-    // save this node to an xml element
+    // save just this node to an xml element
     // return -1 if not saved
     public int saveAsXML(Element root,int id) {
+        
         List<MicroCluster> micros = new ArrayList<>();
         this.getDataAsMicroCluster(micros);
         RealVector mu = MicroCluster.mean(micros);
@@ -102,6 +104,7 @@ abstract public class NodeBase implements Node {
             clusterEle.setAttribute("id", String.format("%d", id));
             clusterEle.setAttribute("parent", "-1");
             clusterEle.setAttribute("count", String.format("%d",micros.size()));
+            clusterEle.setAttribute("sourceNode", String.format("%d", label));
             StringBuilder builder = new StringBuilder();
             for (int j=0 ; j<mu.getDimension() ; ++j){
                 if (j > 0){
@@ -144,9 +147,9 @@ abstract public class NodeBase implements Node {
     public int getN(){
 
         if (N == null){
-        ArrayList list = new ArrayList<>();
-        this.getDataAsMicroCluster(list);
-        this.N = list.size();
+            ArrayList list = new ArrayList<>();
+            this.getDataAsMicroCluster(list);
+            this.N = list.size();
         }
         return N;
     }
@@ -159,11 +162,7 @@ abstract public class NodeBase implements Node {
         }
         return ret;
     }
-    static public void main(String[] args) throws Exception {
-//        List<Node> nodes = NodeBase.readTreeXML("/nfs/waterston/pete/Segmentation/350/Cherryimg_SimpleSegmentationBHCTree0350.xml");
-//        NodeBase.saveClusterListAsXML("/nfs/waterston/pete/Segmentation/350/Cherryimg_SimpleSegmentationBHCTreeCut0350.xml", nodes, .95);
-        int iuhdfui=0;
-    }
+
     public  void allPosteriors(TreeSet<Double> posts){
         posts.add(realR);
         
@@ -174,13 +173,26 @@ abstract public class NodeBase implements Node {
             ((NodeBase)right).allPosteriors(posts);
         }        
     }
-    Integer N;
+    // label this node and all its children, given a starting label
+    // return the highest label used
+    public int labelNode(int startingWith){
+        if (left == null && right == null){
+            label = startingWith;
+            return startingWith;
+        }
+        int used = ((NodeBase)left).labelNode(startingWith);
+        this.label = used + 1;
+        int ret = ((NodeBase)right).labelNode(this.label + 1);
+        return ret;
+    }
+   
+    Integer N; // number of microclusters in assigned to this node  
     Node left;
     Node right;
+    int label;
 
     Dfp r;   // posterior of the merged hypothesis
     double realR;
-    
     
     static DfpField field = new DfpField(20);  // 20 decimal digits  
     public static int maxN;

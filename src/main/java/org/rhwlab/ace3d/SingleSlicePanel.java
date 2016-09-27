@@ -280,13 +280,20 @@ public class SingleSlicePanel extends JPanel implements ChangeListener {
         }
     } 
 */    
-    public int screenX(long[] p){
+    public int screenX(double[] p){
         if (dim==0){
             return (int)((p[1]-timePointImage.minPosition(1))*bufW/(timePointImage.maxPosition(1)-timePointImage.minPosition(1)));
         } else {
             return (int)((p[0]-timePointImage.minPosition(0))*bufW/(timePointImage.maxPosition(0)-timePointImage.minPosition(0)));
         }
     }
+    public int screenX(long[] p){
+        if (dim==0){
+            return (int)((p[1]-timePointImage.minPosition(1))*bufW/(timePointImage.maxPosition(1)-timePointImage.minPosition(1)));
+        } else {
+            return (int)((p[0]-timePointImage.minPosition(0))*bufW/(timePointImage.maxPosition(0)-timePointImage.minPosition(0)));
+        }
+    }    
     static public int screenX(long[] p,int dim,int bufW){
  //       System.out.printf("screenX: p =(%d,%d,%d),dim=%d,bufH=%d\n",p[0],p[1],p[2],dim,bufW);
         if (dim==0){
@@ -297,13 +304,20 @@ public class SingleSlicePanel extends JPanel implements ChangeListener {
     }
 
     // return the screen y coordinate given image coordinates
+    public int screenY(double[] p){
+        if (dim==2){
+            return (int)((p[1]-timePointImage.minPosition(1))*bufH/(timePointImage.maxPosition(1)-timePointImage.minPosition(1)));
+        } else {
+            return (int)((p[2]-timePointImage.minPosition(2))*bufH/(timePointImage.maxPosition(2)-timePointImage.minPosition(2)));
+        }
+    }  
     public int screenY(long[] p){
         if (dim==2){
             return (int)((p[1]-timePointImage.minPosition(1))*bufH/(timePointImage.maxPosition(1)-timePointImage.minPosition(1)));
         } else {
             return (int)((p[2]-timePointImage.minPosition(2))*bufH/(timePointImage.maxPosition(2)-timePointImage.minPosition(2)));
         }
-    }   
+    }      
     static public int screenY(long[] p,int dim,int bufH){
  //       System.out.printf("screenY: p =(%d,%d,%d),dim=%d,bufH=%d\n",p[0],p[1],p[2],dim,bufH);
         if (dim==2){

@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.jdom2.Element;
 import org.rhwlab.dispim.datasource.MicroClusterDataSource;
 import org.rhwlab.dispim.datasource.SegmentedTiffDataSource;
 
@@ -109,15 +110,11 @@ public class Nuclei_Identification implements Runnable {
         alg.saveResultAsXML(BHCTreeFile.getPath());
     }
     private void runTreeCut(File BHCTreeFile,File gmmFile) throws Exception {
-        int cellCount = new CellCounts().getCellCount(time) + 2;
+        int cellCount = new CellCounts().getCellCount(time) ;
         BHCTree tree = new BHCTree(BHCTreeFile.getPath());
-        TreeSet<Double> posteriors = tree.allPosteriors();
-        Iterator<Double> iter = posteriors.iterator();
-        Double post = null;
-        for (int i=1 ; i<=cellCount ; ++i){
-            post = iter.next();
-        }
-        tree.saveClustersAsXML(gmmFile.getPath(),post);
+        Element e = tree.cutTreeToCount(cellCount);
+        BHCTree.saveXML(gmmFile.getPath(), e);
+       
     }
     // determine the number of microclusters to form given the number of voxels in the segmented tiff
     static int clusterCount(int nVox){
@@ -141,12 +138,15 @@ public class Nuclei_Identification implements Runnable {
         for (String tiff : tiffs){
             String fileName = new File(tiff).getName();
             String baseName = baseName(fileName);
+            int time = getTime(fileName);
+/*            
             SegmentedTiffDataSource segSource = new SegmentedTiffDataSource(tiff,backgroundSegment);
             int nVoxels = segSource.getN(nucleiSegment); 
             int nMicroClusters = Math.min(7000, nVoxels/125);
             CellCounts cc = new CellCounts();
-            int time = getTime(fileName);
+            
             int cells = cc.getCellCount(time); 
+ */           
             scriptStream.printf("qsub -e %s -o %s %s.qsub\n",directory.getPath(),directory.getPath(),baseName);
             
             // write the qsub file

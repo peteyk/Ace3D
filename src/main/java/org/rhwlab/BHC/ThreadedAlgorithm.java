@@ -5,22 +5,14 @@
  */
 package org.rhwlab.BHC;
 
-import java.io.FileOutputStream;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.ForkJoinPool;
-import org.apache.commons.math3.dfp.Dfp;
 import org.apache.commons.math3.dfp.DfpField;
-import org.apache.commons.math3.linear.RealVector;
-import org.jdom2.Element;
-import org.jdom2.output.Format;
-import org.jdom2.output.XMLOutputter;
 import org.rhwlab.dispim.datasource.DataSource;
 import org.rhwlab.dispim.datasource.MicroCluster;
 import org.rhwlab.dispim.datasource.MicroClusterDataSource;
@@ -197,31 +189,12 @@ public class ThreadedAlgorithm implements Runnable {
     static public void setDfpField(DfpField fld){
         field = fld;
     }
+    
+    // saves the result as a BHC tree xml
     public void saveResultAsXML(String file)throws Exception {
-//        NodeBase.saveClusterListAsXML(file, clusters,0.99);
-         
-        OutputStream stream = new FileOutputStream(file);
-        Element root = new Element("BHCTrees"); 
-        root.setAttribute("alpha", Double.toString(alpha));
-        root.setAttribute("s", Double.toString(s));
-        root.setAttribute("nu", Integer.toString(nu));
-        StringBuilder builder = new StringBuilder();
-        builder.append("(");
-        for (int d=0 ; d<mu.length ; ++d){
-            builder.append(mu[d]);
-            builder.append(" ");
-        }
-        builder.append(")");
-        root.setAttribute("mu", builder.toString());
-        for (Node node : clusters){
-            ((NodeBase)node).saveAsTreeXML(root);
-            TreeSet<Double> posts = new TreeSet<>();
-            ((NodeBase)node).allPosteriors(posts);
-            int aoshdfuihs=0;
-        }
-        XMLOutputter out = new XMLOutputter(Format.getPrettyFormat());
-        out.output(root, stream);
-        stream.close();          
+        BHCTree tree = new BHCTree(alpha,s,nu,mu,clusters);
+        tree.saveAsXML(file);
+          
     } 
     static public void main(String[] args) throws Exception {
         System.out.println("GaussianGIWPrior");

@@ -99,7 +99,7 @@ public class SynchronizedMultipleSlicePanel extends JPanel implements ChangeList
     public void moveSelectedNucleus(int dim,int value){
         Nucleus selected = this.embryo.selectedNucleus();
         if (selected!= null){
-            long[] center = selected.getCenter();
+            double[] center = selected.getCenter();
             center[dim] = center[dim] + (long)value;
             selected.setCenter(center);
             repaintPanels();
@@ -125,6 +125,12 @@ public class SynchronizedMultipleSlicePanel extends JPanel implements ChangeList
         }
         updatePanelPositions();
     }
+    public void changePosition(double[] pos){
+        for (int d=0 ; d<pos.length ; ++d){
+            position[d] = (long)pos[d];
+        }
+        updatePanelPositions();
+    }    
     public void changePosition(int dim,long pos){
         position[dim] = pos;
         updatePanelPositions();

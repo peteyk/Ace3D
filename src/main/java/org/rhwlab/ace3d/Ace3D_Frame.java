@@ -31,7 +31,6 @@ import javax.swing.JOptionPane;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import org.rhwlab.BHC.BHCTree;
-import org.rhwlab.BHC.Nuclei_Identification;
 import org.rhwlab.ace3d.dialogs.BHCTreeCutDialog;
 import org.rhwlab.dispim.DataSetDesc;
 import org.rhwlab.dispim.Hdf5ImageSource;
@@ -41,6 +40,7 @@ import org.rhwlab.dispim.ImagedEmbryo;
 import org.rhwlab.dispim.nucleus.Ace3DNucleusFile;
 import org.rhwlab.dispim.TifDirectoryImageSource;
 import org.rhwlab.dispim.TimePointImage;
+import org.rhwlab.dispim.nucleus.BHC_NucleusDirectory;
 import org.rhwlab.dispim.nucleus.NucleusFile;
 import org.rhwlab.dispim.nucleus.StarryNiteNucleusFile;
 import org.rhwlab.dispim.nucleus.TGMM_NucleusDirectory;
@@ -104,14 +104,19 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
         hyper.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
-                source = new ImageJHyperstackSource();
-                source.open();
-                initToSource();
-                int fhsduis=0;
+                String timeStr = setMinTime();
+                if (timeStr != null){
+                    source = new ImageJHyperstackSource();
+                    source.open();
+                    initToSource();
+                    int firstTime = Integer.valueOf(timeStr);
+                    source.setFirstTime(firstTime);
+                    panel.setTimeRange(firstTime, source.getMaxTime());                    
+                }
             }
         });
         fileMenu.add(hyper);
-
+/*
         JMenuItem superVoxel = new JMenuItem("Open TGMM SuperVoxel Binary Files");
         superVoxel.addActionListener(new ActionListener(){
             @Override
@@ -130,7 +135,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
             }
         });
         fileMenu.add(superVoxel);
-        
+*/        
         JMenuItem open = new JMenuItem("Open Images from HDF5");
         open.addActionListener(new ActionListener(){
             @Override
@@ -173,12 +178,12 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
         });
         fileMenu.add(nucOpen);
         
-        JMenuItem tgmmOpen = new JMenuItem("Open TGMM Nuclei ");
+        JMenuItem tgmmOpen = new JMenuItem("Open BHC Nuclei ");
         tgmmOpen.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
-                    openTGMMNucFile();
+                    openBHCNucFile();
                     
                 }catch (Exception exc){
                     exc.printStackTrace();
@@ -268,14 +273,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
         navigate.add(toTime);
         
         menuBar.add(navigate);
-        JMenuItem setMinTime = new JMenuItem("Set the First Time");
-        setMinTime.addActionListener(new ActionListener(){
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                setMinTime();
-            }
-        });
-        navigate.add(setMinTime);
+
         
         JMenu nuclesuID = new JMenu("NucleusId");
         menuBar.add(nuclesuID);
@@ -413,20 +411,22 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
             }
         }
     }
-    private void setMinTime(){
+    private String setMinTime(){
+        String ret = null;
         boolean valid = false;
         while (!valid) {
             String timeStr = JOptionPane.showInputDialog("Enter the first time value:");
-            if (timeStr == null) return;
+            if (timeStr == null) return ret;  // null return means user cancelled input
             try {
-                int firstTime = Integer.valueOf(timeStr);
-                source.setFirstTime(firstTime);
-                panel.setTimeRange(firstTime, source.getMaxTime());
+
                 valid = true;
+                ret = timeStr;
+                
             } catch (Exception exc){
                 JOptionPane.showMessageDialog(this,"Not a valid time entry");
             }
-        }        
+        }
+        return ret;        
     }
     public int getCurrentTime(){
         return panel.getTime();
@@ -466,19 +466,19 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
             }
         }        
     }
-    private void openTGMMNucFile()throws Exception {
-        String tgmm = props.getProperty("TGMM");
+    private void openBHCNucFile()throws Exception {
+        String tgmm = props.getProperty("BHC");
         if (tgmm != null){
             nucChooser.setSelectedFile(new File(tgmm));
         } 
         if (nucChooser.showOpenDialog(panel) == JFileChooser.APPROVE_OPTION){
-            nucFile = new TGMM_NucleusDirectory(nucChooser.getSelectedFile(),panel,selectedNucFrame);
+            nucFile = new BHC_NucleusDirectory(nucChooser.getSelectedFile(),panel,selectedNucFrame);
             if (imagedEmbryo != null){
                 imagedEmbryo.setNucleusFile(nucFile);
             }             
             nucFile.addListener(navFrame);
             nucFile.open();
-            props.setProperty("TGMM",nucFile.getFile().getPath());
+            props.setProperty("BHC",nucFile.getFile().getPath());
            
         }
         

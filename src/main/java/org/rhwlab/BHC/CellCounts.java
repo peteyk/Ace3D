@@ -29,7 +29,8 @@ public class CellCounts {
         }
     }
     public int getCellCount(int timeInMinutes){
-        return cellCounts.get(timeInMinutes+25);
+        double t = 33.0 + (timeInMinutes-16.0)/1.1;
+        return cellCounts.get((int)t - 1);
     }
     static ArrayList<Integer> cellCounts;
 }

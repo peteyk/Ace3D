@@ -19,10 +19,10 @@ public class BHC_Nucleus extends Nucleus {
     public BHC_Nucleus(int time,Element gmm){
         super(time,name(time,gmm),center(gmm),10.0);  // for now make all radii the same
         id = gmm.getAttributeValue("id");
-        parent = gmm.getAttributeValue("parent");
-        if (parent != null && parent.equals("-1")){
-            parent = null;
+        if (id.contains("7")){
+            int iaushdfuisd=0;
         }
+        sourceNode = gmm.getAttributeValue("sourceNode");
         A = precisionFromString(gmm.getAttributeValue("W"));
         eigenA = new EigenDecomposition(A);
         adjustedA = A.copy();
@@ -31,7 +31,11 @@ public class BHC_Nucleus extends Nucleus {
         R[0] = R[1] = R[2] = 2.5;
         this.setAdjustment(R);
     }
-
+    public Element asXML(){
+        Element ret = super.asXML();
+        ret.setAttribute("sourceNode", this.sourceNode);
+        return ret;
+    }
 
     public void printMat(String label,RealMatrix m){
         System.out.println(label);
@@ -63,25 +67,20 @@ public class BHC_Nucleus extends Nucleus {
     public String getID(){
         return id;
     }
-    public String getParentName(){
-        if (parent != null)
-            return name(this.getTime()-1,parent);
-        else 
-            return null;
-    }
+
     public String getRadiusLabel(int i){
         // find the adjusted eigenvector closest to the original unadjusted eigenvector for dimension i
         // this keeps the order of the adjusted eigenvectors the same as the original unadjusted eigenvectors
         // the eigendecomposition returns the eigenvectors sorted by eigenvalue
         // this procedure puts them back in their original order
         int adjustedI = 0;
-        double minD = Double.MAX_VALUE;
+        double maxD = 0.0;
         RealVector aV = eigenA.getEigenvector(i);
         for (int j=0 ; j<A.getColumnDimension() ; ++j){
             RealVector v = adjustedEigenA.getEigenvector(j);
-            double d = v.getDistance(aV);
-            if (d < minD){
-                minD = d;
+            double d = Math.abs(v.dotProduct(aV));
+            if (d > maxD){
+                maxD = d;
                 adjustedI = j;
             }
         }
@@ -92,6 +91,6 @@ public class BHC_Nucleus extends Nucleus {
         return String.format("%4.1f(%.2f,%.2f,%.2f)",r, v.getEntry(0),v.getEntry(1),v.getEntry(2));
     }
     String id;
-    String parent; 
+    String sourceNode;
 }
 

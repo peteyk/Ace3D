@@ -21,8 +21,10 @@ import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.DiagonalMatrix;
 import org.apache.commons.math3.linear.EigenDecomposition;
+import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
+import org.jdom2.Element;
 import org.rhwlab.ace3d.SingleSlicePanel;
 import org.rhwlab.starrynite.TimePointNucleus;
 
@@ -245,6 +247,20 @@ public class Nucleus implements Comparable {
         }
         return d;
     }
+    public Element asXML(){
+        Element ret = new Element("Nucleus");
+        ret.setAttribute("name", name);
+        ret.setAttribute("time",Integer.toString(time));
+        ret.setAttribute("x",Double.toString(xC));
+        ret.setAttribute("y",Double.toString(yC));
+        ret.setAttribute("z",Double.toString(zC));
+        ret.setAttribute("precision", precisionAsString(adjustedA));
+        if (cell != null){
+            ret.setAttribute("cell", cell.getName());
+        }
+        ret.setAttribute("expression", Double.toString(exp));
+        return ret;
+    }
     public JsonObjectBuilder asJson(){
         JsonObjectBuilder builder = Json.createObjectBuilder();
         builder.add("Name", name);
@@ -450,6 +466,16 @@ public class Nucleus implements Comparable {
         radii[2] = (long)getRadius(2);
         return radii;
     }
+    public String getFrobenius(){
+ //       return (this.adjustedEigenA.getV().multiply(this.adjustedEigenA.getD()).subtract(MatrixUtils.createRealIdentityMatrix(3))).getFrobeniusNorm();
+      double f = this.adjustedA.getFrobeniusNorm();
+        double[] eigenValues = this.adjustedEigenA.getRealEigenvalues();
+        double sum = 0.0;
+        for (int i=0 ; i<eigenValues.length ; ++i){
+            sum = sum + eigenValues[i]*eigenValues[i];
+        }
+        return String.format("%.4f %.4f",Math.sqrt(sum),f);
+    }
     
     public double[][] getEigenVectors(){
         return adjustedEigenA.getV().getData();
@@ -457,6 +483,92 @@ public class Nucleus implements Comparable {
     public double[][] getEigenVectorsT(){
         return adjustedEigenA.getVT().getData();
     }   
+    
+    // determine if this nucleus is dividing
+    public boolean isDividing(){
+        if (cell == null || cell.lastTime() != this.time || cell.isLeaf()) return false;
+        return true;
+    }
+    
+    // return the next nuclei this nucleus is linked to
+    // return Nucleus[0] if not linked
+    // return Nulcues[1] if linked in time
+    // return Nucleus[2] if dividing
+    public Nucleus[] nextNuclei(){
+        if (cell == null){
+            return new Nucleus[0];
+        }
+        if (this.isDividing()){
+            Nucleus[] ret = new Nucleus[2];
+            Cell[] children = cell.getChildren();
+            ret[0] = children[0].firstNucleus();
+            ret[1] = children[1].firstNucleus();
+            return ret;
+        }else {
+            Nucleus[] ret = new Nucleus[1];
+            ret[0] = cell.nuclei.ceilingEntry(time).getValue();
+            return ret;
+        }
+    }
+    // measure the distance to another nucleus
+    public double distance(Nucleus other){
+        double delx = xC - other.xC;
+        double dely = yC - other.yC;
+        double delz = zC - other.zC;
+        return Math.sqrt(delx*delx + dely*dely + delz*delz);
+    }
+    public double shapeDistance(Nucleus other){
+        double[] l = other.adjustedEigenA.getRealEigenvalues();
+        for (int i=0 ; i<l.length ; ++i){
+            l[i] = 1.0/Math.sqrt(l[i]);
+        }
+        RealMatrix Vt = other.adjustedEigenA.getVT();
+        RealMatrix V = other.adjustedEigenA.getV();
+        DiagonalMatrix D = new DiagonalMatrix(l);
+        
+        RealMatrix Bp = D.multiply(Vt.multiply(this.adjustedA.multiply(V.multiply(D))));
+//        reportMatrix(System.out,"\n\nBp",Bp);
+        EigenDecomposition dec = new EigenDecomposition(Bp);
+        double [] eigen = dec.getRealEigenvalues();
+        double ret = eigen[0]/eigen[2];
+        if (ret < 1.0){
+            ret = 1.0/ret;
+        }
+        ret = ret*ret;
+        
+        double sum = 0.0;
+        for (int i=0 ; i<eigen.length ; ++i){
+            double del = 1.0 - 1.0/(eigen[i]*eigen[i]);
+            sum = sum + del*del;
+            System.out.printf("%f ",1.0/(eigen[i]*eigen[i]));
+        }
+        System.out.println();
+        RealMatrix del = Bp.subtract(MatrixUtils.createRealIdentityMatrix(l.length));
+ //       reportMatrix(System.out,"del",del);
+        double f = del.getFrobeniusNorm();
+//        System.out.printf("%f \n",f);
+//System.out.printf("%s:%s  (%e,%e,%e):(%e,%e.%e)\n",this.getName(),other.getName(),this.getRadius(0),this.getRadius(1),this.getRadius(2),other.getRadius(0),other.getRadius(1),other.getRadius(2));
+        return ret;
+
+    }
+    private void reportMatrix(PrintStream stream,String label,RealMatrix m){
+        stream.printf("%s: ",label);
+        for (int r=0 ; r<m.getRowDimension() ; ++r){
+            for (int c=0 ; c<m.getColumnDimension() ; ++c){
+                stream.printf("%f ",m.getEntry(r, c));
+            }
+            stream.print(" : ");
+        }
+        stream.println();
+    }
+    private RealMatrix reverseHandedness(RealMatrix m){
+        RealMatrix ret = m.copy();
+        for (int c=0 ; c<m.getColumnDimension();++c){
+            
+            ret.setEntry(0, c, -m.getEntry(0, c));
+        }
+        return ret;
+    }
    
     private int time;
     private String name;

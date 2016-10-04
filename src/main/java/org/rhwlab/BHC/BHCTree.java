@@ -17,7 +17,8 @@ import org.jdom2.Element;
 import org.jdom2.input.SAXBuilder;
 import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
-import org.rhwlab.dispim.nucleus.TGMM_NucleusDirectory;
+import org.rhwlab.dispim.nucleus.BHC_NucleusDirectory;
+import org.rhwlab.dispim.nucleus.BHC_NucleusFile;
 
 /**
  *
@@ -27,7 +28,7 @@ public class BHCTree {
     public BHCTree(String file)throws Exception {
         this.fileName = file;
         readTreeXML(file);
-        time = TGMM_NucleusDirectory.getTime(new File(file));
+        time = BHC_NucleusDirectory.getTime(new File(file));
     }
     
     public BHCTree(double alpha,double s,int nu, double[] mu,List<Node> roots){
@@ -37,33 +38,6 @@ public class BHCTree {
         this.nu = nu;
         this.mu = mu;
         this.labelNodes();
-    }
-    public void saveAsXML(String file)throws Exception {
-        OutputStream stream = new FileOutputStream(file);
-        Element root = new Element("BHCTrees"); 
-        root.setAttribute("alpha", Double.toString(alpha));
-        root.setAttribute("s", Double.toString(s));
-        root.setAttribute("nu", Integer.toString(nu));
-        StringBuilder builder = new StringBuilder();
-        builder.append("(");
-        for (int d=0 ; d<mu.length ; ++d){
-            builder.append(mu[d]);
-            builder.append(" ");
-        }
-        builder.append(")");
-        root.setAttribute("mu", builder.toString());
-        for (Node node : roots){
-            ((NodeBase)node).saveAsTreeXML(root);
-            TreeSet<Double> posts = new TreeSet<>();
-            ((NodeBase)node).allPosteriors(posts);
-            int aoshdfuihs=0;
-        }
-        XMLOutputter out = new XMLOutputter(Format.getPrettyFormat());
-        out.output(root, stream);
-        stream.close();          
-    }     
-    public void saveCutAtThresholdAsXML(String file,double thresh)throws Exception {
-        saveClusterListAsXML(file,roots,thresh);
     }
     
     public void readTreeXML(String xml)throws Exception {
@@ -87,19 +61,42 @@ public class BHCTree {
             StdNode std = new StdNode(nodeEle);  // build the node and all the children
             roots.add(std);
         }
+    }    
+    // save the tree as xml
+    public void saveAsXML(String file)throws Exception {
+        OutputStream stream = new FileOutputStream(file);
+        Element root = new Element("BHCTrees"); 
+        root.setAttribute("alpha", Double.toString(alpha));
+        root.setAttribute("s", Double.toString(s));
+        root.setAttribute("nu", Integer.toString(nu));
+        StringBuilder builder = new StringBuilder();
+        builder.append("(");
+        for (int d=0 ; d<mu.length ; ++d){
+            builder.append(mu[d]);
+            builder.append(" ");
+        }
+        builder.append(")");
+        root.setAttribute("mu", builder.toString());
+        for (Node node : roots){
+            ((NodeBase)node).saveAsTreeXML(root);
+            TreeSet<Double> posts = new TreeSet<>();
+            ((NodeBase)node).allPosteriors(posts);
+            int aoshdfuihs=0;
+        }
+        XMLOutputter out = new XMLOutputter(Format.getPrettyFormat());
+        out.output(root, stream);
+        stream.close();          
+    }   
+    
+    public void saveCutAtThresholdAsXML(String file,double thresh)throws Exception {
+        saveCutAtThresholdAsXML(file,roots,fileName,thresh,time);
     }
-    public void saveClustersAsXML(String file,double threshold)throws Exception {
-        saveClusterListAsXML(file,roots,threshold);
-    }
-    public Element formXML(double threshold){
-        return formXML(this.roots,threshold);
-    }
+
     // save a list of clusters to an XML file
     // each cluster is saved with it's children clusters
-    static void saveClusterListAsXML(String file,List<Node> clusters,double threshold)throws Exception{
-        Element root = formXML(clusters,threshold);
+    static void saveCutAtThresholdAsXML(String file,List<Node> clusters,String treeFile,double threshold,int time)throws Exception{
+        Element root = BHC_NucleusFile.formXML(clusters,treeFile,threshold,time);
         saveXML(file,root);
-        
     }  
     
     public static void saveXML(String file,Element root)throws Exception {
@@ -110,18 +107,11 @@ public class BHCTree {
         out.output(root, stream);
         stream.close();         
     }
-    static public Element formXML(List<Node> clusters,double threshold){
-        Element root = new Element("BHCClusterList"); 
-        root.setAttribute("threshold", Double.toString(threshold));
-        int id = 1;
-        for (Node cl : clusters){
-            int used = cl.saveAsXMLByThreshold(root,threshold,id);  // save as a Gaussian Mixture Model
-            if (used != -1){
-                id = used + 1;
-            }
-        }
-        return root;
-    }
+
+    public Element formXML(double threshold){
+        return BHC_NucleusFile.formXML(this.roots,this.fileName,threshold,time);
+    }    
+
     
     public TreeSet<Double> allPosteriors(){
         TreeSet<Double> ret = new TreeSet<>();

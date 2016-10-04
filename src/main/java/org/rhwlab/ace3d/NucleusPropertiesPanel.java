@@ -23,7 +23,7 @@ import org.rhwlab.dispim.nucleus.Nucleus;
  */
 public class NucleusPropertiesPanel extends JPanel implements InvalidationListener  {
     public NucleusPropertiesPanel() {
-        this.setLayout(new GridLayout(10,2));
+        this.setLayout(new GridLayout(11,2));
         this.add(new JLabel("Selected Nucleus"));
         this.add(name);
         this.add(new JLabel("Parent Nucleus"));
@@ -40,6 +40,8 @@ public class NucleusPropertiesPanel extends JPanel implements InvalidationListen
         this.add(bRadius);
         this.add(new JLabel("c Radius"));
         this.add(cRadius);
+        this.add(new JLabel("Frobenius"));
+        this.add(frob);
         this.add(new JLabel("In Cell"));
         this.add(cell);
         cell.addActionListener(new ActionListener(){
@@ -77,6 +79,7 @@ public class NucleusPropertiesPanel extends JPanel implements InvalidationListen
             aRadius.setText(selected.getRadiusLabel(0));
             bRadius.setText(selected.getRadiusLabel(1));
             cRadius.setText(selected.getRadiusLabel(2));
+            frob.setText(selected.getFrobenius());
             if (selected.getCell() != null){
                 cell.setText(selected.getCell().getName());
                 // is it the first nucleus in the cell
@@ -130,6 +133,7 @@ public class NucleusPropertiesPanel extends JPanel implements InvalidationListen
     JLabel aRadius = new JLabel(initial);
     JLabel bRadius = new JLabel(initial);
     JLabel cRadius = new JLabel(initial); 
+    JLabel frob = new JLabel(initial);
 //    JLabel cell = new JLabel(initial);
     JTextField cell = new JTextField(initial);
     JLabel parent = new JLabel(initial);

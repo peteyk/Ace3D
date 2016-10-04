@@ -102,7 +102,7 @@ abstract public class NodeBase implements Node {
         if (W != null){
             Element clusterEle = new Element("GaussianMixtureModel");
             clusterEle.setAttribute("id", String.format("%d", id));
-            clusterEle.setAttribute("parent", "-1");
+ //           clusterEle.setAttribute("parent", "-1");
             clusterEle.setAttribute("count", String.format("%d",micros.size()));
             clusterEle.setAttribute("sourceNode", String.format("%d", label));
             StringBuilder builder = new StringBuilder();

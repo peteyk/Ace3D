@@ -14,73 +14,28 @@ import java.util.Set;
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.input.SAXBuilder;
+import org.rhwlab.BHC.Node;
 
 /**
  *
  * @author gevirl
  */
 public class BHC_NucleusFile {
+    
     // open a tgmm nucleus file , adding nuclei to the Ace3dNucleusFile
-    public void open(int time,File file,Ace3DNucleusFile aceFile)throws Exception {
+    public void open(int time,File file)throws Exception {
         this.file = file;
         SAXBuilder saxBuilder = new SAXBuilder();
-        Set<TGMMNucleus> rootNucs = new HashSet<>();
-        Map<Integer,TGMMNucleus> firstParents =  new HashMap<>();
-        Map<Integer,TGMMNucleus> secondParents = new HashMap<>();                    
+        rootNucs = new HashSet<>();
 
         Document doc = saxBuilder.build(file); 
         Element document = doc.getRootElement(); 
         this.cutThreshold = Double.valueOf(document.getAttributeValue("threshold"));
         List<Element> gmmList = document.getChildren("GaussianMixtureModel");
         for (Element gmm : gmmList){
-            int parent = Integer.valueOf(gmm.getAttributeValue("parent"));
-            TGMMNucleus tgmmNuc = new TGMMNucleus(time,gmm);
-            if (parent == -1){
-                // a new root
-                rootNucs.add(tgmmNuc);
-            } else {
-                TGMMNucleus first = firstParents.get(parent);
-                if (first == null){
-                    firstParents.put(parent,tgmmNuc);
-                } else {
-                    TGMMNucleus second = secondParents.get(parent);
-                    if (second != null){
-                        System.err.println("Error in TGNN_NucleusFile");
-                    }
-                    secondParents.put(parent,tgmmNuc);
-                }
-            }
+            BHC_Nucleus tgmmNuc = new BHC_Nucleus(time,gmm);
+            rootNucs.add(tgmmNuc);
         }
-        for (TGMMNucleus rootNuc : rootNucs){
-            aceFile.addNucleus(rootNuc,false);
-            Cell rootCell = new Cell(rootNuc.getName());
-            rootCell.addNucleus(rootNuc);
-            aceFile.addRoot(rootCell,false);
-        }
-        for (Integer parent : secondParents.keySet()){
-            TGMMNucleus first = firstParents.get(parent);
-            aceFile.addNucleus(first,false);
-            Cell firstCell = new Cell(first.getName());
-            firstCell.addNucleus(first);
-            aceFile.addRoot(firstCell,false);
-
-            TGMMNucleus second = secondParents.get(parent);
-            aceFile.addNucleus(second,false);
-            Cell secondCell = new Cell(second.getName());
-            secondCell.addNucleus(second);
-            aceFile.addRoot(secondCell,false); 
-
-            Nucleus parentNuc = aceFile.byName.get(first.getParentName());
-            aceFile.linkDivision(parentNuc, first, second);
-        }
-        for (Integer parent : firstParents.keySet()){
-            if (secondParents.get(parent) == null){
-                TGMMNucleus nuc = firstParents.get(parent);
-                aceFile.addNucleus(nuc,false);
-                Nucleus parentNuc = aceFile.byName.get(nuc.getParentName());
-                aceFile.linkInTime(parentNuc, nuc);
-            }
-        }        
     }
     public File getBHCTreeFile(){
         String fileName = file.getName();
@@ -89,6 +44,24 @@ public class BHC_NucleusFile {
     public double getThreshold(){
         return this.cutThreshold;
     }
+    static public Element formXML(List<Node> clusters,String treeFile,double threshold,int time){
+        Element root = new Element("BHCNucleusList"); 
+        root.setAttribute("treefile", treeFile);
+        root.setAttribute("threshold", Double.toString(threshold));
+        root.setAttribute("time", Integer.toString(time));
+        int id = 1;
+        for (Node cl : clusters){
+            int used = cl.saveAsXMLByThreshold(root,threshold,id);  // save as a Gaussian Mixture Model
+            if (used != -1){
+                id = used + 1;
+            }
+        }
+        return root;
+    } 
+    public Set<BHC_Nucleus> getNuclei(){
+        return this.rootNucs;
+    }
+    Set<BHC_Nucleus> rootNucs;
     File file;
     int time;
     double cutThreshold;

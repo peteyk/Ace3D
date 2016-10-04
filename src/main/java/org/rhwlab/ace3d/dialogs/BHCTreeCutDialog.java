@@ -22,9 +22,8 @@ import org.jdom2.Element;
 import org.rhwlab.BHC.BHCTree;
 import org.rhwlab.ace3d.Ace3D_Frame;
 import org.rhwlab.dispim.nucleus.Ace3DNucleusFile;
+import org.rhwlab.dispim.nucleus.BHC_NucleusFile;
 import org.rhwlab.dispim.nucleus.NucleusFile;
-import org.rhwlab.dispim.nucleus.TGMM_NucleusDirectory;
-import org.rhwlab.dispim.nucleus.TGMM_NucleusFile;
 
 /**
  *
@@ -32,7 +31,7 @@ import org.rhwlab.dispim.nucleus.TGMM_NucleusFile;
  */
 public class BHCTreeCutDialog extends JDialog {
     public BHCTreeCutDialog(Ace3D_Frame owner,NucleusFile nucleusFile){
-        this.nucleusFile = (TGMM_NucleusDirectory)nucleusFile;
+        this.nucleusFile = (Ace3DNucleusFile)nucleusFile;
         this.setTitle("Cut the BHC Tree");
         this.setSize(300, 500);
         this.getContentPane().setLayout(new BorderLayout());
@@ -78,9 +77,9 @@ public class BHCTreeCutDialog extends JDialog {
             double thresh = ((Posterior)sel).r;
             try {
                 tree.saveCutAtThresholdAsXML(xml, thresh);
-                TGMM_NucleusFile tgmm = new TGMM_NucleusFile();
-                tgmm.open(tree.getTime(),new File(xml), nucleusFile);  
-                this.nucleusFile.putFileForTime(tree.getTime(), tgmm);
+                BHC_NucleusFile bhc = new BHC_NucleusFile();
+                bhc.open(tree.getTime(),new File(xml));  
+                nucleusFile.addBHC(bhc);
             } catch (Exception exc){
                 exc.printStackTrace();
             }
@@ -113,9 +112,11 @@ public class BHCTreeCutDialog extends JDialog {
         jList.setModel(model);
         jList.setSelectedValue(selected,true);
     }
-    TGMM_NucleusDirectory nucleusFile;
+    
+    Ace3DNucleusFile nucleusFile;
     BHCTree tree;
     JList jList;
+    
     class Posterior {
         public Posterior(double r,int n){
             this.r = r;
@@ -125,9 +126,9 @@ public class BHCTreeCutDialog extends JDialog {
         @Override
         public String toString(){
             if (n ==-1){
-                return String.format("%f",r);
+                return String.format("%e",r);
             }
-            return String.format("(%d) %f",n,r);
+            return String.format("(%d) %e",n,r);
         }
         
         double r;

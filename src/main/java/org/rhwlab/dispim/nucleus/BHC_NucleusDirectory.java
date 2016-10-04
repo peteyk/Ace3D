@@ -9,23 +9,20 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.rhwlab.ace3d.SelectedNucleusFrame;
-import org.rhwlab.ace3d.SynchronizedMultipleSlicePanel;
 
 /**
  *
  * @author gevirl
  */
-public class BHC_NucleusDirectory extends Ace3DNucleusFile{
-    public BHC_NucleusDirectory(File f,SynchronizedMultipleSlicePanel panel,SelectedNucleusFrame frame) {
-        super(f,panel,frame);
-
+public class BHC_NucleusDirectory {
+    public BHC_NucleusDirectory(File file) {
+        this.file = file;
     }
-    @Override
-    public void open()throws Exception {
+
+    public void openInto(Ace3DNucleusFile nucFile)throws Exception {
 
         File directory = file.getParentFile();
-        this.opening = true;
+        nucFile.opening = true;
         Matcher m = p.matcher(file.getName());
         m.matches();
         String prefix = m.group(1);
@@ -40,13 +37,15 @@ public class BHC_NucleusDirectory extends Ace3DNucleusFile{
                 if (m.matches()){
                     int time = Integer.valueOf(m.group(1));
                     BHC_NucleusFile gmmFile = new BHC_NucleusFile();
-                    gmmFile.open(time, file, this);
+                    gmmFile.open(time, file);
+                    nucFile.addBHC(gmmFile);
                     fileMap.put(time, gmmFile);
                 }
             }
         }
-        this.opening = false;
-        this.notifyListeners();
+        nucFile.opening = false;
+        nucFile.notifyListeners();
+        int uiashdfuis=0;
     }
     public BHC_NucleusFile getFileforTime(int time){
         return fileMap.get(time);
@@ -62,6 +61,7 @@ public class BHC_NucleusDirectory extends Ace3DNucleusFile{
         }
         return -1;
     }
+    File file;
     static Pattern p = Pattern.compile("(.+)(\\d{3})(.+xml)");
     HashMap<Integer,BHC_NucleusFile> fileMap;
 }

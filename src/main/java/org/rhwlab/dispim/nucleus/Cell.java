@@ -192,6 +192,7 @@ public class Cell  implements Comparable {
         return nuclei.get(time);
     }
     // split this cell into two at the given time
+    // the nucleus at the given time begins the later cell
     // return the later cell
     public Cell split(int time){
         Nucleus nuc = nuclei.get(time);
@@ -205,6 +206,7 @@ public class Cell  implements Comparable {
             nuc = nuclei.get(t);
         }
         
+        // remake the proximal cell list of nuclei
         TreeMap<Integer,Nucleus> prox = new TreeMap<>();
         for (t=this.firstTime() ; t<time;++t){
             prox.put(t,nuclei.get(t));

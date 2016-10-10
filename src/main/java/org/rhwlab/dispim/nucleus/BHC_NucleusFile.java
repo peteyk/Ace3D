@@ -21,21 +21,27 @@ import org.rhwlab.BHC.Node;
  * @author gevirl
  */
 public class BHC_NucleusFile {
-    
+    public BHC_NucleusFile(Element root){
+        init(root);
+    }
     // open a tgmm nucleus file , adding nuclei to the Ace3dNucleusFile
-    public void open(int time,File file)throws Exception {
+    public BHC_NucleusFile(int time,File file)throws Exception {
         this.file = file;
         SAXBuilder saxBuilder = new SAXBuilder();
-        rootNucs = new HashSet<>();
-
         Document doc = saxBuilder.build(file); 
         Element document = doc.getRootElement(); 
+        init(document);
+    }
+    public void init(Element document){
+        rootNucs = new HashSet<>();
         this.cutThreshold = Double.valueOf(document.getAttributeValue("threshold"));
+        this.time = Integer.valueOf(document.getAttributeValue("time"));
+        this.treeFile = document.getAttributeValue("treefile");
         List<Element> gmmList = document.getChildren("GaussianMixtureModel");
         for (Element gmm : gmmList){
             BHC_Nucleus tgmmNuc = new BHC_Nucleus(time,gmm);
             rootNucs.add(tgmmNuc);
-        }
+        }        
     }
     public File getBHCTreeFile(){
         String fileName = file.getName();
@@ -44,20 +50,10 @@ public class BHC_NucleusFile {
     public double getThreshold(){
         return this.cutThreshold;
     }
-    static public Element formXML(List<Node> clusters,String treeFile,double threshold,int time){
-        Element root = new Element("BHCNucleusList"); 
-        root.setAttribute("treefile", treeFile);
-        root.setAttribute("threshold", Double.toString(threshold));
-        root.setAttribute("time", Integer.toString(time));
-        int id = 1;
-        for (Node cl : clusters){
-            int used = cl.saveAsXMLByThreshold(root,threshold,id);  // save as a Gaussian Mixture Model
-            if (used != -1){
-                id = used + 1;
-            }
-        }
-        return root;
-    } 
+    public void setThreshold(double th){
+        this.cutThreshold = th;
+    }
+
     public Set<BHC_Nucleus> getNuclei(){
         return this.rootNucs;
     }
@@ -65,4 +61,5 @@ public class BHC_NucleusFile {
     File file;
     int time;
     double cutThreshold;
+    String treeFile;
 }

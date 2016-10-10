@@ -31,6 +31,7 @@ import org.rhwlab.dispim.nucleus.NucleusFile;
  */
 public class BHCTreeCutDialog extends JDialog {
     public BHCTreeCutDialog(Ace3D_Frame owner,NucleusFile nucleusFile){
+        super(owner,true);
         this.nucleusFile = (Ace3DNucleusFile)nucleusFile;
         this.setTitle("Cut the BHC Tree");
         this.setSize(300, 500);
@@ -56,6 +57,7 @@ public class BHCTreeCutDialog extends JDialog {
             public void actionPerformed(ActionEvent e) {
                 BHCTreeCutDialog.this.ok();
                 BHCTreeCutDialog.this.setVisible(false);
+                result = true;
             }
         });        
         button.add(ok);
@@ -64,6 +66,7 @@ public class BHCTreeCutDialog extends JDialog {
             @Override
             public void actionPerformed(ActionEvent e) {
                 BHCTreeCutDialog.this.setVisible(false);
+                result = false;
             }
         });
         button.add(cancel);
@@ -71,18 +74,21 @@ public class BHCTreeCutDialog extends JDialog {
     }
     private void ok(){
         Object sel = jList.getSelectedValue();
-        String xml = tree.getBaseName() + ".xml";
         if (sel != null){
-            nucleusFile.removeNucleiAtTime(tree.getTime());
-            double thresh = ((Posterior)sel).r;
+            int t = tree.getTime();
+            nucleusFile.unlinkTime(t);
+            nucleusFile.unlinkTime(t-1);
+            
+            nucleusFile.removeNucleiAtTime(t);
+            thresh = ((Posterior)sel).r;
             try {
-                tree.saveCutAtThresholdAsXML(xml, thresh);
-                BHC_NucleusFile bhc = new BHC_NucleusFile();
-                bhc.open(tree.getTime(),new File(xml));  
+                BHC_NucleusFile bhc = tree.cutToNucleusFile(thresh);
                 nucleusFile.addBHC(bhc);
             } catch (Exception exc){
                 exc.printStackTrace();
             }
+            nucleusFile.linkTimePoint(t-1);
+            nucleusFile.linkTimePoint(t);
             nucleusFile.notifyListeners();
         }
     }
@@ -92,12 +98,13 @@ public class BHCTreeCutDialog extends JDialog {
             return;
         }
         if (selected.n == -1){
-            Element ele = tree.formXML(selected.r);
+            Element ele = tree.cutTreeAtThreshold(selected.r);
             selected.n = ele.getChildren("GaussianMixtureModel").size();            
         }
         jList.repaint();
     }
-    public void setBHCTree(BHCTree tree,double thresh){
+    public void setBHCTree(BHCTree tree,double th){
+        thresh = th;
         Posterior selected = null;
         this.tree = tree;
         DefaultListModel model = new DefaultListModel();
@@ -112,7 +119,14 @@ public class BHCTreeCutDialog extends JDialog {
         jList.setModel(model);
         jList.setSelectedValue(selected,true);
     }
-    
+    public boolean isOK(){
+        return this.result;
+    }
+    public double getThresh(){
+        return thresh;
+    }
+    boolean result = false;
+    double thresh;
     Ace3DNucleusFile nucleusFile;
     BHCTree tree;
     JList jList;

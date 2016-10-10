@@ -26,6 +26,7 @@ import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 import org.rhwlab.ace3d.Ace3D_Frame;
 import org.rhwlab.ace3d.SynchronizedMultipleSlicePanel;
+import org.rhwlab.dispim.nucleus.Ace3DNucleusFile;
 import org.rhwlab.dispim.nucleus.NucleusFile;
 
 /**
@@ -231,6 +232,9 @@ public class ImagedEmbryo implements Observable {
             }
         }
         return null;
+    }
+    public void renameSelectedCell(String newName){
+        ((Ace3DNucleusFile)nucFile).renameCell(newName);
     }
     SynchronizedMultipleSlicePanel panel;
     ArrayList<InvalidationListener> listeners = new ArrayList<>();

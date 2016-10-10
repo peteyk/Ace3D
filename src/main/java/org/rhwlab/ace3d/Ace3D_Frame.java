@@ -18,6 +18,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import javax.swing.ButtonGroup;
@@ -42,6 +43,7 @@ import org.rhwlab.dispim.TifDirectoryImageSource;
 import org.rhwlab.dispim.TimePointImage;
 import org.rhwlab.dispim.nucleus.BHC_NucleusDirectory;
 import org.rhwlab.dispim.nucleus.BHC_NucleusFile;
+import org.rhwlab.dispim.nucleus.Nucleus;
 import org.rhwlab.dispim.nucleus.NucleusFile;
 import org.rhwlab.dispim.nucleus.StarryNiteNucleusFile;
 
@@ -155,7 +157,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
         openTif.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
-                source = new TifDirectoryImageSource("/net/waterston/vol9/diSPIM/20151118_nhr-25_XIL0141/CroppedReslicedBGSubtract488");
+                source = new TifDirectoryImageSource("/net/waterston/vol2/home/gevirl/rnt-1/segmented");
                 source.open();
                 initToSource();
             }
@@ -273,18 +275,46 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
         menuBar.add(navigate);
 
         
-        JMenu nucleus = new JMenu("Nuclei");
-        menuBar.add(nucleus);
-        
-        JMenuItem linkItem = new JMenuItem("Linking");
-        nucleus.add(linkItem);
+
+        JMenu linking = new JMenu("Linking");
+        menuBar.add(linking);
+        JMenuItem linkItem = new JMenuItem("Create Links Starting at Current Time");
+        linking.add(linkItem);
         linkItem.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
-                ((Ace3DNucleusFile)nucFile).linkTimePoint(getCurrentTime(),25,200);
+                String timeStr = JOptionPane.showInputDialog("Enter the last time to link:");
+                if (timeStr != null){
+                    Integer endTime;
+                    try {
+                        endTime = Integer.valueOf(timeStr);
+
+                    } catch (Exception exc){
+                        JOptionPane.showMessageDialog(Ace3D_Frame.this, "Invalid entry");
+                        return;
+                    }
+                    for (int t=getCurrentTime() ; t<=endTime ; ++t){
+                        ((Ace3DNucleusFile)nucFile).linkTimePoint(t);
+                    }
+                    
+                }
+                
+            }
+        });
+        JMenuItem unlink = new JMenuItem("Unlink Current Time");
+        linking.add(unlink);
+        unlink.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                Set<Nucleus> nucs = nucFile.getNuclei(getCurrentTime());
+                for (Nucleus nuc : nucs){
+                    ((Ace3DNucleusFile)nucFile).unlink(nuc,true);
+                }
             }
         });
         
+        JMenu segmenting = new JMenu("Segmenting");
+        menuBar.add(segmenting);
         JMenuItem allTimePnts = new JMenuItem("Submit All Time Points");
         allTimePnts.addActionListener(new ActionListener(){
             @Override
@@ -296,9 +326,9 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
                 }
             }
         });
-        nucleus.add(allTimePnts);
+        segmenting.add(allTimePnts);
         JMenu selectedTimePoint = new JMenu("Selected Time Point");
-        nucleus.add(selectedTimePoint);
+        segmenting.add(selectedTimePoint);
         JMenuItem microClusterItem = new JMenuItem("Form Micro Clusters");
         selectedTimePoint.add(microClusterItem);
         JMenuItem bhcItem = new JMenuItem("Run Gaussian Model");
@@ -313,8 +343,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
                     exc.printStackTrace();
                 }
             }
-        });
-        
+        });       
         selectedTimePoint.add(cutItem);
         
         
@@ -446,33 +475,14 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
         }         
         if (nucChooser.showOpenDialog(panel) == JFileChooser.APPROVE_OPTION){
             nucFile = new Ace3DNucleusFile(nucChooser.getSelectedFile(),panel,selectedNucFrame);
+            if (imagedEmbryo != null){
+                imagedEmbryo.setNucleusFile(nucFile);
+            }            
             nucFile.addListener(navFrame);
             nucFile.open();
             props.setProperty("NucFile",nucFile.getFile().getPath());            
-            if (imagedEmbryo != null){
-                imagedEmbryo.setNucleusFile(nucFile);
-            }
+
         }
-    }
-    
-    private void openStarryNiteNucFile()throws Exception {
-        
-//        nucFile = new StarryNiteNucleusFile("/nfs/waterston/pete/Segmentation/dispim_sample_data/matlab_output/CroppedReslicedBGSubtract488/Decon_emb1.zip");
-        String starry = props.getProperty("StarryNite");
-        if (starry != null){
-            nucChooser.setSelectedFile(new File(starry));
-        }
-        if (nucChooser.showOpenDialog(panel) == JFileChooser.APPROVE_OPTION){
-            nucFile = new StarryNiteNucleusFile(nucChooser.getSelectedFile(),panel,selectedNucFrame);
-            nucFile.addListener(navFrame);
-            nucFile.open();
-            props.setProperty("StarryNite",nucFile.getFile().getPath());
-            if (imagedEmbryo != null){
-                long[] coords = TimePointImage.getMinCoordinate();
-                ((StarryNiteNucleusFile)nucFile).adjustCoordinates((int)coords[0],(int)coords[1],(int)coords[2]);
-                imagedEmbryo.setNucleusFile(nucFile);
-            }
-        }        
     }
     private void openBHCNucFile()throws Exception {
         String tgmm = props.getProperty("BHC");
@@ -493,7 +503,27 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
             props.setProperty("BHC",sel.getPath());
         }
         
+    }    
+    private void openStarryNiteNucFile()throws Exception {
+        
+//        nucFile = new StarryNiteNucleusFile("/nfs/waterston/pete/Segmentation/dispim_sample_data/matlab_output/CroppedReslicedBGSubtract488/Decon_emb1.zip");
+        String starry = props.getProperty("StarryNite");
+        if (starry != null){
+            nucChooser.setSelectedFile(new File(starry));
+        }
+        if (nucChooser.showOpenDialog(panel) == JFileChooser.APPROVE_OPTION){
+            nucFile = new StarryNiteNucleusFile(nucChooser.getSelectedFile(),panel,selectedNucFrame);
+            nucFile.addListener(navFrame);
+            nucFile.open();
+            props.setProperty("StarryNite",nucFile.getFile().getPath());
+            if (imagedEmbryo != null){
+                long[] coords = TimePointImage.getMinCoordinate();
+                ((StarryNiteNucleusFile)nucFile).adjustCoordinates((int)coords[0],(int)coords[1],(int)coords[2]);
+                imagedEmbryo.setNucleusFile(nucFile);
+            }
+        }        
     }
+
     private void submitAllTimePoints()throws Exception {
         JFileChooser fileChooser = new JFileChooser();
         String segTiff = props.getProperty("SegmentedTIFF");
@@ -508,23 +538,31 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
     }
     private void cutTree()throws Exception {
         int time = this.getCurrentTime();
-        BHC_NucleusFile tgmmFile = bhc.getFileforTime(time);
-        File bhcFile = tgmmFile.getBHCTreeFile();
+        BHC_NucleusFile bhcNucFile = bhc.getFileforTime(time);
+        File bhcFile = bhcNucFile.getBHCTreeFile();
         BHCTree tree = new BHCTree(bhcFile.getPath());
         if (treeCutDialog == null){
             treeCutDialog = new BHCTreeCutDialog(this,this.nucFile);
         }
-        treeCutDialog.setBHCTree(tree,tgmmFile.getThreshold());
+        treeCutDialog.setBHCTree(tree,bhcNucFile.getThreshold());
         treeCutDialog.setVisible(true);
+        if (treeCutDialog.isOK()){
+            double nextThresh = treeCutDialog.getThresh();
+            bhcNucFile.setThreshold(nextThresh);
+        }
     }
     private void saveAsNucFile()throws Exception {
         buildChooser();
-        if (nucFile != null){
+        if (nucFile != null && nucFile.getFile()!=null){
             nucChooser.setSelectedFile(nucFile.getFile().getParentFile());
+        } else {
+            java.util.Properties pros = System.getProperties();
+            Map<String,String> map = System.getenv();
+            nucChooser.setSelectedFile(new File(System.getProperty("user.home")));
         }
         if (nucChooser.showSaveDialog(panel) == JFileChooser.APPROVE_OPTION){
             File f = nucChooser.getSelectedFile();
-            if (f.getPath().equals(nucFile.getFile().getPath())){
+            if (nucFile.getFile()!=null && f.getPath().equals(nucFile.getFile().getPath())){
                 if (nucFile instanceof StarryNiteNucleusFile){
                     JOptionPane.showMessageDialog(rootPane,"Cannot overwrite the StarryNite file");
                 } else {
@@ -644,9 +682,11 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
     JMenu contrast;
     JMenu lutMenu;
     JMenu colorMenu;
+    
     ImageSource source;
     NucleusFile nucFile;
     ImagedEmbryo imagedEmbryo;
+    
     SynchronizedMultipleSlicePanel panel;
     SelectedNucleusFrame selectedNucFrame;
     JFileChooser nucChooser;

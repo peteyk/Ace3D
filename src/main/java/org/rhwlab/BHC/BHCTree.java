@@ -87,17 +87,8 @@ public class BHCTree {
         out.output(root, stream);
         stream.close();          
     }   
-    
-    public void saveCutAtThresholdAsXML(String file,double thresh)throws Exception {
-        saveCutAtThresholdAsXML(file,roots,fileName,thresh,time);
-    }
 
-    // save a list of clusters to an XML file
-    // each cluster is saved with it's children clusters
-    static void saveCutAtThresholdAsXML(String file,List<Node> clusters,String treeFile,double threshold,int time)throws Exception{
-        Element root = BHC_NucleusFile.formXML(clusters,treeFile,threshold,time);
-        saveXML(file,root);
-    }  
+
     
     public static void saveXML(String file,Element root)throws Exception {
         File f = new File(file);
@@ -107,11 +98,29 @@ public class BHCTree {
         out.output(root, stream);
         stream.close();         
     }
-
-    public Element formXML(double threshold){
-        return BHC_NucleusFile.formXML(this.roots,this.fileName,threshold,time);
-    }    
-
+   
+    
+    public void saveCutAtThresholdAsXML(String file,double thresh)throws Exception {
+        saveXML(file,cutTreeAtThreshold(thresh));
+    }  
+    public BHC_NucleusFile cutToNucleusFile(double threshold){
+        return new BHC_NucleusFile(cutTreeAtThreshold(threshold));
+    }
+    // cut this tree at the given threshold into an XML element
+    public Element cutTreeAtThreshold(double threshold){
+        Element root = new Element("BHCNucleusList"); 
+        root.setAttribute("treefile",fileName);
+        root.setAttribute("threshold", Double.toString(threshold));
+        root.setAttribute("time", Integer.toString(time));
+        int id = 1;
+        for (Node cl : roots){
+            int used = cl.saveAsXMLByThreshold(root,threshold,id);  // save as a Gaussian Mixture Model
+            if (used != -1){
+                id = used + 1;
+            }
+        }
+        return root;
+    } 
     
     public TreeSet<Double> allPosteriors(){
         TreeSet<Double> ret = new TreeSet<>();
@@ -135,6 +144,7 @@ public class BHCTree {
             start = used + 1;
         }
     }
+    /*
     // cuts the BHC Tree to obtain the given number of nuclei/cells
     public Element cutTreeToCount(int nCells){
         int nDel = 20;
@@ -161,6 +171,7 @@ public class BHCTree {
         }
         return null;
     }
+*/
     static public void main(String[] args) throws Exception {
         String dir = "/net/waterston/vol2/home/gevirl/rnt-1/segmented";
         File directory = new File(dir);

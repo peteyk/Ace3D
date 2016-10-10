@@ -110,13 +110,14 @@ public class Nuclei_Identification implements Runnable {
         alg.saveResultAsXML(BHCTreeFile.getPath());
     }
     private void runTreeCut(File BHCTreeFile,File gmmFile) throws Exception {
-        int cellCount = new CellCounts().getCellCount(time) + 2 ;
         BHCTree tree = new BHCTree(BHCTreeFile.getPath());
-//        tree.saveCutAtThresholdAsXML(gmmFile.getPath(),1.0E-9);
-//        Element e = tree.cutTreeToCount(cellCount);
-        
-        BHCTree.saveXML(gmmFile.getPath(), tree.formXML(1.0E-9));
-       
+        TreeSet<Double> post = tree.allPosteriors();
+        for (Double p : post){
+            if (p >= 1.0E-10){
+                tree.saveCutAtThresholdAsXML(gmmFile.getPath(),p);
+                break;
+            }
+        }
     }
     // determine the number of microclusters to form given the number of voxels in the segmented tiff
     static int clusterCount(int nVox){

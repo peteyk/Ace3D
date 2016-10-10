@@ -8,6 +8,7 @@ package org.rhwlab.dispim.nucleus;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -74,6 +75,7 @@ public class Cell  implements Comparable {
             if (nuc != null){
                 nuclei.put(nuc.getTime(),nuc);
             }
+            nuc.setCell(this);
         }
     }
     // name the children using the supplied embryo orientatation rotation matrix
@@ -196,24 +198,26 @@ public class Cell  implements Comparable {
     // return the later cell
     public Cell split(int time){
         Nucleus nuc = nuclei.get(time);
+        Cell cell = nuc.getCell();
         
         // put all the distal nuclei into the new cell
         Cell ret = new Cell(nuc.getName());
-        int t= time;
-        while (nuc != null){
-            ret.addNucleus(nuc);
-            ++t;
-            nuc = nuclei.get(t);
+        for (int t=time ; t<=cell.lastTime() ; ++t){
+            Nucleus distal = cell.getNucleus(t);
+            if (distal != null){
+                ret.addNucleus(distal);
+            }
         }
         
         // remake the proximal cell list of nuclei
         TreeMap<Integer,Nucleus> prox = new TreeMap<>();
-        for (t=this.firstTime() ; t<time;++t){
-            prox.put(t,nuclei.get(t));
+        for (int t=this.firstTime() ; t<time ; ++t){
+            Nucleus proxNuc = cell.getNucleus(t);
+            prox.put(t,proxNuc);
         }
         nuclei = prox;
         
-        // relink children cells to the distal cell
+        // relink children cells to the new distal cell
         for (Cell child : children){
             ret.addChild(child);
         }
@@ -355,6 +359,24 @@ public class Cell  implements Comparable {
     public void setName(String name){
         if (divisionMap.get(name) != null){
             this.name = name;
+        }
+    }
+    public Nucleus[] allNuclei(){
+        return nuclei.values().toArray(new Nucleus[0]);
+    }
+    public void report(PrintStream stream){
+        stream.printf("Cell:%s\n", name);
+        if (parent== null){
+            stream.println("Parent:null");
+        }else {
+            stream.printf("\tparent:%s\n", parent.getName());
+        }
+        for (Cell child : children){
+            stream.printf("\tChild:%s\n", child.getName());
+        }
+        for (Integer time : nuclei.keySet()){
+            Nucleus nuc = nuclei.get(time);
+            stream.printf("\tNucleus: %d,%s\n",time,nuc.getName());
         }
     }
     String name;

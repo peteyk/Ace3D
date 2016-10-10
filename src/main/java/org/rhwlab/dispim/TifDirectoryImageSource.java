@@ -33,24 +33,26 @@ public class TifDirectoryImageSource implements ImageSource {
     }
     @Override
     public boolean open(){
-        Pattern pattern = Pattern.compile("(\\D+)(\\d+).tif");
+ //       Pattern pattern = Pattern.compile("(\\D+)(\\d+).tif");
+        Pattern pattern = Pattern.compile("(\\d+)");
         File dir = new File(this.directory);
+        this.datasetname = dir.getName();
         File[] files = dir.listFiles();
         minTime = Integer.MAX_VALUE;
         maxTime = Integer.MIN_VALUE;
         for (File file : files){
             String fileName = file.getName();
-            if (fileName.endsWith("tif")){
+            if (fileName.endsWith("tif")||fileName.endsWith("tiff")){
                 Matcher matcher = pattern.matcher(fileName);
-                matcher.matches();
-                Integer time = new Integer(matcher.group(2));
+                matcher.find();
+//                matcher.matches();
+                Integer time = new Integer(matcher.group(1));
                 if (time < minTime){
                     minTime = time;
                 }
                 if (time> maxTime){
                     maxTime = time;
                 }
-                datasetname = matcher.group(1);
                 fileNames.put(time,file.getPath());
             }
         }

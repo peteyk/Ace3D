@@ -5,6 +5,9 @@
  */
 package org.rhwlab.dispim.nucleus;
 
+import java.math.BigDecimal;
+import javax.json.JsonObject;
+import javax.json.JsonObjectBuilder;
 import org.apache.commons.math3.linear.EigenDecomposition;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
@@ -16,12 +19,16 @@ import static org.rhwlab.dispim.nucleus.Nucleus.precisionFromString;
  * @author gevirl
  */
 public class BHC_Nucleus extends Nucleus {
+    // construct the nucleus from a GaussianMixtureModel xml element
+        public BHC_Nucleus(JsonObject jsonObj){
+            super(jsonObj);
+            this.sourceNode = jsonObj.getString("SourceNode");
+            this.id = super.getName();
+        }
     public BHC_Nucleus(int time,Element gmm){
         super(time,name(time,gmm),center(gmm),10.0);  // for now make all radii the same
         id = gmm.getAttributeValue("id");
-        if (id.contains("7")){
-            int iaushdfuisd=0;
-        }
+
         sourceNode = gmm.getAttributeValue("sourceNode");
         A = precisionFromString(gmm.getAttributeValue("W"));
         eigenA = new EigenDecomposition(A);
@@ -37,6 +44,11 @@ public class BHC_Nucleus extends Nucleus {
         return ret;
     }
 
+    public JsonObjectBuilder asJson(){
+        JsonObjectBuilder ret = super.asJson();
+        ret.add("SourceNode", this.sourceNode);
+        return ret;
+    }
     public void printMat(String label,RealMatrix m){
         System.out.println(label);
         for (int r=0 ; r<m.getRowDimension() ; ++r){

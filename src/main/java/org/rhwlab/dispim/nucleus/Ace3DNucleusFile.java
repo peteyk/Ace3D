@@ -7,6 +7,7 @@ package org.rhwlab.dispim.nucleus;
 
 import java.io.File;
 import java.io.FileReader;
+import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -52,7 +53,7 @@ public class Ace3DNucleusFile implements NucleusFile,javafx.beans.Observable   {
         JsonArray jsonNucs = obj.getJsonArray("Nuclei");
         for (int n=0 ; n<jsonNucs.size() ; ++n){
             JsonObject jsonNuc = jsonNucs.getJsonObject(n);
-            Nucleus nuc = new Nucleus(jsonNuc);
+            Nucleus nuc = new BHC_Nucleus(jsonNuc);
             this.addNucleus(nuc,false);
         }
         JsonArray jsonRoots = obj.getJsonArray("Roots");
@@ -85,6 +86,7 @@ public class Ace3DNucleusFile implements NucleusFile,javafx.beans.Observable   {
         }
         rootSet.add(cell);
         addCell(cell);
+        cell.parent = null;
         if (notify)        {
             this.notifyListeners();
         }
@@ -103,7 +105,7 @@ public class Ace3DNucleusFile implements NucleusFile,javafx.beans.Observable   {
 
     public void addNucleus(Nucleus nuc,boolean notify){
 
-        Set<Nucleus> timeSet = byTime.get(nuc.getTime());
+        TreeSet<Nucleus> timeSet = byTime.get(nuc.getTime());
         if (timeSet == null){
             timeSet = new TreeSet<Nucleus>();
             byTime.put(nuc.getTime(), timeSet);
@@ -115,53 +117,62 @@ public class Ace3DNucleusFile implements NucleusFile,javafx.beans.Observable   {
         }
     }
  
-    // completely unlink a nucleus from any children (in time or due to division)
-    public void unlink(Nucleus nuc){
-        // is the nucleus dividing ?
-        if (nuc.isDividing()){
-            
-        }else {
-            
+    // unkink a cell from its children
+    public void unLinkCellFromChildren(Cell cell,boolean notify){
+        Cell[] children = cell.getChildren();
+        for (Cell child : children){
+            this.addRoot(child,false);
+        }
+        cell.clearChildren();
+        if (notify){
+            this.notifyListeners();
         }
     }
-    public void unlink(Nucleus from,Nucleus to){
-        Cell fromCell = from.getCell();
-        Cell toCell = to.getCell(); 
-        if (fromCell == null || toCell == null) return;  // they can't be linked if one is not in a cell
-        
-        if (fromCell.getName().equals(toCell.getName())){
-            // not a division - both nuclei in the same cell
-            // split the from cell and make a new root with the to nucleus
-            Cell splitCell = fromCell.split(to.getTime());
-            this.addRoot(splitCell,false);
-        } else {
-            // unlinking a division - the division goes away and the child to keep merges with her parent
-            // the child not keeping in the path is made a new root
-            Nucleus keep = null;
-            Cell[] children = fromCell.getChildren();
-            if (children[0].getName().equals(toCell.getName())){
-                keep = children[1].firstNucleus();
-            } else if (children[1].getName().equals(toCell.getName())){
-                keep = children[0].firstNucleus();
-            }
-            // keep is the child cell to keep linked
-            if (keep != null){
-                // unlink the children cells
-                for (Cell child : fromCell.getChildren()){
-                    child.setParent(null);
-                    this.addRoot(child,false);                
-                }
-                fromCell.clearChildren();
-                
-                // merge the keep cell to her parent
-                linkInTime(from,keep);
+    // unlink all the nuclei in a gven time
+    public void unlinkTime(int t){
+        System.out.print("Before unlinking\n");
+        report(System.out,t);
+        System.out.printf("Unlinking time: %d\n", t);
+        TreeSet<Nucleus> nucs = this.getNuclei(t);
+        for (Nucleus nuc : nucs.descendingSet()){
+            this.unlink(nuc,false);
+            System.out.printf("After unlinking nucleus: %s\n",nuc.getName());
+            this.report(System.out, t);
+            System.out.printf("Roots at time %d\n",t+1);
+            for (Cell r : this.roots.get(t+1)){
+                r.report(System.out);
             }
         }
         this.notifyListeners();
     }
-    public void linkInTime(Nucleus from,Nucleus to){
 
+    // completely unlink a nucleus from any children (in time or due to division)
+    public void unlink(Nucleus nuc,boolean notify){
+        Nucleus[] children = nuc.nextNuclei();
+        if (children.length == 0){
+            return ;  // nothing to unlink
+        }
         
+        if (children.length==1){
+            // not a division - both nuclei in the same cell
+            // split the cell and make a new root with the next nucleus
+            Cell cell = nuc.getCell();
+            Cell splitCell = cell.split(children[0].getTime());
+            this.addRoot(splitCell,false);
+        } else {
+            // unlinking a division - 
+            Cell cell = nuc.getCell();
+            for (Cell child : cell.getChildren()){
+                this.addRoot(child, notify);
+            }
+            cell.clearChildren();
+            
+        }
+        if (notify){
+            this.notifyListeners();
+        }
+    }
+    public void linkInTime(Nucleus from,Nucleus to){
         Cell fromCell = from.getCell();
         Cell toCell = to.getCell();
         if (fromCell == null){
@@ -212,7 +223,6 @@ public class Ace3DNucleusFile implements NucleusFile,javafx.beans.Observable   {
     }
     
    public void linkDivision(Nucleus from,Nucleus to1,Nucleus to2){
-
         
         Cell fromCell = from.getCell();
         if (fromCell == null){
@@ -254,8 +264,8 @@ public class Ace3DNucleusFile implements NucleusFile,javafx.beans.Observable   {
        writer.close();
     }
     @Override
-    public Set<Nucleus> getNuclei(int time){
-        Set<Nucleus> ret = byTime.get(time);
+    public TreeSet<Nucleus> getNuclei(int time){
+        TreeSet<Nucleus> ret = (TreeSet)byTime.get(time);
         if (ret == null){
             ret = new TreeSet<Nucleus>();
             byTime.put(time, ret);
@@ -417,6 +427,7 @@ public class Ace3DNucleusFile implements NucleusFile,javafx.beans.Observable   {
             }
         }
         for (Nucleus nuc : nuclei){
+            this.unlink(nuc, false);
             String cellName = nuc.getCell().getName();
             cellMap.remove(cellName);
             String nucName = nuc.getName();
@@ -426,9 +437,16 @@ public class Ace3DNucleusFile implements NucleusFile,javafx.beans.Observable   {
         }
         this.notifyListeners(); 
     }   
-    public void linkTimePoint(int fromTime,double shapeThreshold,double areaThreshold){
+
+    
+    public void linkTimePoint(int fromTime){
+System.out.printf("Linking time: %d\n", fromTime);
         Nucleus[] fromNucs = byTime.get(fromTime).toArray(new Nucleus[0]);
         Integer[] fromNN = new Integer[fromNucs.length];
+        Set<Nucleus> toNucsSet = byTime.get(fromTime+1);
+        if (toNucsSet == null || toNucsSet.isEmpty()){
+            return;
+        }
         Nucleus[] toNucs = byTime.get(fromTime+1).toArray(new Nucleus[0]);
         Integer[] toNN = new Integer[toNucs.length];
 
@@ -442,13 +460,17 @@ public class Ace3DNucleusFile implements NucleusFile,javafx.beans.Observable   {
             dist[r] = new double[toNucs.length];
             shape[r] = new double[toNucs.length];
             for (int c=0 ; c<toNucs.length ; ++c){
+                if (r == 5 && c==3){
+                    int sfduisd=0;
+                }
                 shape[r][c] = fromNucs[r].shapeDistance(toNucs[c]);
                 dist[r][c] = fromNucs[r].distance(toNucs[c]);
             }
         }
-        
-        while (fromRemaining>0 && toRemaining >0){
-        
+        boolean changed = true;
+        while (fromRemaining>0 && toRemaining >0 && changed){
+            changed = false;
+            
             // find the nearest neighbor for each nucleus in both time points
             for (int r=0 ; r<fromNucs.length ; ++r){
                 fromNN[r] = null;
@@ -480,8 +502,9 @@ public class Ace3DNucleusFile implements NucleusFile,javafx.beans.Observable   {
                     }
                 }
             } 
+ 
             
-            // find the clearly linkable nuclei by seeing if the nerestneighbors are exclusive and mutual
+            // link the closely associated nuclei
             for (int r=0 ; r<fromNucs.length ; ++r){
                 if (fromNucs[r] != null) {
                     Integer toIndex = fromNN[r];
@@ -514,51 +537,86 @@ public class Ace3DNucleusFile implements NucleusFile,javafx.beans.Observable   {
                         if (linkable){
                             this.linkInTime(fromNucs[r], toNucs[toIndex]);
                             fromNucs[r] = null;
+                            fromNN[r] = null;
                             toNucs[toIndex] = null;
+                            toNN[toIndex]=null;
                             --fromRemaining;
                             --toRemaining;
+                            changed = true;
                         }
                     }
                 }
             }
+
+            if (toRemaining <= fromRemaining){
+                // see if there is a non-exclusive close association
+                for (int r=0 ; r<fromNucs.length ; ++r){
+                    if (fromNucs[r] != null) {
+                        Integer toIndex = fromNN[r];
+                        if (toIndex != -1 && toNN[toIndex]!=null && toNN[toIndex] == r){
+                            // can be linked
+                            this.linkInTime(fromNucs[r], toNucs[toIndex]);
+                            fromNucs[r] = null;
+                            fromNN[r] = null;
+                            toNucs[toIndex] = null;
+                            toNN[toIndex]=null;
+                            --fromRemaining;
+                            --toRemaining;
+                            changed = true;
+                        }
+                    }
+                }
+                
+            }
+            
+            // resolve the divisions
             if (toRemaining > fromRemaining){
-                int divisions = this.linkDivisions(fromNucs, toNucs, toRemaining-fromRemaining,areaThreshold);
+                int nd = Math.min(fromRemaining,toRemaining-fromRemaining);
+                int divisions = this.linkDivisions(fromNucs, toNucs,nd ,areaThreshold);
                 toRemaining = toRemaining - 2*divisions;
                 fromRemaining = fromRemaining -divisions;
-            }
+                if (divisions>0 ){
+                    changed = true;
+                }
+            }             
         }
     }
     // try to link a given number of divisions - must meet area threshold criteria
     // return the number of divisions linked
     public int linkDivisions(Nucleus[] fromNucs,Nucleus[] toNucs,int nDivisions,double areaThreshold){
         int ret = 0;
-        // compute the area of triangles
-        TreeMap<Double,Integer[]> map = new TreeMap<>();
-        for (int k=0 ; k<fromNucs.length ; ++k){
-            Nucleus from = fromNucs[k];
-            if (from != null){
-                for (int i=0 ; i<toNucs.length ; ++i){
-                    if (toNucs[i] != null){
-                        for (int j=i+1 ; j<toNucs.length ; ++j){
-                            if (toNucs[j] != null){
-                                double a = from.distance(toNucs[i]);
-                                double b = from.distance(toNucs[j]);
-                                double c = toNucs[i].distance(toNucs[j]);
-                                double area = HeronFormula(a,b,c);
-                                Integer[] division = new Integer[3];
-                                division[0] = k;
-                                division[1] = i;
-                                division[2] = j;
-                                map.put(area,division);
+        // try to form nDivisions
+        for (int n=0 ;n<nDivisions ; ++n){
+        
+            // compute the area of triangles
+            TreeMap<Double,Integer[]> map = new TreeMap<>();
+            for (int k=0 ; k<fromNucs.length ; ++k){
+                Nucleus from = fromNucs[k];
+                if (from != null){
+                    for (int i=0 ; i<toNucs.length ; ++i){
+                        if (toNucs[i] != null){
+                            for (int j=i+1 ; j<toNucs.length ; ++j){
+                                if (toNucs[j] != null){
+                                    double a = from.distance(toNucs[i]);
+                                    double b = from.distance(toNucs[j]);
+                                    double c = toNucs[i].distance(toNucs[j]);
+//System.out.printf("from:%d to:%d to%d a=%f b=%f c=%f \n",k,i,j,a,b,c);                                    
+//                                    double area = HeronFormula(a,b,c);
+                        
+                                    Integer[] division = new Integer[3];
+                                    division[0] = k;
+                                    division[1] = i;
+                                    division[2] = j;
+                                    map.put(a+b+c,division);
+                                }
                             }
                         }
                     }
                 }
             }
-        }
         
-        // link the divsions with minimal area
-        for (Double area : map.navigableKeySet()){
+            // link the divsions with minimal area
+            Double area = map.firstKey();
             if (area <=areaThreshold){
                 Integer[] division = map.get(area);
                 this.linkDivision(fromNucs[division[0]], toNucs[division[1]], toNucs[division[2]]);
@@ -569,89 +627,23 @@ public class Ace3DNucleusFile implements NucleusFile,javafx.beans.Observable   {
                 if (ret == nDivisions ){
                     return ret;
                 }
-            } else {
-                break;
             }
         }
         return ret;
     }
 
-  /*  
-    // try to form all the nuclei linkages from the given time
-    // it is assumed that everything is unlinked in this method
-    public void linkTimePointsGraph(int fromTime){
-        Set<Nucleus> fromNucs = byTime.get(fromTime);
-        Set<Nucleus> toNucs = byTime.get(fromTime+1);
-        
-        // make a complete neighbor graph 
-        // the edge represents the distance between each pair of nuclei
-        // all the pairwise distances are computed
-        SimpleWeightedGraph simpleGraph = new SimpleWeightedGraph(DefaultWeightedEdge.class);
-        for (Nucleus from : fromNucs){
-            simpleGraph.addVertex(from);
-        }
-        for (Nucleus to : toNucs){
-            simpleGraph.addVertex(to);
-        }
-        for (Nucleus from : fromNucs){
-            for (Nucleus to : toNucs){
-                DefaultWeightedEdge edge = (DefaultWeightedEdge)simpleGraph.addEdge(from, to);
-                simpleGraph.setEdgeWeight(edge, from.distance(to));
-            }
-        }
-        
-        // make a nearest neighbor graph where the directed edge goes to the nearest neighbor in the other time point
-        DefaultDirectedWeightedGraph nnGraph = new DefaultDirectedWeightedGraph(DefaultWeightedEdge.class);
-        for (Nucleus from : fromNucs){
-            Nucleus nn = nearestNucleus(from,simpleGraph);
-            nnGraph.addVertex(from);
-            nnGraph.addVertex(nn);
-            nnGraph.addEdge(from, nn);
-        }
-        for (Nucleus to : toNucs){
-            Nucleus nn = nearestNucleus(to,simpleGraph);
-            nnGraph.addVertex(to);
-            nnGraph.addVertex(nn);
-            nnGraph.addEdge(to, nn);
-        }
-
-        // find linkable nuclei
-        for (Nucleus from : fromNucs){
-            Set edges = nnGraph.outgoingEdgesOf(from);
-            if (edges.size() != 1){
-                System.err.printf("Error: more than one nearest neighbor for %s\n",from.getName());
-                System.exit(1);
-            }
-            Object outEdge = edges.iterator().next();
-            Nucleus to = (Nucleus)nnGraph.getEdgeTarget(outEdge);
-            int n = nnGraph.outDegreeOf(to);
-            if (n == 1){
-                
-            }
-        }
-        HashMap<Nucleus,TreeMap<Double,Nucleus>> fromMap = new HashMap<>();
-        HashMap<Nucleus,TreeMap<Double,Nucleus>> toMap = new HashMap<>();
-        
-
-    }
-    private Nucleus nearestNucleus(Nucleus from,SimpleWeightedGraph g){
-        Set edges = g.outgoingEdgesOf(from);
-        Iterator iter = edges.iterator();
-        double minD = Double.MAX_VALUE;
-        Nucleus nn = null;
-        while (iter.hasNext()){
-            Object edge = iter.next();
-            double d = g.getEdgeWeight(edge);
-            if (d < minD){
-                minD = d;
-                nn = (Nucleus)g.getEdgeTarget(edge);
-            }
-        }
-        return nn;
-    }
-*/
     // stable calculation of the area of a triangle given the length of the sides
     static double HeronFormula(double a,double b,double c){
+        double s = (a + b + c)/2.0;
+        double sa = s-a;
+        double sb = s-b;
+        double sc = s-c;
+        double a2 = s*sa*sb*sc;
+        double area = Math.sqrt(a2);
+        
+        System.out.printf("s=%f s-a=%f s-b=%f s-c=%f a2=%f area=%f\n\n",s,sa,sb,sc,a2,area);
+        return area;
+/*        
         double[] x = new double[3];
         x[0] = a;
         x[1] = b;
@@ -659,8 +651,32 @@ public class Ace3DNucleusFile implements NucleusFile,javafx.beans.Observable   {
         Arrays.sort(x);
         double s = (x[0]+(x[1]+x[2])) * (x[2]-(x[0]-x[1])) * (x[2]+(x[0]-x[1])) * (x[0]+(x[1]-x[2])) ;
         return 0.25*Math.sqrt(s);
+*/
     }
-    
+    //report all connections at a given time 
+    public void report(PrintStream stream,int time){
+        stream.printf("Reporting Time:%d\n",time);
+        // report the roots
+        Set<Cell> rootCells = roots.get(time);
+        if (rootCells.isEmpty()){
+            stream.println("No root cells");
+        }else {
+            for (Cell root : roots.get(time)){
+                root.report(stream);
+            }
+        }
+        for (Nucleus nuc : byTime.get(time)){
+            nuc.report(stream);
+        }
+    }
+    // rename the cell containing the selected nucleus
+    public void renameCell(String newName){
+        Cell selectedCell = selectedNucleus.getCell();
+        String oldName = selectedCell.name;
+        selectedCell.setName(newName);
+        cellMap.put(newName, selectedCell);
+        cellMap.remove(oldName);
+    }
     SynchronizedMultipleSlicePanel panel;
     SelectedNucleusFrame frame;
     boolean opening = true;
@@ -668,10 +684,11 @@ public class Ace3DNucleusFile implements NucleusFile,javafx.beans.Observable   {
     Nucleus selectedNucleus;
     TreeMap<Integer,Set<Cell>> roots = new TreeMap<>();  // root cells indexed by time
     TreeMap<String,Cell> cellMap = new TreeMap<>();  // map of the all the cells by name
-    TreeMap<Integer,Set<Nucleus>> byTime = new TreeMap<>();  // all the nuclei present at a given time
+    TreeMap<Integer,TreeSet<Nucleus>> byTime = new TreeMap<>();  // all the nuclei present at a given time
     TreeMap<String,Nucleus> byName = new TreeMap<>();  // map of nuclei indexed by name, map indexed by time
     ArrayList<InvalidationListener> listeners = new ArrayList<>();
 
-
+    double shapeThreshold=25;
+    double areaThreshold=200;
 
 }

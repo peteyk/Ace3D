@@ -119,7 +119,7 @@ public class Navigation_Frame extends JFrame implements PlugIn,InvalidationListe
                 }
             }
             Set<Nucleus> nucs = nucFile.getNuclei(time);
-            DefaultMutableTreeNode timeNode = new DefaultMutableTreeNode(Integer.toString(time));
+            DefaultMutableTreeNode timeNode = new DefaultMutableTreeNode(String.format("Time:%d (%d)",time,nucs.size()));
             nucsRoot.add(timeNode);
             for (Nucleus nuc : nucs){
                 DefaultMutableTreeNode nucNode = new DefaultMutableTreeNode(nuc.getName());

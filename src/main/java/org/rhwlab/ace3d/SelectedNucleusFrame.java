@@ -79,7 +79,7 @@ public class SelectedNucleusFrame extends JFrame implements ChangeListener    {
                 String childName = npPanel.getChild1();
                 Nucleus childNuc = file.getNucleus(childName);
                 if (childNuc != null) {
-                    file.unlink(embryo.selectedNucleus(), childNuc);
+                    file.unlink(embryo.selectedNucleus(), true);
                 }
             }
         });
@@ -94,7 +94,7 @@ public class SelectedNucleusFrame extends JFrame implements ChangeListener    {
                 String childName = npPanel.getChild2();
                 Nucleus childNuc = file.getNucleus(childName);
                 if (childNuc != null) {
-                    file.unlink(embryo.selectedNucleus(), childNuc);
+                    file.unlink(embryo.selectedNucleus(),true);
                 }
             }
         });

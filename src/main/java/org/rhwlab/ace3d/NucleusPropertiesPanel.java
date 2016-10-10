@@ -58,11 +58,11 @@ public class NucleusPropertiesPanel extends JPanel implements InvalidationListen
 
     public void renameCell(){
         if (embryo == null) return;
+        embryo.renameSelectedCell(this.cell.getText().trim());
         
-        Nucleus selected = embryo.selectedNucleus();
-        Cell sel = selected.getCell();
-        sel.setName(this.cell.getText().trim());
-        sel.nameChildren(null);
+
+        
+//        sel.nameChildren(null);
     }
     @Override
     public void invalidated(Observable observable) {

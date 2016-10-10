@@ -10,6 +10,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Ellipse2D;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Random;
@@ -495,18 +496,19 @@ public class Nucleus implements Comparable {
     // return Nulcues[1] if linked in time
     // return Nucleus[2] if dividing
     public Nucleus[] nextNuclei(){
-        if (cell == null){
-            return new Nucleus[0];
-        }
+
         if (this.isDividing()){
             Nucleus[] ret = new Nucleus[2];
             Cell[] children = cell.getChildren();
             ret[0] = children[0].firstNucleus();
             ret[1] = children[1].firstNucleus();
             return ret;
-        }else {
+        }else if(cell.lastTime() == this.time){
+            return new Nucleus[0]; // no next nucleus, it is the last nucleus in a lef cell
+        }
+        else {
             Nucleus[] ret = new Nucleus[1];
-            ret[0] = cell.nuclei.ceilingEntry(time).getValue();
+            ret[0] = cell.nuclei.ceilingEntry(time+1).getValue();
             return ret;
         }
     }
@@ -518,10 +520,25 @@ public class Nucleus implements Comparable {
         return Math.sqrt(delx*delx + dely*dely + delz*delz);
     }
     public double shapeDistance(Nucleus other){
+        double ret = 0.0;
         double[] l = other.adjustedEigenA.getRealEigenvalues();
         for (int i=0 ; i<l.length ; ++i){
             l[i] = 1.0/Math.sqrt(l[i]);
         }
+        Arrays.sort(l);
+        double[] k = this.adjustedEigenA.getRealEigenvalues();
+        for (int i=0 ; i<k.length ; ++i){
+            k[i] = 1.0/Math.sqrt(k[i]);
+        }
+        Arrays.sort(k);  
+        
+        for (int i=0 ; i<k.length ; ++i){
+            double del = k[i]-l[i];
+            ret = ret + del*del;
+        }
+        ret = Math.sqrt(ret);
+        return ret;
+/*        
         RealMatrix Vt = other.adjustedEigenA.getVT();
         RealMatrix V = other.adjustedEigenA.getV();
         DiagonalMatrix D = new DiagonalMatrix(l);
@@ -530,7 +547,7 @@ public class Nucleus implements Comparable {
 //        reportMatrix(System.out,"\n\nBp",Bp);
         EigenDecomposition dec = new EigenDecomposition(Bp);
         double [] eigen = dec.getRealEigenvalues();
-        double ret = eigen[0]/eigen[2];
+        ret = eigen[0]/eigen[2];
         if (ret < 1.0){
             ret = 1.0/ret;
         }
@@ -549,7 +566,7 @@ public class Nucleus implements Comparable {
 //        System.out.printf("%f \n",f);
 //System.out.printf("%s:%s  (%e,%e,%e):(%e,%e.%e)\n",this.getName(),other.getName(),this.getRadius(0),this.getRadius(1),this.getRadius(2),other.getRadius(0),other.getRadius(1),other.getRadius(2));
         return ret;
-
+*/
     }
     private void reportMatrix(PrintStream stream,String label,RealMatrix m){
         stream.printf("%s: ",label);
@@ -570,6 +587,15 @@ public class Nucleus implements Comparable {
         return ret;
     }
    
+    public void report(PrintStream stream){
+        stream.printf("Nucleus:%s time=%d  cell=%s\n", name,time,cell.getName()); 
+        if (cell != null){
+            cell.report(stream);
+        } else {
+            stream.println("Cell is null");
+        }
+        
+    }
     private int time;
     private String name;
     private double xC;

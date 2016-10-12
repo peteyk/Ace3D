@@ -110,7 +110,12 @@ public class SingleSlicePanel extends JPanel implements ChangeListener {
                         g2.setColor(Color.GREEN);
                         drawSisters(g2);  // draw the sister indicator   
 //                        g2.setColor(save);
-                   }                   
+                   }     
+                   if (Ace3D_Frame.divisionsIndicated()){
+                        g2.setColor(Color.GREEN);
+                        drawDivisions(g2);  // draw the sister indicator   
+//                        g2.setColor(save);
+                   }                    
                    if (Ace3D_Frame.labelNuclei()){
                         g2.setColor(Color.GREEN);
                         labelAllNuclei(g2);
@@ -475,6 +480,17 @@ public class SingleSlicePanel extends JPanel implements ChangeListener {
             Nucleus nuc2 = entry.getValue();
             if (visible(nuc1)||visible(nuc2)){
                 g2.drawLine(screenX(nuc1.getCenter()),screenY(nuc1.getCenter()),screenX(nuc2.getCenter()),screenY(nuc2.getCenter()));
+            }
+        }
+    }
+    private void drawDivisions(Graphics2D g2){
+        Set<Nucleus> nucs = embryo.getNuclei(timePointImage.getTime());
+        for (Nucleus nuc : nucs){
+            if (nuc.equals(this.embryo.selectedNucleus())){
+                Nucleus sister = nuc.getSisterNucleus();
+                if (sister != null){
+                    g2.drawLine(screenX(nuc.getCenter()),screenY(nuc.getCenter()),screenX(sister.getCenter()),screenY(sister.getCenter()));
+                }
             }
         }
     }

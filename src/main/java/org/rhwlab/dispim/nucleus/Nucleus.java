@@ -600,6 +600,25 @@ public class Nucleus implements Comparable {
     public Cell getRoot(){
         return this.getCell().getRoot();
     }
+    // return the sister nucleus if parent just divided
+    public Nucleus getSisterNucleus(){
+        if (this.getCell().firstNucleus().getName().equals(this.getName())){
+           // this is the first nucleus in the cell, so parent just divided
+           Cell parentCell = this.getCell().getParent();
+           if (parentCell != null){
+               Cell[] children = parentCell.getChildren();
+               Nucleus sisterNuc = children[0].firstNucleus();
+               if (!sisterNuc.getName().equals(this.getName())){
+                   return sisterNuc;
+               }else {
+                   return children[1].firstNucleus();
+               }
+           }
+        }else {
+            return null;
+        }
+        return null;
+    }
     private int time;
     private String name;
     private double xC;

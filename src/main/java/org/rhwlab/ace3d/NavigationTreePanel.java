@@ -67,11 +67,13 @@ public class NavigationTreePanel extends JPanel implements ChangeListener{
                     CellLocation cellLoc = cellImage.cellAtLocation(x, y);
                     if (cellLoc != null){
                         Cell cell = embryo.getNucleusFile().getCell(cellLoc.name);
-                        double f = (y-cellLoc.y0)/(cellLoc.y1-cellLoc.y0);
-                        int t = cell.firstTime() + (int)(f*(cell.lastTime()-cell.firstTime()));
-                        Nucleus nuc = cell.getNucleus(t);
-                        nucName = nuc.getName();
-                        System.out.printf("%s\n",nuc.getName());
+                        if (cell != null){
+                            double f = (y-cellLoc.y0)/(cellLoc.y1-cellLoc.y0);
+                            int t = cell.firstTime() + (int)(f*(cell.lastTime()-cell.firstTime()));
+                            Nucleus nuc = cell.getNucleus(t);
+                            nucName = nuc.getName();
+                            System.out.printf("%s\n",nuc.getName());
+                        }
                     }  
                 }
             }

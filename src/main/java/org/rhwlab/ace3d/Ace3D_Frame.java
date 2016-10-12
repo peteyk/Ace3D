@@ -361,6 +361,16 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
         });
         view.add(segmentedNuclei);
         
+        divisionIndicator = new JCheckBoxMenuItem("Division indicator");
+        divisionIndicator.setSelected(true);
+        divisionIndicator.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                panel.repaint();
+            }
+        });        
+        view.add(divisionIndicator);
+        
         sisters = new JCheckBoxMenuItem("Sister indicator");
         sisters.setSelected(false);
         sisters.addActionListener(new ActionListener(){
@@ -644,6 +654,9 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
     static public boolean sistersIndicated(){
         return sisters.getState();
     }
+    static public boolean divisionsIndicated(){
+        return divisionIndicator.getState();
+    }    
     static public boolean nucleiIndicated(){
         return segmentedNuclei.getState();
     }
@@ -705,6 +718,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
     static JCheckBoxMenuItem segmentedNuclei;
     static JCheckBoxMenuItem sisters;
     static JCheckBoxMenuItem locationIndicator;
+    static JCheckBoxMenuItem divisionIndicator;
     static JCheckBoxMenuItem nucleiLabeled;
     static JCheckBoxMenuItem selectedLabeled;
     static JMenuItem[] colorChoices;

@@ -58,7 +58,7 @@ public class BHCTree {
         }
         
         for (Element nodeEle : root.getChildren("Node")){
-            StdNode std = new StdNode(nodeEle);  // build the node and all the children
+            StdNode std = new StdNode(nodeEle,null);  // build the node and all the children
             roots.add(std);
         }
     }    
@@ -107,6 +107,7 @@ public class BHCTree {
         return new BHC_NucleusFile(cutTreeAtThreshold(threshold));
     }
     // cut this tree at the given threshold into an XML element
+    // the children of the returned Element are the GaussianMixtureModel descriptions of a nucleus
     public Element cutTreeAtThreshold(double threshold){
         Element root = new Element("BHCNucleusList"); 
         root.setAttribute("treefile",fileName);
@@ -172,6 +173,16 @@ public class BHCTree {
         return null;
     }
 */
+    public Node findNode(int label){
+        for (Node root : roots){
+            NodeBase nodeBase = (NodeBase)root;
+            Node ret = nodeBase.findNodeWithlabel(label);
+            if (ret != null){
+                return ret;
+            }
+        }
+        return null;
+    }
     static public void main(String[] args) throws Exception {
         String dir = "/net/waterston/vol2/home/gevirl/rnt-1/segmented";
         File directory = new File(dir);

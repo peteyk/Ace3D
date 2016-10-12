@@ -91,10 +91,21 @@ abstract public class NodeBase implements Node {
         return idUsed;
     }    
 
-    // save just this node to an xml element
+    
+    // add as a child, just this node as a GaussinaMixtureModel xml element into a root Element
     // return -1 if not saved
     public int saveAsXML(Element root,int id) {
-        
+        Element clusterEle = formElementXML(id);
+        if (clusterEle != null){
+            root.addContent(clusterEle);
+            return id;            
+        }else {
+            return -1;
+        }
+
+    }
+    // form an XML Element from this node
+    public Element formElementXML(int id){
         List<MicroCluster> micros = new ArrayList<>();
         this.getDataAsMicroCluster(micros);
         RealVector mu = MicroCluster.mean(micros);
@@ -125,12 +136,10 @@ abstract public class NodeBase implements Node {
                 }
             }
             clusterEle.setAttribute("W", builder.toString());
-            root.addContent(clusterEle);
-            return id;
+            return clusterEle;
         }else {
-            MicroCluster.precision(micros, mu);
+            return null;
         }
-        return -1;
     }
     @Override
     public Node getLeft() {
@@ -175,6 +184,7 @@ abstract public class NodeBase implements Node {
     }
     // label this node and all its children, given a starting label
     // return the highest label used
+    // this results in the labels as keys in a binary tree so a given node can be found quickly by its label
     public int labelNode(int startingWith){
         if (left == null && right == null){
             label = startingWith;
@@ -185,11 +195,41 @@ abstract public class NodeBase implements Node {
         int ret = ((NodeBase)right).labelNode(this.label + 1);
         return ret;
     }
+    public Node findNodeWithlabel(int labelToFind){
+        if (this.label == labelToFind){
+            return this;
+        }
+        if (this.left == null){
+            return null;
+        }
+        if (this.label < labelToFind){
+            return ((NodeBase)right).findNodeWithlabel(labelToFind);
+        } else {
+            return ((NodeBase)left).findNodeWithlabel(labelToFind);
+        }
+    }
+    public Node getParent(){
+        return this.parent;
+    }
+    public Node getSister(){
+        if (this.parent != null){
+            if (this.parent.getRight().equals(this)){
+                return this.parent.getLeft();
+            }else {
+                return this.parent.getRight();
+            }
+        }
+        return null;
+    }
+    public int getLabel(){
+        return label;
+    }
    
     Integer N; // number of microclusters in assigned to this node  
     Node left;
     Node right;
     int label;
+    Node parent;
 
     Dfp r;   // posterior of the merged hypothesis
     double realR;

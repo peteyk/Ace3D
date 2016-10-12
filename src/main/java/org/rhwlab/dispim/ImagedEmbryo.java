@@ -5,7 +5,9 @@
  */
 package org.rhwlab.dispim;
 
+import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import org.rhwlab.dispim.nucleus.Nucleus;
 import java.util.List;
 import java.util.Set;
@@ -24,9 +26,15 @@ import net.imglib2.realtransform.Translation3D;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
+import org.rhwlab.BHC.BHCTree;
+import org.rhwlab.BHC.Node;
+import org.rhwlab.BHC.NodeBase;
 import org.rhwlab.ace3d.Ace3D_Frame;
 import org.rhwlab.ace3d.SynchronizedMultipleSlicePanel;
 import org.rhwlab.dispim.nucleus.Ace3DNucleusFile;
+import org.rhwlab.dispim.nucleus.BHC_Nucleus;
+import org.rhwlab.dispim.nucleus.BHC_NucleusDirectory;
+import org.rhwlab.dispim.nucleus.BHC_NucleusFile;
 import org.rhwlab.dispim.nucleus.NucleusFile;
 
 /**
@@ -236,6 +244,60 @@ public class ImagedEmbryo implements Observable {
     public void renameSelectedCell(String newName){
         ((Ace3DNucleusFile)nucFile).renameCell(newName);
     }
+    // join the selected nucleus to its sister
+    public void joinSelectedNucleus()throws Exception {
+       
+        Nucleus nuc = nucFile.getSelected();
+        if (nuc == null) return;
+        int time = nuc.getTime();
+        
+        // make a Nucleus from the selected nucleus' parent node
+        BHC_Nucleus bhcNuc = (BHC_Nucleus)nuc;
+        BHCTree tree = getBHCTree(time);
+        NodeBase node = (NodeBase)tree.findNode(Integer.valueOf(bhcNuc.getSourceNode()));
+        NodeBase parent = (NodeBase)node.getParent();
+        BHC_Nucleus joinedNuc = new BHC_Nucleus(nuc.getTime(),parent.formElementXML(Integer.valueOf(bhcNuc.getID())));
+        
+        // find the Nucleus that corresponds to the sister node
+        Nucleus sisterNuc = null;
+        int sisterLabel = ((NodeBase)node.getSister()).getLabel();
+        for (Nucleus possibleSister : nucFile.getNuclei(time)){
+            int possibleLabel = Integer.valueOf(((BHC_Nucleus)possibleSister).getSourceNode());
+            if (possibleLabel == sisterLabel){
+                sisterNuc = possibleSister;
+                break;
+            }
+        }
+        // unlink the nuclei
+        Ace3DNucleusFile nf = ((Ace3DNucleusFile)nucFile);
+        nf.unlinkTime(time);
+        nf.unlinkTime(time-1);
+            
+        nf.removeNucleus(nuc, false);
+        nf.removeNucleus(sisterNuc, false);
+        nf.addNucleus(joinedNuc,false);
+
+        nf.linkTimePoint(time-1);
+        nf.linkTimePoint(time);
+        nf.notifyListeners();        
+
+    }
+    // split the selected nucleus into daughters 
+    public void splitSelectedNucleus(){
+        
+    }
+    public BHCTree getBHCTree(int time)throws Exception {
+        BHCTree tree = this.bhcTreeMap.get(time);
+        if (tree == null) {
+            BHC_NucleusDirectory bhc = ((Ace3DNucleusFile) nucFile).getBHC();
+            BHC_NucleusFile bhcNucFile = bhc.getFileforTime(time);
+            File bhcFile = bhcNucFile.getBHCTreeFile();
+            tree = new BHCTree(bhcFile.getPath());
+            bhcTreeMap.put(time, tree);
+        }
+        return tree;
+    }    
+    HashMap<Integer,BHCTree> bhcTreeMap = new HashMap<>();
     SynchronizedMultipleSlicePanel panel;
     ArrayList<InvalidationListener> listeners = new ArrayList<>();
     NucleusFile nucFile;

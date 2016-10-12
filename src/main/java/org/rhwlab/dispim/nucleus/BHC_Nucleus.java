@@ -23,7 +23,7 @@ public class BHC_Nucleus extends Nucleus {
         public BHC_Nucleus(JsonObject jsonObj){
             super(jsonObj);
             this.sourceNode = jsonObj.getString("SourceNode");
-            this.id = super.getName();
+            this.id = super.getName().substring(super.getName().indexOf('_')+1);
         }
     public BHC_Nucleus(int time,Element gmm){
         super(time,name(time,gmm),center(gmm),10.0);  // for now make all radii the same
@@ -101,6 +101,9 @@ public class BHC_Nucleus extends Nucleus {
 //        double r = 1.0/Math.sqrt(Ace3D_Frame.R*eigenVal);
         double r = this.getRadius(adjustedI);
         return String.format("%4.1f(%.2f,%.2f,%.2f)",r, v.getEntry(0),v.getEntry(1),v.getEntry(2));
+    }
+    public String getSourceNode(){
+        return this.sourceNode;
     }
     String id;
     String sourceNode;

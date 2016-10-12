@@ -596,6 +596,10 @@ public class Nucleus implements Comparable {
         }
         
     }
+    // return the root cell leading to this nucleus
+    public Cell getRoot(){
+        return this.getCell().getRoot();
+    }
     private int time;
     private String name;
     private double xC;

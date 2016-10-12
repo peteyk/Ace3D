@@ -29,6 +29,8 @@ public class StdNode extends  NodeBase {
         this.micro = micro;
         this.left = null;
         this.right = null;
+        this.parent = null;
+        
         d = alpha;
         pi = 1.0;
         onePi = 0.0;
@@ -38,16 +40,19 @@ public class StdNode extends  NodeBase {
         this.micro = null;
         this.left = l;
         this.right = r; 
+        ((NodeBase)this.left).parent = this;
+        ((NodeBase)this.right).parent = this;
         posterior();
     }
-    public StdNode(Element ele){
+    public StdNode(Element ele,Node par){
+        this.parent = par;
         this.label = Integer.valueOf(ele.getAttributeValue("label"));
         this.realR = Double.valueOf(ele.getAttributeValue("posterior"));
         String centerStr = ele.getAttributeValue("center");
         if (centerStr == null){
             List<Element> children = ele.getChildren("Node");
-            this.left = new StdNode(children.get(0));
-            this.right = new StdNode(children.get(1));
+            this.left = new StdNode(children.get(0),this);
+            this.right = new StdNode(children.get(1),this);
         } else {
             this.micro = new MicroCluster(ele);
         }

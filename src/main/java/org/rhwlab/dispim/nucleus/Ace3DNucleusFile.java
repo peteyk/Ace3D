@@ -10,9 +10,6 @@ import java.io.FileReader;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeMap;
@@ -24,10 +21,6 @@ import javax.json.JsonArrayBuilder;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonReader;
-import org.jgrapht.WeightedGraph;
-import org.jgrapht.graph.DefaultDirectedWeightedGraph;
-import org.jgrapht.graph.DefaultWeightedEdge;
-import org.jgrapht.graph.SimpleWeightedGraph;
 import org.rhwlab.ace3d.SelectedNucleusFrame;
 import org.rhwlab.ace3d.SynchronizedMultipleSlicePanel;
 
@@ -50,6 +43,7 @@ public class Ace3DNucleusFile implements NucleusFile,javafx.beans.Observable   {
         this.opening = true;
         JsonReader reader = Json.createReader(new FileReader(file));
         JsonObject obj = reader.readObject();
+        this.bhc = new BHC_NucleusDirectory(new File(obj.getJsonString("BHC").getString()));
         JsonArray jsonNucs = obj.getJsonArray("Nuclei");
         for (int n=0 ; n<jsonNucs.size() ; ++n){
             JsonObject jsonNuc = jsonNucs.getJsonObject(n);
@@ -130,17 +124,17 @@ public class Ace3DNucleusFile implements NucleusFile,javafx.beans.Observable   {
     }
     // unlink all the nuclei in a gven time
     public void unlinkTime(int t){
-        System.out.print("Before unlinking\n");
-        report(System.out,t);
-        System.out.printf("Unlinking time: %d\n", t);
+//        System.out.print("Before unlinking\n");
+//        report(System.out,t);
+//        System.out.printf("Unlinking time: %d\n", t);
         TreeSet<Nucleus> nucs = this.getNuclei(t);
         for (Nucleus nuc : nucs.descendingSet()){
             this.unlink(nuc,false);
-            System.out.printf("After unlinking nucleus: %s\n",nuc.getName());
-            this.report(System.out, t);
-            System.out.printf("Roots at time %d\n",t+1);
+//            System.out.printf("After unlinking nucleus: %s\n",nuc.getName());
+//            this.report(System.out, t);
+//            System.out.printf("Roots at time %d\n",t+1);
             for (Cell r : this.roots.get(t+1)){
-                r.report(System.out);
+ //               r.report(System.out);
             }
         }
         this.notifyListeners();
@@ -278,6 +272,7 @@ public class Ace3DNucleusFile implements NucleusFile,javafx.beans.Observable   {
     }
     public JsonObjectBuilder asJson(){
         JsonObjectBuilder builder = Json.createObjectBuilder();
+        builder.add("BHC", this.bhc.getTypicalFile().getPath());
         builder.add("Nuclei", this.nucleiAsJson());
         builder.add("Roots",this.rootsAsJson());
         return builder;
@@ -419,7 +414,7 @@ public class Ace3DNucleusFile implements NucleusFile,javafx.beans.Observable   {
     }
     public void removeNucleiAtTime(int time){
         // make sure all nuclei are unlinked BHC nuclei
-        Set<Nucleus> nuclei = this.byTime.get(time);
+        Nucleus[] nuclei = this.byTime.get(time).toArray(new Nucleus[0]);
         for (Nucleus nuc : nuclei){
             if (!(nuc instanceof BHC_Nucleus)){
                 System.err.println("cannot remove non BHC nuclei");
@@ -427,20 +422,55 @@ public class Ace3DNucleusFile implements NucleusFile,javafx.beans.Observable   {
             }
         }
         for (Nucleus nuc : nuclei){
-            this.unlink(nuc, false);
-            String cellName = nuc.getCell().getName();
-            cellMap.remove(cellName);
-            String nucName = nuc.getName();
-            byName.remove(nucName);
-            byTime.remove(time);
-            roots.remove(time);
+            removeNucleus(nuc,false);
         }
         this.notifyListeners(); 
     }   
 
+    public void removeNucleus(Nucleus nuc,boolean notify){
+        int time = nuc.getTime();
+        Cell cell = nuc.getCell();
+        String cellName = nuc.getCell().getName();
+        
+        this.unlink(nuc, false);
+        // afer unlinking nucleus, it is now the last Nucleus in an unlinked cell
+        
+        // remove the nucleus from the cell
+        cell.removeNucleus(time);
+
+        // remove the nucleus from indexes
+        String nucName = nuc.getName();
+        byName.remove(nucName);
+        Set<Nucleus> nucs = byTime.get(time);
+        nucs.remove(nuc);
+        
+        // if the cell is empty, remove the cell
+        if (cell.allNuclei().length ==0){
+            Set<Cell> rootCellsAtTime = this.roots.get(time);
+            if (rootCellsAtTime.contains(cell)){
+                rootCellsAtTime.remove(cell);
+                this.cellMap.remove(cellName);
+            }else {
+                // merge sister cell with parent cell
+                Cell sisterCell = cell.getSister();
+                sisterCell.mergeWithParent();
+                String sisterName = sisterCell.getName();
+                this.cellMap.remove(cellName);
+                this.cellMap.remove(sisterName);
+                        
+            }
+        }       
+
+        if (notify){
+            this.notifyListeners();
+        }
+    }
     
     public void linkTimePoint(int fromTime){
 System.out.printf("Linking time: %d\n", fromTime);
+if (fromTime == 86){
+    int iasfbhisa=0;
+}
         Nucleus[] fromNucs = byTime.get(fromTime).toArray(new Nucleus[0]);
         Integer[] fromNN = new Integer[fromNucs.length];
         Set<Nucleus> toNucsSet = byTime.get(fromTime+1);
@@ -534,7 +564,10 @@ System.out.printf("Linking time: %d\n", fromTime);
                                 }
                             }
                         }
-                        if (linkable){
+                        if (linkable && dist[r][toIndex]<= distanceThreshold){
+                            if (r==5){
+                                int suhdfs=0;
+                            }
                             this.linkInTime(fromNucs[r], toNucs[toIndex]);
                             fromNucs[r] = null;
                             fromNN[r] = null;
@@ -553,7 +586,7 @@ System.out.printf("Linking time: %d\n", fromTime);
                 for (int r=0 ; r<fromNucs.length ; ++r){
                     if (fromNucs[r] != null) {
                         Integer toIndex = fromNN[r];
-                        if (toIndex != -1 && toNN[toIndex]!=null && toNN[toIndex] == r){
+                        if (toIndex != -1 && toNN[toIndex]!=null && toNN[toIndex] == r && dist[r][toIndex]<=distanceThreshold){
                             // can be linked
                             this.linkInTime(fromNucs[r], toNucs[toIndex]);
                             fromNucs[r] = null;
@@ -600,14 +633,16 @@ System.out.printf("Linking time: %d\n", fromTime);
                                     double a = from.distance(toNucs[i]);
                                     double b = from.distance(toNucs[j]);
                                     double c = toNucs[i].distance(toNucs[j]);
+                                    if (a <=distanceThreshold && b <=distanceThreshold){
 //System.out.printf("from:%d to:%d to%d a=%f b=%f c=%f \n",k,i,j,a,b,c);                                    
 //                                    double area = HeronFormula(a,b,c);
-                        
-                                    Integer[] division = new Integer[3];
-                                    division[0] = k;
-                                    division[1] = i;
-                                    division[2] = j;
-                                    map.put(a+b+c,division);
+
+                                        Integer[] division = new Integer[3];
+                                        division[0] = k;
+                                        division[1] = i;
+                                        division[2] = j;
+                                        map.put(a+b+c,division);
+                                    }
                                 }
                             }
                         }
@@ -677,6 +712,13 @@ System.out.printf("Linking time: %d\n", fromTime);
         cellMap.put(newName, selectedCell);
         cellMap.remove(oldName);
     }
+    public void setBHC(BHC_NucleusDirectory bhc){
+        this.bhc = bhc;
+    }
+    public BHC_NucleusDirectory getBHC(){
+        return this.bhc;
+    }
+    BHC_NucleusDirectory bhc;
     SynchronizedMultipleSlicePanel panel;
     SelectedNucleusFrame frame;
     boolean opening = true;
@@ -690,5 +732,5 @@ System.out.printf("Linking time: %d\n", fromTime);
 
     double shapeThreshold=25;
     double areaThreshold=200;
-
+    double distanceThreshold = 50.0;
 }

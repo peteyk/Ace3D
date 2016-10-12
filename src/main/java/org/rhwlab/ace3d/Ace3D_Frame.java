@@ -16,6 +16,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -498,8 +499,9 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
                 }
             }
             File sel = nucChooser.getSelectedFile();
-            bhc  = new BHC_NucleusDirectory(sel);
+            BHC_NucleusDirectory bhc  = new BHC_NucleusDirectory(sel);
             bhc.openInto((Ace3DNucleusFile)nucFile);
+            ((Ace3DNucleusFile)nucFile).setBHC(bhc);
             props.setProperty("BHC",sel.getPath());
         }
         
@@ -538,9 +540,10 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
     }
     private void cutTree()throws Exception {
         int time = this.getCurrentTime();
+        BHC_NucleusDirectory bhc = ((Ace3DNucleusFile)nucFile).getBHC();
         BHC_NucleusFile bhcNucFile = bhc.getFileforTime(time);
         File bhcFile = bhcNucFile.getBHCTreeFile();
-        BHCTree tree = new BHCTree(bhcFile.getPath());
+        BHCTree tree = imagedEmbryo.getBHCTree(this.getCurrentTime());
         if (treeCutDialog == null){
             treeCutDialog = new BHCTreeCutDialog(this,this.nucFile);
         }
@@ -551,6 +554,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
             bhcNucFile.setThreshold(nextThresh);
         }
     }
+
     private void saveAsNucFile()throws Exception {
         buildChooser();
         if (nucFile != null && nucFile.getFile()!=null){
@@ -687,6 +691,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
     NucleusFile nucFile;
     ImagedEmbryo imagedEmbryo;
     
+    
     SynchronizedMultipleSlicePanel panel;
     SelectedNucleusFrame selectedNucFrame;
     JFileChooser nucChooser;
@@ -695,7 +700,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
     Navigation_Frame navFrame;
     LookUpTables lookUpTables = new LookUpTables();
     BHCTreeCutDialog treeCutDialog;
-    BHC_NucleusDirectory bhc;
+//    BHC_NucleusDirectory bhc;
     
     static JCheckBoxMenuItem segmentedNuclei;
     static JCheckBoxMenuItem sisters;

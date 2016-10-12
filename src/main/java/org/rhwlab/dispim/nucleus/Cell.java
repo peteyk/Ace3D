@@ -379,6 +379,25 @@ public class Cell  implements Comparable {
             stream.printf("\tNucleus: %d,%s\n",time,nuc.getName());
         }
     }
+    public void removeNucleus(int time){
+        nuclei.remove(time);
+    
+    }
+    // merge this cell with its parent
+    public void mergeWithParent(){
+        parent.children = this.children;
+        for (Nucleus nuc : this.allNuclei()){
+            parent.addNucleus(nuc);
+        }
+        
+    }
+    // return the root cell of this cell
+    public Cell getRoot(){
+        if (this.parent == null){
+            return this;
+        }
+        return this.parent.getRoot();
+    }
     String name;
     Cell parent;  // the parent cell - can be null
     List<Cell> children = new ArrayList<>();  // children after division of this cell - can be empty

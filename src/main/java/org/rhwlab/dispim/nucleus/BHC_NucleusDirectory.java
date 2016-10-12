@@ -16,14 +16,21 @@ import java.util.regex.Pattern;
  */
 public class BHC_NucleusDirectory {
     public BHC_NucleusDirectory(File file) {
-        this.file = file;
+        this.typicalFile = file;
     }
 
     public void openInto(Ace3DNucleusFile nucFile)throws Exception {
-
-        File directory = file.getParentFile();
         nucFile.opening = true;
-        Matcher m = p.matcher(file.getName());
+        buildMap();
+        for (BHC_NucleusFile gmmFile : fileMap.values()){
+            nucFile.addBHC(gmmFile);
+        }
+        nucFile.opening = false;
+        nucFile.notifyListeners();
+    }
+    private void buildMap()throws Exception {
+         File directory = typicalFile.getParentFile();
+        Matcher m = p.matcher(typicalFile.getName());
         m.matches();
         String prefix = m.group(1);
         String suffix = m.group(3);
@@ -37,16 +44,16 @@ public class BHC_NucleusDirectory {
                 if (m.matches()){
                     int time = Integer.valueOf(m.group(1));
                     BHC_NucleusFile gmmFile = new BHC_NucleusFile(time,file);
-                    nucFile.addBHC(gmmFile);
+                    
                     fileMap.put(time, gmmFile);
                 }
             }
-        }
-        nucFile.opening = false;
-        nucFile.notifyListeners();
-        int uiashdfuis=0;
+        }        
     }
-    public BHC_NucleusFile getFileforTime(int time){
+    public BHC_NucleusFile getFileforTime(int time)throws Exception {
+        if (fileMap== null){
+            buildMap();
+        }
         return fileMap.get(time);
     }
     public void putFileForTime(int time,BHC_NucleusFile file){
@@ -60,7 +67,10 @@ public class BHC_NucleusDirectory {
         }
         return -1;
     }
-    File file;
+    public File getTypicalFile(){
+        return typicalFile;
+    }
+    File typicalFile;
     static Pattern p = Pattern.compile("(.+)(\\d{3})(.+xml)");
     HashMap<Integer,BHC_NucleusFile> fileMap;
 }

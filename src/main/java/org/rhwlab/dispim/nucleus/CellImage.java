@@ -36,6 +36,7 @@ public class CellImage {
         g2.setStroke(stroke);
         locations.clear();
         drawCell(0,w,0,cell);
+
         return image;
     }
     // draw a cell and its descendents into a portion of the bufferedimage

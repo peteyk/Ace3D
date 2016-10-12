@@ -12,6 +12,7 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionAdapter;
 import java.awt.geom.AffineTransform;
 import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
@@ -35,6 +36,7 @@ public class NavigationTreePanel extends JPanel implements ChangeListener{
         embryo = emb;
         lut.min = 0;
         lut.max = 255;
+        
         this.addMouseListener(new MouseAdapter(){
             @Override
             public void mouseClicked(MouseEvent e){
@@ -43,10 +45,34 @@ public class NavigationTreePanel extends JPanel implements ChangeListener{
                 CellLocation cellLoc = cellImage.cellAtLocation(x, y);
                 if (cellLoc != null){
                     Cell cell = embryo.getNucleusFile().getCell(cellLoc.name);
-                    double f = (y-cellLoc.y0)/(cellLoc.y1-cellLoc.y0);
-                    int t = cell.firstTime() + (int)(f*(cell.lastTime()-cell.firstTime()));
-                    Nucleus nuc = cell.getNucleus(t);
-                    embryo.setSelectedNucleus(nuc);
+                    if (e.getButton() == MouseEvent.BUTTON1) {
+                        double f = (y-cellLoc.y0)/(cellLoc.y1-cellLoc.y0);
+                        int t = cell.firstTime() + (int)(f*(cell.lastTime()-cell.firstTime()));
+                        Nucleus nuc = cell.getNucleus(t);
+                        embryo.setSelectedNucleus(nuc);
+                    } else if (e.getButton()==MouseEvent.BUTTON3){
+                        Nucleus nuc = cell.getNucleus(cell.lastTime());
+                        embryo.setSelectedNucleus(nuc);                        
+                    }
+                }
+            }
+        });
+        
+        this.addMouseMotionListener(new MouseMotionAdapter(){
+            @Override
+            public void mouseMoved(MouseEvent e){
+                int x = e.getX();
+                int y = e.getY();
+                if (cellImage != null){
+                    CellLocation cellLoc = cellImage.cellAtLocation(x, y);
+                    if (cellLoc != null){
+                        Cell cell = embryo.getNucleusFile().getCell(cellLoc.name);
+                        double f = (y-cellLoc.y0)/(cellLoc.y1-cellLoc.y0);
+                        int t = cell.firstTime() + (int)(f*(cell.lastTime()-cell.firstTime()));
+                        Nucleus nuc = cell.getNucleus(t);
+                        nucName = nuc.getName();
+                        System.out.printf("%s\n",nuc.getName());
+                    }  
                 }
             }
         });
@@ -62,6 +88,7 @@ public class NavigationTreePanel extends JPanel implements ChangeListener{
                 headPanel.getTimeScale(),headPanel.getCellWidth());
         int h = buffered.getHeight();
         int w = buffered.getWidth(); 
+
         this.setSize(w,h);
         this.setPreferredSize(new Dimension(w,h));
         this.invalidate();
@@ -101,4 +128,5 @@ public class NavigationTreePanel extends JPanel implements ChangeListener{
     BufferedImage buffered;
     Cell rootCell;
     CellImage cellImage;
+    String nucName;
 }

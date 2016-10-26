@@ -24,12 +24,18 @@ public class BHC_Nucleus extends Nucleus {
             super(jsonObj);
             this.sourceNode = jsonObj.getString("SourceNode");
             this.id = super.getName().substring(super.getName().indexOf('_')+1);
+            this.count = jsonObj.getInt("Count");
+            this.voxels = jsonObj.getInt("Voxels");
+            this.intensity = jsonObj.getJsonNumber("Intensity").longValue();
+            init();
         }
     public BHC_Nucleus(int time,Element gmm){
         super(time,name(time,gmm),center(gmm),10.0);  // for now make all radii the same
         id = gmm.getAttributeValue("id");
-
+        count = Integer.valueOf(gmm.getAttributeValue("count"));
         sourceNode = gmm.getAttributeValue("sourceNode");
+        intensity = Long.valueOf(gmm.getAttributeValue("intensity"));
+        voxels = Integer.valueOf(gmm.getAttributeValue("voxels"));
         A = precisionFromString(gmm.getAttributeValue("W"));
         eigenA = new EigenDecomposition(A);
         adjustedA = A.copy();
@@ -37,16 +43,29 @@ public class BHC_Nucleus extends Nucleus {
         R = new double[3];
         R[0] = R[1] = R[2] = 2.5;
         this.setAdjustment(R);
+        init();
+
+    }
+    private void init(){
+        volume = vf;
+        for (int i=0 ; i<3 ; ++i){
+            volume = volume*this.getRadius(i);
+        }
+        density = count/volume;        
     }
     public Element asXML(){
         Element ret = super.asXML();
         ret.setAttribute("sourceNode", this.sourceNode);
+        ret.setAttribute("count",Integer.toString(this.count));
         return ret;
     }
 
     public JsonObjectBuilder asJson(){
         JsonObjectBuilder ret = super.asJson();
         ret.add("SourceNode", this.sourceNode);
+        ret.add("Count",this.count);
+        ret.add("Voxels",this.voxels);
+        ret.add("Intensity",this.intensity);
         return ret;
     }
     public void printMat(String label,RealMatrix m){
@@ -105,7 +124,22 @@ public class BHC_Nucleus extends Nucleus {
     public String getSourceNode(){
         return this.sourceNode;
     }
+    public double getVolume(){
+        return volume;
+    }
+    public double getDensity(){
+        return density;
+    }
+    public double getAverageIntensity(){
+        return ((double)intensity)/voxels;
+    }
+    static double vf = 4.0*Math.PI/3.0;
     String id;
+    int count;
     String sourceNode;
+    double volume;
+    double density;
+    long intensity;
+    int voxels;
 }
 

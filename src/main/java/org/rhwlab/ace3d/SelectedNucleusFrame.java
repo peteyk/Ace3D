@@ -116,7 +116,8 @@ public class SelectedNucleusFrame extends JFrame implements ChangeListener    {
                     childName = npPanel.getChild2();
                     childNuc = file.getNucleus(childName);  
                     if (childNuc == null){
-                        file.linkDivision(embryo.selectedNucleus(), markedNuc);
+                        
+//                        file.linkDivision(embryo.selectedNucleus(), markedNuc);
                     }
                 }
             }
@@ -133,10 +134,7 @@ public class SelectedNucleusFrame extends JFrame implements ChangeListener    {
         npPanel.invalidated(embryo);
         radiusControl.invalidated(embryo);
     }
-    
     ImagedEmbryo embryo;  
     NucleusPropertiesPanel npPanel;
     RadiusControlPanel radiusControl;
-
-            
 }

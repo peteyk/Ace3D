@@ -29,7 +29,7 @@ import org.jdom2.output.XMLOutputter;
 public class SegmentedTiffIntensityDataSource extends SegmentedTiffDataSource implements SegmentedDataSource {
     public SegmentedTiffIntensityDataSource(String tiff,String segmentedTiff,int bck){
         super(segmentedTiff,bck);
-        TiffDataSource tiffSource = new TiffDataSource(tiff);
+        tiffSource = new TiffDataSource(tiff);
         
         // the tiff and the segmented tiff must have the same dimensions
         if (dims.length != tiffSource.dims.length){
@@ -170,12 +170,14 @@ public class SegmentedTiffIntensityDataSource extends SegmentedTiffDataSource im
     @Override
     public Voxel get(int i,int segment){
         // get the voxel from this tiff data source
-        Voxel ret = super.get(segmentIndex.get(segment).get(i));
+        Voxel ret = this.tiffSource.get(segmentIndex.get(segment).get(i));
+/*        
         double I = Math.max(0, ret.getIntensity() - backGround);
         double num = getN(segment);
         double totI = totalIntensity.get(segment);
         double avg = totI/num -backGround ;
         ret.setAdjusted(I/avg);
+*/
         return ret;
     }
     public int getBackground(){
@@ -217,9 +219,9 @@ public class SegmentedTiffIntensityDataSource extends SegmentedTiffDataSource im
         stream.close();
         
     }
-
+    TiffDataSource tiffSource;
     int backGround;
-    HashMap<Integer,Long> totalIntensity;  // sum of all voxel intensities for the voxels in each segment
+    HashMap<Integer,Long> totalIntensity = new HashMap<>();  // sum of all voxel intensities for the voxels in each segment
     
     static public void main(String[] args)throws Exception {
         SegmentedTiffIntensityDataSource source = new SegmentedTiffIntensityDataSource("/nfs/waterston/pete/Segmentation/Cherryimg350.tif",              

@@ -12,6 +12,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import org.apache.commons.math3.analysis.function.Logistic;
+import org.apache.commons.math3.fitting.SimpleCurveFitter;
+import org.apache.commons.math3.fitting.WeightedObservedPoints;
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.input.SAXBuilder;
@@ -124,11 +127,13 @@ public class BHCTree {
     } 
     
     public TreeSet<Double> allPosteriors(){
-        TreeSet<Double> ret = new TreeSet<>();
-        for (Node root : roots){
-            ((NodeBase)root).allPosteriors(ret);
-        }
-        return ret;
+        if (this.allPosts == null){
+            this.allPosts = new TreeSet<>();
+            for (Node root : roots){
+                ((NodeBase)root).allPosteriors(this.allPosts);
+            }
+        }        
+        return allPosts;
     }
     public int getTime(){
         return time;
@@ -183,17 +188,101 @@ public class BHCTree {
         }
         return null;
     }
-    static public void main(String[] args) throws Exception {
-        String dir = "/net/waterston/vol2/home/gevirl/rnt-1/segmented";
-        File directory = new File(dir);
-        for (File file : directory.listFiles()){
-            if (file.getName().contains("BHCTree")){
-                BHCTree tree = new BHCTree(file.getPath());
-                tree.labelNodes();
-                tree.saveAsXML(file.getPath());
-                int iuasdfusd=0;
+    public Element[] cutTreeWithLinearFunction(){
+        Double[] posteriors = this.allPosteriors().toArray(new Double[0]);
+        int x0 = 0;
+        int x1 = posteriors.length-1;
+        boolean better = true;
+        double eMin = lmsError(x0,x1,posteriors);
+        while (x0 < x1 && better){
+            better = false;
+            // try to move x0 up
+            while (x0 < x1){
+                double e = lmsError(x0+1,x1,posteriors);
+                if (e < eMin){
+                    eMin = e;
+                    ++x0;
+                    better = true;
+                } else{
+                    break;
+                }
+            }   
+            // try to move x1 down
+            while (x0 < x1){
+                double e = lmsError(x0,x1-1,posteriors);
+                if (e < eMin){
+                    eMin = e;
+                    --x1;
+                    better = true;
+                } else{
+                    break;
+                }
+            }             
+
+        }
+        Element[] ret = new Element[x1-x0+1];
+        for (int i=0 ; i<ret.length ; ++i){
+            ret[i] = this.cutTreeAtThreshold(posteriors[x0+i]);
+        }
+        return ret;
+    }
+    double lmsError(int x0,int x1,Double[] y){
+        double e = 0.0;
+        double xDel = (double)(x1-x0);
+        for (int i=0 ; i<y.length ; ++i){
+            double del;
+            if (i < x0 ){
+                del = y[i];
+            } else if (i > x1){
+                del = y[i] - 1.0;
+            }  else if (xDel != 0.0 ){
+                del = y[i] - ((double)(i-x0))/(xDel);
+            } else {
+                del = Math.min(y[i],1.0-y[i]);
+            }
+            e = e + del * del;
+        }
+        return e;        
+    }
+    public Element cutTreeWithLogisticFunction(){
+        Double[] posteriors = this.allPosteriors().toArray(new Double[0]);
+        WeightedObservedPoints points = new WeightedObservedPoints();
+        for (int i=0 ; i<posteriors.length ; i = i+10){
+            if (i >=410 && i<=520){
+            points.add(i, posteriors[i]);
+ //           System.out.printf("%d  %f\n",i,posteriors[i]);
             }
         }
+        double[] parameters = new double[6];
+        parameters[0] = 1.0;  // k - upper bound
+        parameters[1]= 475.0;  //m -  x value at maximum growth 
+        parameters[2] = 1.0;  //b - growth rate
+        parameters[3] = 1.0;  // q - related to Y(0)
+        parameters[4] = 0.0;  //a - lower bound
+        parameters[5] = 1.0;  // nu - affect near which asymptote max growth occurs
+        
+        Logistic.Parametric func = new Logistic.Parametric();
+        for (int i=0 ; i<posteriors.length ; ++i){
+            double x = (double)i;
+            double value = func.value(x, parameters);
+            double[] grad = func.gradient(x, parameters);
+//            System.out.printf("%d  %f\n", i,value);
+            for (int j=0 ; j<grad.length ; ++j){
+ //               System.out.printf("\t%f\n",grad[j]);
+            }
+        }
+        
+        SimpleCurveFitter fitter = SimpleCurveFitter.create(new Logistic.Parametric(), parameters);
+//        fitter.withMaxIterations(1);
+        double[] params = fitter.fit(points.toList());
+        return null;
+//        double[] results = fitter.fit(points);
+    }
+    static public void main(String[] args) throws Exception {
+        String f = "/net/waterston/vol2/home/gevirl/rnt-1/xml/img_TL017_Simple_SegmentationBHCTree.xml";
+        BHCTree tree = new BHCTree(f);
+        tree.cutTreeWithLinearFunction();
+
     }     
     String fileName ;
     int time;
@@ -202,6 +291,7 @@ public class BHCTree {
     double s;
     int nu;
     double[] mu;
+    TreeSet<Double> allPosts = null;
     
             
  //   TreeMap<Double,Integer> cutCounts = new TreeMap<>();

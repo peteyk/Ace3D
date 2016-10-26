@@ -176,6 +176,9 @@ public class Cell  implements Comparable {
     public Cell getParent(){
         return this.parent;
     }
+    public boolean isRoot(){
+        return this.parent==null;
+    }
     public Cell[] getChildren(){
         return children.toArray(new Cell[0]);
     }
@@ -196,14 +199,13 @@ public class Cell  implements Comparable {
     // split this cell into two at the given time
     // the nucleus at the given time begins the later cell
     // return the later cell
-    public Cell split(int time){
-        Nucleus nuc = nuclei.get(time);
-        Cell cell = nuc.getCell();
+    public Cell split(Nucleus nuc){
+        int time = nuc.getTime();
         
         // put all the distal nuclei into the new cell
         Cell ret = new Cell(nuc.getName());
-        for (int t=time ; t<=cell.lastTime() ; ++t){
-            Nucleus distal = cell.getNucleus(t);
+        for (int t=time ; t<=lastTime() ; ++t){
+            Nucleus distal = getNucleus(t);
             if (distal != null){
                 ret.addNucleus(distal);
             }
@@ -212,8 +214,10 @@ public class Cell  implements Comparable {
         // remake the proximal cell list of nuclei
         TreeMap<Integer,Nucleus> prox = new TreeMap<>();
         for (int t=this.firstTime() ; t<time ; ++t){
-            Nucleus proxNuc = cell.getNucleus(t);
-            prox.put(t,proxNuc);
+            Nucleus proxNuc = getNucleus(t);
+            if (proxNuc != null){
+                prox.put(t,proxNuc);
+            }
         }
         nuclei = prox;
         
@@ -357,9 +361,8 @@ public class Cell  implements Comparable {
         return children.isEmpty();
     }
     public void setName(String name){
-        if (divisionMap.get(name) != null){
-            this.name = name;
-        }
+
+        this.name = name;
     }
     public Nucleus[] allNuclei(){
         return nuclei.values().toArray(new Nucleus[0]);

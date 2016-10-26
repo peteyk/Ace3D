@@ -295,7 +295,12 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
                         return;
                     }
                     for (int t=getCurrentTime() ; t<=endTime ; ++t){
-                        ((Ace3DNucleusFile)nucFile).linkTimePoint(t);
+                        try {
+ //                           ((Ace3DNucleusFile)nucFile).linkTimePointAdjustable(t,Ace3D_Frame.this.imagedEmbryo.getBHCTree(t+1));
+                            ((Ace3DNucleusFile)nucFile).linkTimePoint(t);
+                        } catch (Exception exc){
+                            exc.printStackTrace();
+                        }
                     }
                     
                 }

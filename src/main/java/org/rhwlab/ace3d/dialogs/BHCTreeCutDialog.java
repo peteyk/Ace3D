@@ -87,8 +87,8 @@ public class BHCTreeCutDialog extends JDialog {
             } catch (Exception exc){
                 exc.printStackTrace();
             }
-            nucleusFile.linkTimePoint(t-1);
-            nucleusFile.linkTimePoint(t);
+//            nucleusFile.linkTimePoint(t-1);
+//            nucleusFile.linkTimePoint(t);
             nucleusFile.notifyListeners();
         }
     }

@@ -13,7 +13,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Random;
+import java.util.TreeMap;
 import javafx.beans.InvalidationListener;
 import javax.json.Json;
 import javax.json.JsonObject;
@@ -467,6 +469,14 @@ public class Nucleus implements Comparable {
         radii[2] = (long)getRadius(2);
         return radii;
     }
+    // return the direction vectors of the ellipsoid axes sorted by length of radii
+    public RealVector[] getAxes(){
+        TreeMap<Double,RealVector> map = new TreeMap<>();
+        for (int d=0 ; d<this.getCenter().length ; ++d){
+            map.put(this.getRadius(d), this.adjustedEigenA.getEigenvector(d));
+        }
+        return map.values().toArray(new RealVector[0]);
+    }
     public String getFrobenius(){
  //       return (this.adjustedEigenA.getV().multiply(this.adjustedEigenA.getD()).subtract(MatrixUtils.createRealIdentityMatrix(3))).getFrobeniusNorm();
       double f = this.adjustedA.getFrobeniusNorm();
@@ -487,7 +497,9 @@ public class Nucleus implements Comparable {
     
     // determine if this nucleus is dividing
     public boolean isDividing(){
-        if (cell == null || cell.lastTime() != this.time || cell.isLeaf()) return false;
+        if (cell == null || cell.lastTime() != this.time || cell.isLeaf()){
+            return false;
+        }
         return true;
     }
     
@@ -508,7 +520,12 @@ public class Nucleus implements Comparable {
         }
         else {
             Nucleus[] ret = new Nucleus[1];
-            ret[0] = cell.nuclei.ceilingEntry(time+1).getValue();
+            Entry<Integer,Nucleus> entry = cell.nuclei.ceilingEntry(time+1);
+            if (entry == null){
+                System.err.println("Error in Nucleus:nextNuclei");
+                System.exit(time);}
+            
+            ret[0] = entry.getValue();
             return ret;
         }
     }
@@ -618,6 +635,33 @@ public class Nucleus implements Comparable {
             return null;
         }
         return null;
+    }
+    public double[] eccentricity(){
+        double[] r = new double[3];
+        for (int i=0 ; i<3 ; ++i){
+            r[i] = this.getRadius(i);
+        }
+        Arrays.sort(r);
+        
+        double[] e = new double[3];
+        e[0] = ecc(r[0],r[1]);
+        e[1] = ecc(r[0],r[2]);
+        e[2] = ecc(r[1],r[2]);
+
+        return e;
+    }
+    private double ecc(double axis1,double axis2){
+        double f = axis1/axis2;
+        return Math.sqrt((1.0- f*f));        
+    }
+    
+    // the time since this nucleus last divided
+    public int timeSinceDivsion(){
+        Cell cell = this.getCell();
+        if (cell.isRoot()){
+            return -1;  // cannot determine time since division in a root cell
+        }
+        return this.time- cell.firstTime() ;
     }
     private int time;
     private String name;

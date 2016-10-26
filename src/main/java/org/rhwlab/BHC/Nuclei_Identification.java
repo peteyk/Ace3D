@@ -9,22 +9,25 @@ import java.io.File;
 import java.io.PrintStream;
 import java.util.Iterator;
 import java.util.List;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.jdom2.Element;
 import org.rhwlab.dispim.datasource.MicroClusterDataSource;
 import org.rhwlab.dispim.datasource.SegmentedTiffDataSource;
+import org.rhwlab.dispim.datasource.SegmentedTiffIntensityDataSource;
 
 /**
  *
  * @author gevirl
  */
 public class Nuclei_Identification implements Runnable {
-    public Nuclei_Identification(String segmentedTiff,boolean force){
+    public Nuclei_Identification(String dir,String lineageTiff,String segmentedTiff,boolean force){
         this.segmentedTiff = segmentedTiff;
+        this.lineageTff = lineageTiff;
         File file = new File(segmentedTiff);
-        this.directory = file.getParentFile();
+        this.directory = new File(dir);
         String name = file.getName();
         this.baseName = baseName(name);
         this.force = force;
@@ -47,20 +50,28 @@ public class Nuclei_Identification implements Runnable {
         return time;
     }
 
+    static File[] xmlFiles(File directory,String baseName){
+        File[] ret = new File[3];
+        String microClusterFileName = baseName + "Clusters.xml";
+        ret[0] = new File(directory,microClusterFileName);
+        String BHCTreeFileName = baseName+"BHCTree.xml";
+        ret[1] = new File(directory,BHCTreeFileName);
+        ret[2] = new File(directory,baseName+".xml");        
+        return ret;
+    }
     @Override
     public void run() {
 
         // determine the file names
-        String microClusterFileName = baseName + "Clusters.xml";
-        File microClusterFile = new File(directory,microClusterFileName);
-        String BHCTreeFileName = baseName+"BHCTree.xml";
-        File BHCTreeFile = new File(directory,BHCTreeFileName);
-        File gmmFile = new File(directory,baseName+".xml");
+        File[] xmls = xmlFiles(directory,baseName);
+        File microClusterFile = xmls[0];
+        File BHCTreeFile = xmls[1];
+        File gmmFile = xmls[2];
         
         if (!microClusterFile.exists()  || force){
             try {
-                SegmentedTiffDataSource segSource = new SegmentedTiffDataSource(segmentedTiff,backgroundSegment); 
-                
+                SegmentedTiffIntensityDataSource segSource = new SegmentedTiffIntensityDataSource(lineageTff,segmentedTiff,backgroundSegment); 
+//                SegmentedTiffDataSource segSource = new SegmentedTiffDataSource(segmentedTiff,backgroundSegment); 
                 this.runMicroCluster(segSource,microClusterFile);
                 this.runBHC(microClusterFile,BHCTreeFile);
                 this.runTreeCut(BHCTreeFile,gmmFile);
@@ -113,7 +124,7 @@ public class Nuclei_Identification implements Runnable {
         BHCTree tree = new BHCTree(BHCTreeFile.getPath());
         TreeSet<Double> post = tree.allPosteriors();
         for (Double p : post){
-            if (p >= 1.0E-10){
+            if (p >= 0.5){
                 tree.saveCutAtThresholdAsXML(gmmFile.getPath(),p);
                 break;
             }
@@ -129,19 +140,22 @@ public class Nuclei_Identification implements Runnable {
         }
         return ret;
     }
-    static public void submitTimePoints(String[] tiffs,boolean force)throws Exception {
-        if (tiffs.length==0) return;
+    static public void submitTimePoints(File directory,TreeMap<Integer,String[]> tiffs,boolean force)throws Exception {
+        if (tiffs.isEmpty()) return;
         
-        File directory = new File(tiffs[0]).getParentFile();
         File scriptFile = new File(directory,"SubmitTimePoints.sh");
         scriptFile.setExecutable(true, false);
         PrintStream scriptStream = new PrintStream(scriptFile);
         scriptStream.printf("cd %s\n", directory.getPath());
         
-        for (String tiff : tiffs){
-            String fileName = new File(tiff).getName();
+        for (int time : tiffs.keySet()){
+            String[] names = tiffs.get(time);
+            String fileName = new File(names[1]).getName();
             String baseName = baseName(fileName);
-            int time = getTime(fileName);
+            File[] xmls = xmlFiles(directory,baseName);
+            if (xmls[0].exists() && xmls[1].exists() && xmls[2].exists()){
+                continue;
+            }
 /*            
             SegmentedTiffDataSource segSource = new SegmentedTiffDataSource(tiff,backgroundSegment);
             int nVoxels = segSource.getN(nucleiSegment); 
@@ -164,7 +178,7 @@ public class Nuclei_Identification implements Runnable {
             qsubStream.println("JAVA_HOME=/nfs/waterston/jdk1.8.0_102");
             qsubStream.println("M2_HOME=/nfs/waterston/apache-maven-3.3.9");
             qsubStream.print("/nfs/waterston/apache-maven-3.3.9/bin/mvn \"-Dexec.args=-Xms40000m -Xmx40000m -classpath %classpath org.rhwlab.BHC.Nuclei_Identification ");
-            qsubStream.printf("%s -first %d -last %d", tiff,time,time);
+            qsubStream.printf(" -first %d -last %d -segTiff %s  -lineageTiff %s -dir %s  ",time,time,names[1],names[0],directory.getPath());
             if (force){
                 qsubStream.print(" -force ");
             }
@@ -182,15 +196,14 @@ public class Nuclei_Identification implements Runnable {
     static public void main(String[] args)throws Exception {
         Nuclei_IdentificationCLI cli = new Nuclei_IdentificationCLI();
         cli.process(args, true);
-        String[] tiffs = cli.getTiffs();
-        for (String tiff : tiffs){
-            System.out.println(tiff);
-        }
+        TreeMap<Integer,String[]> tiffs = cli.getTiffs();
+
         if (cli.getQsub()){
-            submitTimePoints(tiffs,cli.getForce());
+            submitTimePoints(new File(cli.getDirectory()),tiffs,cli.getForce());
         } else {
-            for (String tiff : cli.getTiffs()){
-                Nuclei_Identification objectID = new Nuclei_Identification(tiff,cli.getForce());
+            for (int time : tiffs.keySet()){
+                String[] names = tiffs.get(time);
+                Nuclei_Identification objectID = new Nuclei_Identification(cli.getDirectory(),names[0],names[1],cli.getForce());
                 objectID.run();
             }
         }
@@ -207,6 +220,7 @@ public class Nuclei_Identification implements Runnable {
         int iuasdfisd=0;
     }
 //    SegmentedTiffDataSource segSource;
+    String lineageTff;
     File directory;
     String baseName;
     String segmentedTiff;

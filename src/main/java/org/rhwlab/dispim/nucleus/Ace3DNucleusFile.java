@@ -9,7 +9,10 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeMap;
@@ -21,6 +24,8 @@ import javax.json.JsonArrayBuilder;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonReader;
+import org.jdom2.Element;
+import org.rhwlab.BHC.BHCTree;
 import org.rhwlab.ace3d.SelectedNucleusFrame;
 import org.rhwlab.ace3d.SynchronizedMultipleSlicePanel;
 
@@ -29,6 +34,9 @@ import org.rhwlab.ace3d.SynchronizedMultipleSlicePanel;
  * @author gevirl
  */
 public class Ace3DNucleusFile implements NucleusFile,javafx.beans.Observable   {
+    public Ace3DNucleusFile(){
+        
+    }
     public Ace3DNucleusFile(SynchronizedMultipleSlicePanel panel,SelectedNucleusFrame frame){
         this.panel = panel;
         this.frame = frame;        
@@ -44,12 +52,20 @@ public class Ace3DNucleusFile implements NucleusFile,javafx.beans.Observable   {
         JsonReader reader = Json.createReader(new FileReader(file));
         JsonObject obj = reader.readObject();
         this.bhc = new BHC_NucleusDirectory(new File(obj.getJsonString("BHC").getString()));
-        JsonArray jsonNucs = obj.getJsonArray("Nuclei");
-        for (int n=0 ; n<jsonNucs.size() ; ++n){
-            JsonObject jsonNuc = jsonNucs.getJsonObject(n);
-            Nucleus nuc = new BHC_Nucleus(jsonNuc);
-            this.addNucleus(nuc,false);
+        JsonArray jsonTimes = obj.getJsonArray("Times");
+        for (int t=0 ; t<jsonTimes.size() ; ++t){
+            JsonObject timeObj = jsonTimes.getJsonObject(t);
+            int nucTime = timeObj.getJsonNumber("Time").intValue();
+            double cut = timeObj.getJsonNumber("TreeCut").doubleValue();
+            this.cutPosteriors.put(nucTime,cut);
+            JsonArray jsonNucs = timeObj.getJsonArray("Nuclei");
+            for (int n=0 ; n<jsonNucs.size() ; ++n){
+                JsonObject jsonNuc = jsonNucs.getJsonObject(n);
+                Nucleus nuc = new BHC_Nucleus(jsonNuc);
+                this.addNucleus(nuc,false);
+            }            
         }
+
         JsonArray jsonRoots = obj.getJsonArray("Roots");
         for (int n=0 ; n<jsonRoots.size() ; ++n){
             JsonObject rootObj  = jsonRoots.getJsonObject(n);
@@ -66,7 +82,8 @@ public class Ace3DNucleusFile implements NucleusFile,javafx.beans.Observable   {
             Cell rootCell = new Cell(rootNuc.getName());
             rootCell.addNucleus(rootNuc);
             this.addRoot(rootCell,false);
-        }        
+        }   
+        this.cutPosteriors.put(bhc.time, bhc.cutThreshold);
     }
     public void addRoot(Cell cell){
         addRoot(cell,true);
@@ -98,7 +115,9 @@ public class Ace3DNucleusFile implements NucleusFile,javafx.beans.Observable   {
     }    
 
     public void addNucleus(Nucleus nuc,boolean notify){
-
+        if (nuc.getTime() == 209){
+            int sadfhuisd=0;
+        }
         TreeSet<Nucleus> timeSet = byTime.get(nuc.getTime());
         if (timeSet == null){
             timeSet = new TreeSet<Nucleus>();
@@ -133,9 +152,7 @@ public class Ace3DNucleusFile implements NucleusFile,javafx.beans.Observable   {
 //            System.out.printf("After unlinking nucleus: %s\n",nuc.getName());
 //            this.report(System.out, t);
 //            System.out.printf("Roots at time %d\n",t+1);
-            for (Cell r : this.roots.get(t+1)){
- //               r.report(System.out);
-            }
+
         }
         this.notifyListeners();
     }
@@ -143,24 +160,23 @@ public class Ace3DNucleusFile implements NucleusFile,javafx.beans.Observable   {
     // completely unlink a nucleus from any children (in time or due to division)
     public void unlink(Nucleus nuc,boolean notify){
         Nucleus[] children = nuc.nextNuclei();
+        
         if (children.length == 0){
-            return ;  // nothing to unlink
+            return ;  // nothing to unlink, the nucleus is the last nuc in an unlnked cell
         }
         
+        Cell cell = nuc.getCell();
         if (children.length==1){
-            // not a division - both nuclei in the same cell
+            // not a division - nucleus is interior of cell
             // split the cell and make a new root with the next nucleus
-            Cell cell = nuc.getCell();
-            Cell splitCell = cell.split(children[0].getTime());
+            Cell splitCell = cell.split(children[0]);
             this.addRoot(splitCell,false);
         } else {
             // unlinking a division - 
-            Cell cell = nuc.getCell();
             for (Cell child : cell.getChildren()){
                 this.addRoot(child, notify);
             }
             cell.clearChildren();
-            
         }
         if (notify){
             this.notifyListeners();
@@ -189,11 +205,12 @@ public class Ace3DNucleusFile implements NucleusFile,javafx.beans.Observable   {
                 Set<Cell> rootSet = roots.get(toCell.firstTime());
                 rootSet.remove(toCell);
                 fromCell.combineWith(toCell);
+                cellMap.remove(toCell.getName());
             }
         }
         this.notifyListeners();
     }
-    
+ /*   
     // create a new division by linking a nucleus to a parent nucleus that is already linked in time
     public void linkDivision(Nucleus from,Nucleus to){
         if (from.getTime() != to.getTime()-1) return; // can only link nuclei separated by one unit of time
@@ -215,7 +232,7 @@ public class Ace3DNucleusFile implements NucleusFile,javafx.beans.Observable   {
         
         this.notifyListeners(); 
     }
-    
+ */   
    public void linkDivision(Nucleus from,Nucleus to1,Nucleus to2){
         
         Cell fromCell = from.getCell();
@@ -273,21 +290,36 @@ public class Ace3DNucleusFile implements NucleusFile,javafx.beans.Observable   {
     public JsonObjectBuilder asJson(){
         JsonObjectBuilder builder = Json.createObjectBuilder();
         builder.add("BHC", this.bhc.getTypicalFile().getPath());
-        builder.add("Nuclei", this.nucleiAsJson());
+        builder.add("Times", this.timesAsJson());
         builder.add("Roots",this.rootsAsJson());
         return builder;
-    }
-    public JsonArrayBuilder nucleiAsJson(){
+    }    
+    public JsonArrayBuilder timesAsJson(){
         JsonArrayBuilder builder = Json.createArrayBuilder();
         for (Integer time : byTime.navigableKeySet()){
-            Set<Nucleus> nucs = byTime.get(time);
-            for (Nucleus nuc : nucs){
-                builder.add(nuc.asJson());
-            }
-        }
+            builder.add(timeAsJson(time));
+        } 
         return builder;
     }
-    
+    public JsonObjectBuilder timeAsJson(int t){
+        JsonObjectBuilder builder = Json.createObjectBuilder();
+        builder.add("Time",t);
+        try {
+        builder.add("TreeCut",this.cutPosteriors.get(t));
+        } catch (Exception exc){
+            int ajsdfhuisd=0;
+        }
+        builder.add("Nuclei", nucleiAsJson(t));
+        return builder;
+    }
+    public JsonArrayBuilder nucleiAsJson(int t){
+        JsonArrayBuilder builder = Json.createArrayBuilder();
+        Set<Nucleus> nucs = byTime.get(t);
+        for (Nucleus nuc : nucs){
+            builder.add(nuc.asJson());
+        }
+        return builder;
+    }   
     public JsonArrayBuilder rootsAsJson(){
         JsonArrayBuilder builder = Json.createArrayBuilder();
         for (Integer t : roots.navigableKeySet()){
@@ -349,10 +381,27 @@ public class Ace3DNucleusFile implements NucleusFile,javafx.beans.Observable   {
         return sisterCell.getNucleus(nuc.getTime());
     }
     @Override
+    // get the roots at a given time
     public Set<Cell> getRoots(int time) {
         return roots.get(time);
     }    
 
+    public Set<Cell> getAllRoots(){
+        HashSet<Cell> ret = new HashSet<>();
+        for (int t : roots.keySet()){
+            ret.addAll(roots.get(t));
+        }
+        return ret;
+    }
+    public Set<Nucleus> getDeadNuclei(){
+        HashSet<Nucleus> ret = new HashSet<>();
+        for (Nucleus nuc : this.byName.values()){
+            if (nuc.nextNuclei().length==0){
+                ret.add(nuc);
+            }
+        }
+        return ret;
+    }
     @Override
     public void addListener(InvalidationListener listener) {
         listeners.add(listener);
@@ -412,7 +461,7 @@ public class Ace3DNucleusFile implements NucleusFile,javafx.beans.Observable   {
     public Nucleus getSelected(){
         return this.selectedNucleus;
     }
-    public void removeNucleiAtTime(int time){
+    public int removeNucleiAtTime(int time){
         // make sure all nuclei are unlinked BHC nuclei
         Nucleus[] nuclei = this.byTime.get(time).toArray(new Nucleus[0]);
         for (Nucleus nuc : nuclei){
@@ -425,6 +474,7 @@ public class Ace3DNucleusFile implements NucleusFile,javafx.beans.Observable   {
             removeNucleus(nuc,false);
         }
         this.notifyListeners(); 
+        return nuclei.length;
     }   
 
     public void removeNucleus(Nucleus nuc,boolean notify){
@@ -465,7 +515,100 @@ public class Ace3DNucleusFile implements NucleusFile,javafx.beans.Observable   {
             this.notifyListeners();
         }
     }
-    
+
+    public void linkTimePointAdjustable(int fromTime,BHCTree bhcTree){
+        if (fromTime==29){
+            int shdfuisd=0;
+        }
+        linkTimePoint(fromTime);
+        
+        int nextTime = fromTime + 1;
+        int rootsAtNextTime = roots.get(nextTime).size();
+        int deaths = this.getDeadNuclei().size();
+        if (rootsAtNextTime == 0){
+            return;  // can't make it any better by resegmenting
+        }
+        
+        boolean finished = false;
+        while (!finished){
+            if (rootsAtNextTime > 0){
+            // try reducing the segmentation of next time
+                this.unlinkTime(fromTime);
+                int removed = this.removeNucleiAtTime(nextTime);
+                double cut = this.cutPosteriors.get(nextTime);
+                TreeSet<Double> posts = bhcTree.allPosteriors();
+                
+                // find the next lower cutPosterior 
+                int n;
+                Element ele;
+                while(true) {
+                    double nextCut = posts.lower(cut);
+                    ele = bhcTree.cutTreeAtThreshold(nextCut);
+                    n  = ele.getChildren("GaussianMixtureModel").size();
+                    if (n < removed){
+                        break;
+                    }
+                    cut = nextCut;
+                } 
+                
+                BHC_NucleusFile bhcNucFile = new BHC_NucleusFile(ele);
+                this.addBHC(bhcNucFile);
+                this.linkTimePoint(fromTime);  // relink the time point
+                
+                if (roots.get(nextTime).size()==0){
+                    finished=true;
+                } else if (roots.get(nextTime).size() >= rootsAtNextTime) {
+                    // revert to previous cut
+                    this.unlinkTime(fromTime);
+                    removed = this.removeNucleiAtTime(nextTime);    
+                    ele = bhcTree.cutTreeAtThreshold(cut);
+                    bhcNucFile = new BHC_NucleusFile(ele);
+                    this.addBHC(bhcNucFile);
+                    this.linkTimePoint(fromTime);                     
+                    finished = true;
+                }
+            }
+        }
+
+    }
+    public void linkTimePoint(int fromTime){
+        TreeSet<Nucleus> fromSet = (TreeSet<Nucleus>)byTime.get(fromTime).clone();
+        Nucleus[] fromNucs = fromSet.toArray(new Nucleus[0]);
+        TreeSet<Nucleus> toSet = (TreeSet<Nucleus>)byTime.get(fromTime+1).clone();
+        Nucleus[] toNucs = toSet.toArray(new Nucleus[0]);
+        
+        HashMap<Nucleus,Division> best = Division.bestDivisions(fromNucs, toNucs);
+        // link the best divisions, if any
+        for (Division div : best.values()){
+            this.linkDivision(div.parent, div.child1, div.child2);
+            fromSet.remove(div.parent);
+            toSet.remove(div.child1);
+            toSet.remove(div.child2);
+        }
+        
+        // compute all pairwise distance between nuclei in the two adjacent time points
+        fromNucs = fromSet.toArray(new Nucleus[0]);
+        toNucs = toSet.toArray(new Nucleus[0]);
+        double[][] dist = new double[fromNucs.length][];
+        for (int r=0 ; r<dist.length ; ++r){
+            dist[r] = new double[toNucs.length];
+            for (int c=0 ; c<toNucs.length ; ++c){
+                dist[r][c] = fromNucs[r].distance(toNucs[c]);
+            }
+        }
+        
+        // use Hungarian Algorithm to assign linking
+        HungarianAlgorithm hungarian = new HungarianAlgorithm(dist);
+        int[] linkage = hungarian.execute();
+        
+        // link the nuclei
+        for (int i=0 ; i<linkage.length ; ++i){
+            if (linkage[i]!=-1){
+                this.linkInTime(fromNucs[i], toNucs[linkage[i]]);
+            }
+        }
+    }
+/*    
     public void linkTimePoint(int fromTime){
 System.out.printf("Linking time: %d\n", fromTime);
 if (fromTime == 86){
@@ -480,6 +623,8 @@ if (fromTime == 86){
         Nucleus[] toNucs = byTime.get(fromTime+1).toArray(new Nucleus[0]);
         Integer[] toNN = new Integer[toNucs.length];
 
+        HashMap<Nucleus,Division> best = Division.bestDivisions(fromNucs, toNucs);
+        
         double[][] dist = new double[fromNucs.length][];
         double[][] shape = new double[fromNucs.length][];
         int fromRemaining = fromNucs.length;
@@ -666,7 +811,7 @@ if (fromTime == 86){
         }
         return ret;
     }
-
+*/
     // stable calculation of the area of a triangle given the length of the sides
     static double HeronFormula(double a,double b,double c){
         double s = (a + b + c)/2.0;
@@ -718,19 +863,34 @@ if (fromTime == 86){
     public BHC_NucleusDirectory getBHC(){
         return this.bhc;
     }
+    public int getLastTime(){
+        return byTime.lastKey();
+    }
+    @Override
+    public Ace3DNucleusFile clone() throws CloneNotSupportedException{
+        Ace3DNucleusFile ret = new Ace3DNucleusFile();
+        ret.roots = (TreeMap<Integer,Set<Cell>>)this.roots.clone();
+        ret.byName = (TreeMap<String,Nucleus>)this.byName.clone();
+        ret.cellMap = (TreeMap<String,Cell>)this.cellMap.clone();
+        ret.byTime = (TreeMap<Integer,TreeSet<Nucleus>>)this.byTime.clone();
+        return ret;
+    }
     BHC_NucleusDirectory bhc;
     SynchronizedMultipleSlicePanel panel;
     SelectedNucleusFrame frame;
     boolean opening = true;
     File file;
     Nucleus selectedNucleus;
+    
     TreeMap<Integer,Set<Cell>> roots = new TreeMap<>();  // root cells indexed by time
     TreeMap<String,Cell> cellMap = new TreeMap<>();  // map of the all the cells by name
     TreeMap<Integer,TreeSet<Nucleus>> byTime = new TreeMap<>();  // all the nuclei present at a given time
     TreeMap<String,Nucleus> byName = new TreeMap<>();  // map of nuclei indexed by name, map indexed by time
+    TreeMap<Integer,Double> cutPosteriors = new TreeMap<>();
+    
     ArrayList<InvalidationListener> listeners = new ArrayList<>();
 
-    double shapeThreshold=25;
-    double areaThreshold=200;
-    double distanceThreshold = 50.0;
+    static double shapeThreshold=25;
+    static double areaThreshold=200;
+    static double distanceThreshold = 50.0;
 }

@@ -29,7 +29,7 @@ public class BHC_NucleusDirectory {
         nucFile.notifyListeners();
     }
     private void buildMap()throws Exception {
-         File directory = typicalFile.getParentFile();
+        File directory = typicalFile.getParentFile();
         Matcher m = p.matcher(typicalFile.getName());
         m.matches();
         String prefix = m.group(1);
@@ -43,7 +43,7 @@ public class BHC_NucleusDirectory {
                 m = exactP.matcher(file.getName());
                 if (m.matches()){
                     int time = Integer.valueOf(m.group(1));
-                    BHC_NucleusFile gmmFile = new BHC_NucleusFile(time,file);
+                    BHC_NucleusFile gmmFile = new BHC_NucleusFile(file);
                     
                     fileMap.put(time, gmmFile);
                 }
@@ -70,6 +70,7 @@ public class BHC_NucleusDirectory {
     public File getTypicalFile(){
         return typicalFile;
     }
+
     File typicalFile;
     static Pattern p = Pattern.compile("(.+)(\\d{3})(.+xml)");
     HashMap<Integer,BHC_NucleusFile> fileMap;

@@ -7,6 +7,7 @@ package org.rhwlab.BHC;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.rhwlab.command.CommandLine;
@@ -35,6 +36,15 @@ public class Nuclei_IdentificationCLI extends CommandLine {
         }
         return String.format("File: %s cannot be found", s);
     }
+    
+    public String lineageTiff(String s){
+        this.lineTiff = s;
+        File file = new File(s);
+        if (file.exists()){
+            return null;
+        }
+        return String.format("File: %s cannot be found", s);        
+    }
 
     @Override
     public void usage() {
@@ -44,6 +54,17 @@ public class Nuclei_IdentificationCLI extends CommandLine {
         System.out.println("\t-last TIME");
         System.out.println("\t-force\tforce recalculation for the time point(s)");
         System.out.println("\t-qsub\trun on the whead cluster");
+    }
+    public String segTiff(String s){
+        return noOption(s);
+    }
+    public String dir(String s){
+        File dir = new File(s);
+        if (dir.isDirectory()){
+            this.directory = dir.getPath();
+            return null;
+        }
+        return s;
     }
     public String first(String s){
         try {
@@ -79,9 +100,28 @@ public class Nuclei_IdentificationCLI extends CommandLine {
     public boolean getQsub(){
         return this.qsub;
     }
-    public String[] getTiffs(){
-        ArrayList<String> list = new ArrayList<>();
-        File tiff = new File(segTiff);
+    public String getDirectory(){
+        return this.directory;
+    }
+    public TreeMap<Integer,String[]> getTiffs(){
+        TreeMap<Integer,String> segMap = getFiles(this.segTiff);
+        TreeMap<Integer,String> lineMap = getFiles(this.lineTiff);
+        TreeMap<Integer,String[]> timeMap = new TreeMap<>();
+        for (int time : lineMap.keySet()){
+            String seg = segMap.get(time);
+            if (seg != null){
+                String[] names = new String[2];
+                names[0] = lineMap.get(time);
+                names[1] = segMap.get(time);
+                timeMap.put(time,names);
+            }
+        }
+        return timeMap;
+    }
+    public TreeMap<Integer,String> getFiles(String typical){
+        TreeMap ret = new TreeMap<>();
+        
+        File tiff = new File(typical);
 
         File dir = tiff.getParentFile();
         File[] files = dir.listFiles();
@@ -106,13 +146,14 @@ public class Nuclei_IdentificationCLI extends CommandLine {
                 if (lastTime != null && time > lastTime){
                     continue;
                 }
-                list.add(file.getPath());
+                ret.put(time, file.getPath());
             }
         }
        
-        return list.toArray(new String[0]);
+        return ret;
     }
-    
+    String directory;
+    String lineTiff;
     String segTiff;
     Integer firstTime;
     Integer lastTime;

@@ -15,6 +15,7 @@ import org.apache.commons.math3.ml.clustering.KMeansPlusPlusClusterer;
 import org.jdom2.Element;
 import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
+import org.rhwlab.BHC.BalancedKMeansClusterer;
 
 
 /**
@@ -136,6 +137,7 @@ public class SegmentedTiffDataSource extends TiffDataSource implements Segmented
             if (!list.isEmpty()){
                 int nc = (int)((double)list.size()/f);
                 VoxelClusterer clusterer = new VoxelClusterer(list,new KMeansPlusPlusClusterer(nc));
+//                VoxelClusterer clusterer = new VoxelClusterer(list,new BalancedKMeansClusterer(nc));
                 clusterers.add(clusterer);
             }
         }

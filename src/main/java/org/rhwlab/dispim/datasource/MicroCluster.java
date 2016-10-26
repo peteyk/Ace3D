@@ -22,9 +22,10 @@ import org.jdom2.Element;
  * @author gevirl
  */
 public class MicroCluster {
-    public MicroCluster(double[] v,short[][] points){
+    public MicroCluster(double[] v,short[][] points,int[] intensities){
         this.v = v;
         this.points = points;
+        this.intensities = intensities;
     }
     // construct from an xml element
     public MicroCluster (Element ele){
@@ -38,6 +39,7 @@ public class MicroCluster {
         
         int nPts = Integer.valueOf(ele.getAttributeValue("points"));
         points = new short[nPts][];
+        intensities = new int[nPts];
         String cont = ele.getTextNormalize();
         String[] tokens = cont.substring(1, cont.length()-1).split("\\)\\(");
         for (int i=0 ; i<nPts ; ++i){
@@ -47,6 +49,7 @@ public class MicroCluster {
                 p[d] = Short.valueOf(valStrs[d]);
             }
             points[i] = p;
+            intensities[i] = Integer.valueOf(valStrs[valStrs.length-1]);
         }
         
     }
@@ -121,6 +124,7 @@ public class MicroCluster {
     static public void setField(DfpField fld){
         field = fld;
     }
+    // record the point as 4D (x,y,z,intensity)
     public String pointsAsString(){
         StringBuilder builder = new StringBuilder();
         for (int p=0 ; p<points.length ; ++p)    {
@@ -128,15 +132,25 @@ public class MicroCluster {
             short[] pnt = points[p];
             for (int i=0 ; i<pnt.length ; ++i){
                 builder.append(pnt[i]);
-                if (i < pnt.length-1){
-                    builder.append(",");
-                }
+                builder.append(",");
             }
+            builder.append(intensities[p]);
             builder.append(")");
         }
         return builder.toString();
     }
+    public int getPointCount(){
+        return points.length;
+    }
+    public long getIntensity(){
+        long ret = 0;
+        for (int i : this.intensities){
+            ret = ret + i;
+        }
+        return ret;
+    }
     static DfpField field ;
     double[] v;  // center
     short[][] points;
+    int[] intensities;
 }

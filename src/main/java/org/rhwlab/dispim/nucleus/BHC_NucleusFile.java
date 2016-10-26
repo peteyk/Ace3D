@@ -25,7 +25,7 @@ public class BHC_NucleusFile {
         init(root);
     }
     // open a tgmm nucleus file , adding nuclei to the Ace3dNucleusFile
-    public BHC_NucleusFile(int time,File file)throws Exception {
+    public BHC_NucleusFile(File file)throws Exception {
         this.file = file;
         SAXBuilder saxBuilder = new SAXBuilder();
         Document doc = saxBuilder.build(file); 

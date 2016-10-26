@@ -42,20 +42,20 @@ public class MicroClusterDataSource implements DataSource {
             
             List<Element> pointElements = clusterElement.getChildren("Point");
             short[][] points = new short[pointElements.size()][];
+            int[] intensities = new int[pointElements.size()];
             int n = 0;
             for (Element pointElement : pointElements){
+                intensities[n] = Integer.valueOf(pointElement.getAttributeValue("Intensity"));
                 tokens = pointElement.getTextNormalize().split(" ");
                 points[n] = new short[tokens.length];
                 for (int i=0 ; i<v.length ; ++i){
                     points[n][i] = Double.valueOf(tokens[i]).shortValue();
                 }
                 ++n;
-            } 
-            
-            micros[k] = new MicroCluster(v,points);
+            }          
+            micros[k] = new MicroCluster(v,points,intensities);
             ++k;
         }
-
     }
     @Override
     public int getN() {
@@ -86,7 +86,6 @@ public class MicroClusterDataSource implements DataSource {
     }    
     public static void main(String[] args)throws Exception {
         MicroClusterDataSource source = new MicroClusterDataSource("/nfs/waterston/pete/Segmentation/Cherryimg_SimpleSegmentation0075.save");
-        int ioisaodhf=0;
     }
     int D;
     int N;

@@ -108,6 +108,12 @@ abstract public class NodeBase implements Node {
     public Element formElementXML(int id){
         List<MicroCluster> micros = new ArrayList<>();
         this.getDataAsMicroCluster(micros);
+        int voxels = 0;
+        long intensity = 0;
+        for (MicroCluster micro : micros){
+            voxels = voxels + micro.getPointCount();
+            intensity = intensity + micro.getIntensity();
+        }
         RealVector mu = MicroCluster.mean(micros);
         RealMatrix W = MicroCluster.precision(micros, mu);
         if (W != null){
@@ -115,6 +121,8 @@ abstract public class NodeBase implements Node {
             clusterEle.setAttribute("id", String.format("%d", id));
  //           clusterEle.setAttribute("parent", "-1");
             clusterEle.setAttribute("count", String.format("%d",micros.size()));
+            clusterEle.setAttribute("voxels", String.format("%d",voxels));
+            clusterEle.setAttribute("intensity", String.format("%d",intensity));
             clusterEle.setAttribute("sourceNode", String.format("%d", label));
             StringBuilder builder = new StringBuilder();
             for (int j=0 ; j<mu.getDimension() ; ++j){

@@ -10,6 +10,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.Set;
+import java.util.TreeMap;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -21,8 +22,8 @@ import javax.swing.event.ListSelectionListener;
 import org.jdom2.Element;
 import org.rhwlab.BHC.BHCTree;
 import org.rhwlab.ace3d.Ace3D_Frame;
-import org.rhwlab.dispim.nucleus.Ace3DNucleusFile;
-import org.rhwlab.dispim.nucleus.BHC_NucleusFile;
+import org.rhwlab.dispim.nucleus.BHCNucleusData;
+import org.rhwlab.dispim.nucleus.BHCNucleusFile;
 import org.rhwlab.dispim.nucleus.NucleusFile;
 
 /**
@@ -31,8 +32,8 @@ import org.rhwlab.dispim.nucleus.NucleusFile;
  */
 public class BHCTreeCutDialog extends JDialog {
     public BHCTreeCutDialog(Ace3D_Frame owner,NucleusFile nucleusFile){
-        super(owner,true);
-        this.nucleusFile = (Ace3DNucleusFile)nucleusFile;
+        super(owner,false);
+        this.nucleusFile = nucleusFile;
         this.setTitle("Cut the BHC Tree");
         this.setSize(300, 500);
         this.getContentPane().setLayout(new BorderLayout());
@@ -74,15 +75,19 @@ public class BHCTreeCutDialog extends JDialog {
     }
     private void ok(){
         Object sel = jList.getSelectedValue();
+        
         if (sel != null){
             int t = tree.getTime();
+            BHCNucleusFile bhc = tree.cutToN(((Posterior)sel).n);
+            nucleusFile.addNuclei(bhc,true);
+/*            
             nucleusFile.unlinkTime(t);
             nucleusFile.unlinkTime(t-1);
             
             nucleusFile.removeNucleiAtTime(t);
             thresh = ((Posterior)sel).r;
             try {
-                BHC_NucleusFile bhc = tree.cutToNucleusFile(thresh);
+                BHCNucleusFile bhc = tree.cutToNucleusFile(thresh);
                 nucleusFile.addBHC(bhc);
             } catch (Exception exc){
                 exc.printStackTrace();
@@ -90,6 +95,7 @@ public class BHCTreeCutDialog extends JDialog {
 //            nucleusFile.linkTimePoint(t-1);
 //            nucleusFile.linkTimePoint(t);
             nucleusFile.notifyListeners();
+*/
         }
     }
     public void countClusters(){
@@ -103,14 +109,16 @@ public class BHCTreeCutDialog extends JDialog {
         }
         jList.repaint();
     }
-    public void setBHCTree(BHCTree tree,double th){
-        thresh = th;
+    public void setBHCTree(BHCTree tree){
         Posterior selected = null;
         this.tree = tree;
         DefaultListModel model = new DefaultListModel();
-        Set<Double> posts = tree.allPosteriors();
-        for (Double post : posts){
-            Posterior posterior = new Posterior(post,-1);
+        TreeMap<Integer,Double> postMap = new TreeMap<>(); 
+        this.tree.allPosteriorProb(postMap);
+//        Set<Double> posts = tree.allPosteriors();
+        for (Integer m : postMap.keySet()){
+            Double post = postMap.get(m);
+            Posterior posterior = new Posterior(post,m);
             model.addElement(posterior);
             if (post == thresh){
                 selected = posterior;
@@ -127,7 +135,7 @@ public class BHCTreeCutDialog extends JDialog {
     }
     boolean result = false;
     double thresh;
-    Ace3DNucleusFile nucleusFile;
+    NucleusFile nucleusFile;
     BHCTree tree;
     JList jList;
     
@@ -140,9 +148,9 @@ public class BHCTreeCutDialog extends JDialog {
         @Override
         public String toString(){
             if (n ==-1){
-                return String.format("%e",r);
+                return String.format("%e %f",r,Math.log(r));
             }
-            return String.format("(%d) %e",n,r);
+            return String.format("(%d) %e %f",n,r,Math.log(r));
         }
         
         double r;

@@ -7,33 +7,32 @@ package org.rhwlab.dispim.nucleus;
 
 import java.io.File;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.jdom2.Document;
-import org.jdom2.Element;
-import org.jdom2.input.SAXBuilder;
-import org.rhwlab.ace3d.SelectedNucleusFrame;
-import org.rhwlab.ace3d.SynchronizedMultipleSlicePanel;
 
 /**
  *
  * @author gevirl
  */
-public class TGMM_NucleusDirectory extends Ace3DNucleusFile{
-    public TGMM_NucleusDirectory(File f,SynchronizedMultipleSlicePanel panel,SelectedNucleusFrame frame) {
-        super(f,panel,frame);
-
+// the container directory of all the BHCNucleusFiles
+public class BHCNucleusDirectory {
+    public BHCNucleusDirectory(File file) {
+        this.typicalFile = file;
     }
-    @Override
-    public void open()throws Exception {
-
-        File directory = file.getParentFile();
-        this.opening = true;
-        Matcher m = p.matcher(file.getName());
+/*
+    public void openInto(Ace3DNucleusFile nucFile)throws Exception {
+        nucFile.opening = true;
+        buildMap();
+        for (BHCNucleusFile gmmFile : fileMap.values()){
+            nucFile.addBHC(gmmFile);
+        }
+        nucFile.opening = false;
+        nucFile.notifyListeners();
+    }
+*/
+    private void buildMap()throws Exception {
+        File directory = typicalFile.getParentFile();
+        Matcher m = p.matcher(typicalFile.getName());
         m.matches();
         String prefix = m.group(1);
         String suffix = m.group(3);
@@ -46,21 +45,24 @@ public class TGMM_NucleusDirectory extends Ace3DNucleusFile{
                 m = exactP.matcher(file.getName());
                 if (m.matches()){
                     int time = Integer.valueOf(m.group(1));
-                    TGMM_NucleusFile tgmmFile = new TGMM_NucleusFile();
-                    tgmmFile.open(time, file, this);
-                    fileMap.put(time, tgmmFile);
+                    BHCNucleusFile gmmFile = new BHCNucleusFile(file);
+                    
+                    fileMap.put(time, gmmFile);
                 }
             }
-        }
-        this.opening = false;
-        this.notifyListeners();
+        }        
     }
-    public TGMM_NucleusFile getFileforTime(int time){
+    public BHCNucleusFile getFileforTime(int time)throws Exception {
+        if (fileMap== null){
+            buildMap();
+        }
         return fileMap.get(time);
     }
-    public void putFileForTime(int time,TGMM_NucleusFile file){
+    public void putFileForTime(int time,BHCNucleusFile file){
         this.fileMap.put(time,file);
     }
+    
+    // extract the time from the BHCNucleusFile name
     static public int getTime(File file){
         Matcher m = p.matcher(file.getName());
         m.matches(); 
@@ -69,6 +71,11 @@ public class TGMM_NucleusDirectory extends Ace3DNucleusFile{
         }
         return -1;
     }
+    public File getTypicalFile(){
+        return typicalFile;
+    }
+
+    File typicalFile;
     static Pattern p = Pattern.compile("(.+)(\\d{3})(.+xml)");
-    HashMap<Integer,TGMM_NucleusFile> fileMap;
+    HashMap<Integer,BHCNucleusFile> fileMap;  // the BHCNucleusFile's indexed by time
 }

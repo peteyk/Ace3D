@@ -5,11 +5,8 @@
  */
 package org.rhwlab.ace3d;
 
-import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -37,6 +34,7 @@ public class NavigationHeaderPanel extends JPanel {
         
         this.add(new JLabel("Max Time:"));
         maxTime = new JTextField();
+        maxTime.setText("100");
         maxTime.setColumns(10);
         maxTime.addActionListener(new ActionListener(){
             @Override
@@ -104,6 +102,10 @@ public class NavigationHeaderPanel extends JPanel {
     }
     public double getCellWidth(){
         return Double.valueOf(cellWidth.getText().trim());
+    }
+    public void setRoot(String r){
+        this.rootField.setText(r);
+        treePanel.stateChanged(new ChangeEvent(NavigationHeaderPanel.this));
     }
     NavigationTreePanel treePanel;
     JTextField rootField;

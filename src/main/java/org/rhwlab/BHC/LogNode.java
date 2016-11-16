@@ -5,6 +5,7 @@
  */
 package org.rhwlab.BHC;
 
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
@@ -44,9 +45,34 @@ public class LogNode extends StdNode {
     public Node mergeWith(Node other) {
         return new LogNode(this,(LogNode)other);
     }    
-    
+    public double alternative(List<RealVector> data){
+        int n = data.size();
+        double nP = n + beta;
+        if (n >maxN){
+            return 0.0;
+        }
+        int D = data.get(0).getDimension(); 
+        RealVector xSum = new ArrayRealVector(D);  // a vector of zeros  
+        RealMatrix XXT = new Array2DRowRealMatrix(D,D);
+        for (RealVector v : data){
+            xSum = xSum.add(v);
+            RealMatrix v2 = v.outerProduct(v);
+            XXT = XXT.add(v2);
+        }   
+        RealMatrix Sp = S.add(XXT);
+        Sp = Sp.add(m.outerProduct(m).scalarMultiply(beta*n/(nP)));
+        Sp = Sp.add(xSum.outerProduct(xSum).scalarMultiply(1.0/(nP)));
+        Sp = Sp.subtract(m.outerProduct(xSum).add(xSum.outerProduct(m)).scalarMultiply(beta/(nP)));
+        
+        LUDecomposition ed = new LUDecomposition(Sp);
+        if (!ed.getSolver().isNonSingular()){
+            System.exit(10);
+        }
+        return Utils.eln(ed.getDeterminant()); 
+
+    }
     // the likelihood of the data in this node/cluster only - given the priors
-    public double logMarginalLikelihood(List<RealVector> data) throws ArithmeticException {
+    public double logMarginalLikelihood(List<RealVector> data)  {
 
         int n = data.size();
         if (n >maxN){
@@ -76,6 +102,7 @@ public class LogNode extends StdNode {
             System.exit(10);
         }
         double logDetSp = Utils.eln(ed.getDeterminant());
+ //       double logDetSp = alternative(data);
         
         Double ret = Utils.elnPow(logPi, -n*D/2.0);
         ret = Utils.elnMult(ret, Utils.elnPow(lnBeta, D/2.0));
@@ -141,9 +168,28 @@ public class LogNode extends StdNode {
         }
         dfpR = field.newDfp(realR);
         
-    }    
+    }   
+    @Override
+    public void print(PrintStream stream){
+        List<RealVector> data = new ArrayList<>();
+        this.getDataAsRealVector(data);
+        stream.printf("Size=%d\n", data.size());
+/*        
+        for (RealVector vec : data){
+            stream.print(vectorAsString(vec));
+        }
+        stream.println();
+        */
+        stream.printf("lnd=%s\n", Double.toString(lnd));
+        stream.printf("lnLike=%s\n", Double.toString(lnLike));
+        stream.printf("lnDPM=%s\n", Double.toString(lnDPM));
+        stream.printf("lnPi=%s\n", Double.toString(lnPi));
+        stream.printf("lnR=%s\n", Double.toString(lnR));
+        stream.printf("R=%s\n", Double.toString(realR));
+    }  
+    
     Double lnd;
-    Double lnPi = 0.0;
+    Double lnPi;
     Double lnonePi;
     Double lnLike;
     Double lnDPM;

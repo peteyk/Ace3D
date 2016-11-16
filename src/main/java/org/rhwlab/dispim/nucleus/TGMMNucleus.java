@@ -14,7 +14,7 @@ import org.jdom2.Element;
  *
  * @author gevirl
  */
-public class TGMMNucleus extends Nucleus {
+public class TGMMNucleus extends NucleusData {
     public TGMMNucleus(int time,Element gmm){
         super(time,name(time,gmm),center(gmm),10.0);  // for now make all radii the same
         id = gmm.getAttributeValue("id");

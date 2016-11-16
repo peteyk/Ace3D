@@ -7,7 +7,9 @@ package org.rhwlab.dispim.datasource;
 
 import java.io.File;
 import java.util.List;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.ArrayRealVector;
+import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.jdom2.Document;
 import org.jdom2.Element;
@@ -83,7 +85,15 @@ public class MicroClusterDataSource implements DataSource {
             ret = ret.add(micros[k].asRealVector());
         }
         return ret.mapDivide(micros.length);
-    }    
+    } 
+    public RealMatrix getDataVariance(){
+        RealMatrix ret = new Array2DRowRealMatrix(getD(),getD());
+        for (int k=0 ; k<micros.length ; ++k){
+            RealVector v = micros[k].asRealVector();
+            ret = ret.add(v.outerProduct(v));
+        } 
+        return ret.scalarMultiply(1.0/micros.length);
+    }
     public static void main(String[] args)throws Exception {
         MicroClusterDataSource source = new MicroClusterDataSource("/nfs/waterston/pete/Segmentation/Cherryimg_SimpleSegmentation0075.save");
     }

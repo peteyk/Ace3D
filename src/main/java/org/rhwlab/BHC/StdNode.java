@@ -181,6 +181,7 @@ public class StdNode extends  NodeBase {
         alpha = a;
         lnAlpha = Utils.eln(alpha);
     }
+
     @Override
     public void print(PrintStream stream){
         List<RealVector> data = new ArrayList<>();
@@ -272,20 +273,28 @@ public class StdNode extends  NodeBase {
    
     static void setParameters(int n,double beta,double[] mu,double s){
         StdNode.nu = n;
+        
         StdNode.S = new Array2DRowRealMatrix(mu.length,mu.length);
         for (int i=0 ; i<mu.length ; ++i){
             S.setEntry(i, i, s);
         }
+        LUDecomposition ed = new LUDecomposition(S);
+        detS = Math.pow(ed.getDeterminant(),nu/2.0);
+        logdetSnu = Utils.eln(detS);        
+
         StdNode.beta = beta;
         lnBeta = Utils.eln(beta);
         StdNode.m = new ArrayRealVector(mu);
-        
-        LUDecomposition ed = new LUDecomposition(S);
-        detS = Math.pow(ed.getDeterminant(),nu/2.0);
-        logdetSnu = Utils.eln(detS);
         rmm = m.outerProduct(m).scalarMultiply(beta);
         ratio = new GammaRatio(mu.length,n);
     }   
+    static public void setS(RealMatrix s0){
+        S = s0;
+        LUDecomposition ed = new LUDecomposition(S);
+        detS = Math.pow(ed.getDeterminant(),nu/2.0);
+        logdetSnu = Utils.eln(detS);    
+        System.out.printf("detS=%e\n", detS);
+    }    
     public double getd(){
         return this.d;
     }

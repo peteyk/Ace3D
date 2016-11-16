@@ -34,6 +34,7 @@ import org.rhwlab.dispim.CompositeTimePointImage;
 import org.rhwlab.dispim.ImagedEmbryo;
 import org.rhwlab.dispim.TimePointImage;
 import org.rhwlab.dispim.nucleus.Nucleus;
+import org.rhwlab.dispim.nucleus.NucleusData;
 import org.rhwlab.dispim.nucleus.NucleusFile;
 
 /**
@@ -227,7 +228,7 @@ public class SingleSlicePanel extends JPanel implements ChangeListener {
                             radius = radius + l*l;  // (image coordinates)
                         }
                         radius = Math.sqrt(radius);
-                        embryo.addNucleus(new Nucleus(timePointImage.getTime(),center,radius));
+                        embryo.addNucleus(new Nucleus(new NucleusData(timePointImage.getTime(),center,radius)));
                         parent.repaint();                        
                     }
                     else if (parent != null ){

@@ -7,10 +7,11 @@ package org.rhwlab.dispim;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collection;
 import org.rhwlab.dispim.nucleus.Nucleus;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import javafx.beans.InvalidationListener;
 import javafx.beans.Observable;
@@ -26,15 +27,10 @@ import net.imglib2.realtransform.Translation3D;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
-import org.rhwlab.BHC.BHCTree;
-import org.rhwlab.BHC.Node;
-import org.rhwlab.BHC.NodeBase;
+import org.jdom2.Element;
 import org.rhwlab.ace3d.Ace3D_Frame;
 import org.rhwlab.ace3d.SynchronizedMultipleSlicePanel;
-import org.rhwlab.dispim.nucleus.Ace3DNucleusFile;
-import org.rhwlab.dispim.nucleus.BHC_Nucleus;
-import org.rhwlab.dispim.nucleus.BHC_NucleusDirectory;
-import org.rhwlab.dispim.nucleus.BHC_NucleusFile;
+import org.rhwlab.dispim.nucleus.Cell;
 import org.rhwlab.dispim.nucleus.NucleusFile;
 
 /**
@@ -44,11 +40,49 @@ import org.rhwlab.dispim.nucleus.NucleusFile;
  */
 public class ImagedEmbryo implements Observable {
     public ImagedEmbryo(){
-        sources = new ArrayList<ImageSource>();
+        sources = new ArrayList<>();
+    }
+    public void fromXML(Element root){
+        Element sourcesEle = root.getChild("Sources");
+        for (Element src : sourcesEle.getChildren()){
+            String name = src.getName();
+            if (name.equals("ImageJHyperStack")){
+                ImageJHyperstackSource source = new ImageJHyperstackSource(src,this);
+                addSource(source);
+            }
+        }               
+    }
+/*
+    public void save()throws Exception {
+        saveAsXML(xml);
+    }
+    public void saveAsXML(File xml)throws Exception {
+        if (xml == null){
+            JFileChooser chooser = new JFileChooser();
+            if (chooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION){
+                xml = chooser.getSelectedFile();
+                
+            }
+        }
+        OutputStream stream = new FileOutputStream(xml);       
+        XMLOutputter out = new XMLOutputter(Format.getPrettyFormat());
+        out.output(this.toXML(), stream);
+        stream.close();         
+    }
+    */
+    public Element toXML(){
+        Element ret = new Element("ImagedEmbryo");
+        Element sourcesEle = new Element("Sources");
+        ret.addContent(sourcesEle);
+        
+        for (ImageSource src : sources){
+            sourcesEle.addContent(src.toXML());
+        }
+        return ret;
     }
     public void addSource(ImageSource src){
         sources.add(src);
-        notifyListeners();
+ //       notifyListeners();
     }
     public CompositeTimePointImage getImage(int time){
         return new CompositeTimePointImage(time);
@@ -82,6 +116,8 @@ public class ImagedEmbryo implements Observable {
     }
     public void setNucleusFile(NucleusFile file){
         nucFile = file;
+        rebuildCellTrees();
+
     }
     public Nucleus selectedNucleus(){
         if (nucFile != null){
@@ -242,27 +278,27 @@ public class ImagedEmbryo implements Observable {
         return null;
     }
     public void renameSelectedCell(String newName){
-        ((Ace3DNucleusFile)nucFile).renameCell(newName);
+//        ((Ace3DNucleusFile)nucFile).renameCell(newName);
     }
     // join the selected nucleus to its sister
     public void joinSelectedNucleus()throws Exception {
-       
+/*       
         Nucleus nuc = nucFile.getSelected();
         if (nuc == null) return;
         int time = nuc.getTime();
         
         // make a Nucleus from the selected nucleus' parent node
-        BHC_Nucleus bhcNuc = (BHC_Nucleus)nuc;
+        BHCNucleusData bhcNuc = (BHCNucleusData)nuc.getNucleusData();
         BHCTree tree = getBHCTree(time);
         NodeBase node = (NodeBase)tree.findNode(Integer.valueOf(bhcNuc.getSourceNode()));
         NodeBase parent = (NodeBase)node.getParent();
-        BHC_Nucleus joinedNuc = new BHC_Nucleus(nuc.getTime(),parent.formElementXML(Integer.valueOf(bhcNuc.getID())));
+        BHCNucleusData joinedNuc = new BHCNucleusData(nuc.getTime(),parent.formElementXML(Integer.valueOf(bhcNuc.getID())));
         
         // find the Nucleus that corresponds to the sister node
         Nucleus sisterNuc = null;
         int sisterLabel = ((NodeBase)node.getSister()).getLabel();
         for (Nucleus possibleSister : nucFile.getNuclei(time)){
-            int possibleLabel = Integer.valueOf(((BHC_Nucleus)possibleSister).getSourceNode());
+            int possibleLabel = Integer.valueOf(((BHCNucleusData)possibleSister.getNucleusData()).getSourceNode());
             if (possibleLabel == sisterLabel){
                 sisterNuc = possibleSister;
                 break;
@@ -275,29 +311,54 @@ public class ImagedEmbryo implements Observable {
             
         nf.removeNucleus(nuc, false);
         nf.removeNucleus(sisterNuc, false);
-        nf.addNucleus(joinedNuc,false);
+        nf.addNucleus(new Nucleus(joinedNuc),false);
 
-        nf.linkTimePoint(time-1);
-        nf.linkTimePoint(time);
+//        nf.linkTimePoint(time-1);
+//        nf.linkTimePoint(time);
         nf.notifyListeners();        
-
+*/
     }
     // split the selected nucleus into daughters 
     public void splitSelectedNucleus(){
         
     }
+    /*
     public BHCTree getBHCTree(int time)throws Exception {
         BHCTree tree = this.bhcTreeMap.get(time);
         if (tree == null) {
-            BHC_NucleusDirectory bhc = ((Ace3DNucleusFile) nucFile).getBHC();
-            BHC_NucleusFile bhcNucFile = bhc.getFileforTime(time);
+            BHCNucleusDirectory bhc = ((Ace3DNucleusFile) nucFile).getBHC();
+            BHCNucleusFile bhcNucFile = bhc.getFileforTime(time);
             File bhcFile = bhcNucFile.getBHCTreeFile();
             tree = new BHCTree(bhcFile.getPath());
             bhcTreeMap.put(time, tree);
         }
-        return tree;
-    }    
-    HashMap<Integer,BHCTree> bhcTreeMap = new HashMap<>();
+        return tree
+    } 
+*/
+    public void rebuildCellTrees(){
+        rootCells.clear();
+        for (Integer t : nucFile.getAllTimes() ){
+            Set<Nucleus> rootNucs = nucFile.getRoots(t);
+            if (!rootNucs.isEmpty()){
+                for (Nucleus rootNuc : rootNucs){
+                    Cell rootCell = new Cell(rootNuc.getName(),rootNuc);  // recursively build the cells
+                    rootCells.put(rootCell.getName(), rootCell);
+                }
+            }
+        }
+    }
+    public Cell getRoot(String name){
+        return rootCells.get(name);
+    }
+    public Collection<Cell> getRootCells(){
+        return rootCells.values();
+    }
+    public List<ImageSource> getSources(){
+        return sources;
+    }
+//    HashMap<Integer,BHCTree> bhcTreeMap = new HashMap<>();
+    File xml;
+    TreeMap<String,Cell> rootCells = new TreeMap<>();
     SynchronizedMultipleSlicePanel panel;
     ArrayList<InvalidationListener> listeners = new ArrayList<>();
     NucleusFile nucFile;

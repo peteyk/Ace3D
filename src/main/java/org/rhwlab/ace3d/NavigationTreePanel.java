@@ -44,7 +44,7 @@ public class NavigationTreePanel extends JPanel implements ChangeListener{
                 int y = e.getY();
                 CellLocation cellLoc = cellImage.cellAtLocation(x, y);
                 if (cellLoc != null){
-                    Cell cell = embryo.getNucleusFile().getCell(cellLoc.name);
+                    Cell cell = rootCell.findChild(cellLoc.name);
                     if (e.getButton() == MouseEvent.BUTTON1) {
                         double f = (y-cellLoc.y0)/(cellLoc.y1-cellLoc.y0);
                         int t = cell.firstTime() + (int)(f*(cell.lastTime()-cell.firstTime()));
@@ -82,8 +82,8 @@ public class NavigationTreePanel extends JPanel implements ChangeListener{
     @Override
     public void stateChanged(ChangeEvent e) {
         NavigationHeaderPanel headPanel = (NavigationHeaderPanel)e.getSource();
-        String rootCellName = headPanel.getRoot();
-        rootCell = embryo.getNucleusFile().getCell(rootCellName);
+        String rootNucName = headPanel.getRoot();
+        rootCell = embryo.getRoot(rootNucName);
         if (rootCell == null)return;
         cellImage = new CellImage();
         buffered = cellImage.getImage(rootCell,headPanel.getMaxTime(),lut,headPanel.labelNodes(),headPanel.labelLeaves(),

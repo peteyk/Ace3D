@@ -37,7 +37,7 @@ public class Navigation_Frame extends JFrame implements PlugIn,InvalidationListe
         this.panel = p;
         this.getContentPane().setLayout(new BorderLayout());
         
-        rootsRoot = new DefaultMutableTreeNode("Roots at Each Time",true);
+        rootsRoot = new DefaultMutableTreeNode("Cell Tree",true);
         rootsTree = new JTree(rootsRoot);
         rootsTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);    
         rootsTree.addTreeSelectionListener(new TreeSelectionListener(){
@@ -47,22 +47,21 @@ public class Navigation_Frame extends JFrame implements PlugIn,InvalidationListe
                 if (node == null){
                     return;
                 }
-                String cellName = (String)node.getUserObject();
-                NucleusFile nucFile = embryo.getNucleusFile();
-                Cell cell = nucFile.getCell(cellName);                
-                if (cell != null){
-                    int time = cell.firstTime();
-                    Nucleus nuc = cell.getNucleus(time);
-                    emb.setSelectedNucleus(nuc);
- //                   panel.changeTime(time);
- //                   panel.changePosition(nuc.getCenter());
+                Cell cell = (Cell)node.getUserObject();
+                Nucleus nuc = cell.firstNucleus();
+                emb.setSelectedNucleus(nuc);
+                panel.changeTime(nuc.getTime());
+                panel.changePosition(nuc.getCenter());                
+                
+                if (nuc.getParent()==null){
+                    headPanel.setRoot(nuc.getCell());
                 }
             }
         });
         JScrollPane rootsScroll = new JScrollPane(rootsTree);
         this.getContentPane().add(rootsScroll,BorderLayout.WEST);
  
-        nucsRoot = new DefaultMutableTreeNode("All Nuclei at Each Time",true);
+        nucsRoot = new DefaultMutableTreeNode("Nuclei by Time",true);
         nucsTree = new JTree(nucsRoot);
         nucsTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);    
         nucsTree.addTreeSelectionListener(new TreeSelectionListener(){
@@ -71,12 +70,10 @@ public class Navigation_Frame extends JFrame implements PlugIn,InvalidationListe
                 DefaultMutableTreeNode node = (DefaultMutableTreeNode)nucsTree.getLastSelectedPathComponent();
                 if (node == null)return;
                 if (node.isLeaf()){
-                    String nucID = (String)node.getUserObject();
-                    NucleusFile nucFile = embryo.getNucleusFile();
-                    Nucleus nuc = nucFile.getNucleus(nucID);
+                    Nucleus nuc = (Nucleus)node.getUserObject();
                     embryo.setSelectedNucleus(nuc);
-//                    panel.changeTime(time);
-//                    panel.changePosition(nucFile.getNucleus(nuc).getCenter());
+                    panel.changeTime(nuc.getTime());
+                    panel.changePosition(nuc.getCenter());
                 }
             }
         });
@@ -91,6 +88,7 @@ public class Navigation_Frame extends JFrame implements PlugIn,InvalidationListe
         this.add(headPanel,BorderLayout.NORTH);
         pack();
         
+
     }
 
     @Override
@@ -102,29 +100,26 @@ public class Navigation_Frame extends JFrame implements PlugIn,InvalidationListe
 
     @Override
     public void invalidated(Observable observable) {
-        nucsRoot = new DefaultMutableTreeNode("All Nuclei at Each Time",true);
-        rootsRoot = new DefaultMutableTreeNode("Roots at Each Time",true);
-        NucleusFile nucFile = (NucleusFile)observable;
+        nucsRoot = new DefaultMutableTreeNode("All Nuclei",true);
+        NucleusFile nucFile = embryo.getNucleusFile();
+        if (nucFile == null) { 
+            return;
+        }
         Set<Integer> times = nucFile.getAllTimes();
         for (Integer time : times){
-            Set<Cell> roots = nucFile.getRoots(time);
-            if (roots!=null){
-                if (!roots.isEmpty()){
-                    DefaultMutableTreeNode timeNode = new DefaultMutableTreeNode(Integer.toString(time));
-                    rootsRoot.add(timeNode);
-                    for (Cell cell : roots){
-                        addCellToNode(cell,timeNode);
-//                        System.out.printf("Root Cell: %s\n", cell.getName());
-                    }
-                }
-            }
             Set<Nucleus> nucs = nucFile.getNuclei(time);
             DefaultMutableTreeNode timeNode = new DefaultMutableTreeNode(String.format("Time:%d (%d)",time,nucs.size()));
             nucsRoot.add(timeNode);
             for (Nucleus nuc : nucs){
-                DefaultMutableTreeNode nucNode = new DefaultMutableTreeNode(nuc.getName());
+                DefaultMutableTreeNode nucNode = new DefaultMutableTreeNode(nuc);
                 timeNode.add(nucNode);                
             }
+        }
+        
+        rootsRoot = new DefaultMutableTreeNode("Root Cells",true);
+        for (Cell root : embryo.getRootCells()){
+            addRootToNode(root,rootsRoot);
+           
         }
         rootsTree.setModel(new DefaultTreeModel(rootsRoot));
         nucsTree.setModel(new DefaultTreeModel(nucsRoot));
@@ -132,11 +127,11 @@ public class Navigation_Frame extends JFrame implements PlugIn,InvalidationListe
         this.invalidate();
         
     }
-    private void addCellToNode(Cell cell,DefaultMutableTreeNode node){
-        DefaultMutableTreeNode cellNode = new DefaultMutableTreeNode(cell.getName());
+    private void addRootToNode(Cell root,DefaultMutableTreeNode node){
+        DefaultMutableTreeNode cellNode = new DefaultMutableTreeNode(root);
         node.add(cellNode);
-        for (Cell child : cell.getChildren()){
-            addCellToNode(child,cellNode);
+        for (Cell child : root.getChildren()){
+            addRootToNode(child,cellNode);
         }
         
     }

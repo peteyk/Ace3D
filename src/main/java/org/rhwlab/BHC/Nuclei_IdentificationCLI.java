@@ -88,6 +88,9 @@ public class Nuclei_IdentificationCLI extends CommandLine {
     public void qsub(){
         this.qsub = true;
     }
+    public void study(){
+        this.study = true;
+    }
     public Integer getFirstTime(){
         return this.firstTime;
     }
@@ -99,6 +102,9 @@ public class Nuclei_IdentificationCLI extends CommandLine {
     }
     public boolean getQsub(){
         return this.qsub;
+    }
+    public boolean getStudy(){
+        return this.study;
     }
     public String getDirectory(){
         return this.directory;
@@ -159,4 +165,5 @@ public class Nuclei_IdentificationCLI extends CommandLine {
     Integer lastTime;
     boolean force=false;
     boolean qsub = false;
+    boolean study = false;
 }

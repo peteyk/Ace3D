@@ -20,17 +20,18 @@ import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonString;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
-import org.apache.commons.math3.linear.RealVector;
 
 /**
  *
  * @author gevirl
  */
 public class Cell  implements Comparable {
+    public Cell(String name,Nucleus nuc){
+        this.name = name;
+        addNucleus(nuc);
+    }
     public Cell(String name){
         this.name = name;
         if (divisionMap == null){
@@ -75,7 +76,7 @@ public class Cell  implements Comparable {
             if (nuc != null){
                 nuclei.put(nuc.getTime(),nuc);
             }
-            nuc.setCell(this);
+            nuc.setCell(this.name);
         }
     }
     // name the children using the supplied embryo orientatation rotation matrix
@@ -182,9 +183,28 @@ public class Cell  implements Comparable {
     public Cell[] getChildren(){
         return children.toArray(new Cell[0]);
     }
+    // add the given nucleus recursively to this cell
+    // entire cell tree is constructed under this cell if needed
     public void addNucleus(Nucleus nuc){
+        nuc.setCell(this.name);
         nuclei.put(nuc.getTime(),nuc);
-        nuc.setCell(this);
+        
+        Nucleus[] childrenNucs = nuc.nextNuclei();
+        if (childrenNucs.length==0){
+            return;  // no further nuclei to add
+        }
+        if (childrenNucs.length == 1){
+            addNucleus(childrenNucs[0]);
+            return;
+        } else{
+            Cell cell1 = new Cell(childrenNucs[0].getName(),childrenNucs[0]);
+            Cell cell2 = new Cell(childrenNucs[1].getName(),childrenNucs[1]);
+            this.children.add(cell1);
+            this.children.add(cell2);
+            cell1.parent = this;
+            cell2.parent = this;
+        }
+        
     }
     public void addChild(Cell child){
         children.add(child);
@@ -196,6 +216,7 @@ public class Cell  implements Comparable {
     public Nucleus getNucleus(int time){
         return nuclei.get(time);
     }
+/*    
     // split this cell into two at the given time
     // the nucleus at the given time begins the later cell
     // return the later cell
@@ -229,6 +250,7 @@ public class Cell  implements Comparable {
         
         return ret;
     }
+*/
     // the time of the last nucleus in the cell
     public int lastTime(){
         return nuclei.lastKey();
@@ -245,6 +267,7 @@ public class Cell  implements Comparable {
     public Nucleus lastNucleus(){
         return nuclei.lastEntry().getValue();
     }
+/*    
     // unlink this cell from its parent
     public void unlink(){
         if (parent != null){
@@ -268,6 +291,7 @@ public class Cell  implements Comparable {
         other.clearChildren();
         
     }
+*/
     public Cell getSister(){
         Cell ret = null;
         if (parent != null){
@@ -361,9 +385,9 @@ public class Cell  implements Comparable {
         return children.isEmpty();
     }
     public void setName(String name){
-
         this.name = name;
     }
+    // get the nuclei in this cell only
     public Nucleus[] allNuclei(){
         return nuclei.values().toArray(new Nucleus[0]);
     }
@@ -384,8 +408,8 @@ public class Cell  implements Comparable {
     }
     public void removeNucleus(int time){
         nuclei.remove(time);
-    
     }
+    /*
     // merge this cell with its parent
     public void mergeWithParent(){
         parent.children = this.children;
@@ -394,6 +418,7 @@ public class Cell  implements Comparable {
         }
         
     }
+*/
     // return the root cell of this cell
     public Cell getRoot(){
         if (this.parent == null){
@@ -401,10 +426,49 @@ public class Cell  implements Comparable {
         }
         return this.parent.getRoot();
     }
+    @Override
+    public String toString(){
+        return this.getName();
+    }
+    public Cell findChild(String childName){
+        if (this.getName().equals(childName)){
+            return this;
+        }
+        if (this.isLeaf()){
+            return null;
+        }
+        for (Cell child : this.children){
+            Cell ret = child.findChild(childName);
+            if (ret != null){
+                return ret;
+            }
+        }
+        return null;
+    }
+    /*
+    public Cell clone(){
+        Cell ret = new Cell(this.name);
+        // clone all the children cells
+        for (Cell child : this.children){
+            Cell c = child.clone();
+            ret.children.add(c);
+            c.parent = ret;
+        }
+        
+        // clone the nuclei
+        for (Entry<Integer,Nucleus> entry : nuclei.entrySet()){
+            Nucleus nucClone = entry.getValue().clone();
+            nucClone.setCell(ret.name);
+            ret.nuclei.put(entry.getKey(), nucClone);
+        }
+        return ret;
+    }
+*/
     String name;
     Cell parent;  // the parent cell - can be null
     List<Cell> children = new ArrayList<>();  // children after division of this cell - can be empty
     TreeMap<Integer,Nucleus> nuclei =  new TreeMap<>();  // the time-linked nuclei in this cell
+    
     static TreeMap<String,Division> divisionMap;
 
     class Division{

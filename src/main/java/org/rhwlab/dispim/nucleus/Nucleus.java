@@ -6,192 +6,53 @@
 package org.rhwlab.dispim.nucleus;
 
 import java.awt.Shape;
-import java.awt.geom.AffineTransform;
-import java.awt.geom.Ellipse2D;
 import java.io.PrintStream;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Map.Entry;
-import java.util.Random;
-import java.util.TreeMap;
-import javafx.beans.InvalidationListener;
-import javax.json.Json;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.apache.commons.math3.linear.ArrayRealVector;
-import org.apache.commons.math3.linear.DiagonalMatrix;
-import org.apache.commons.math3.linear.EigenDecomposition;
-import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.jdom2.Element;
-import org.rhwlab.ace3d.SingleSlicePanel;
-import org.rhwlab.starrynite.TimePointNucleus;
 
 /**
  *
  * @author gevirl
  */
 public class Nucleus implements Comparable {
-    public Nucleus(JsonObject jsonObj){
-        this.time = jsonObj.getInt("Time");
-        this.name = jsonObj.getString("Name");
-        String precString = jsonObj.getJsonString("Precision").getString();
-        this.A = precisionFromString(precString);
-        this.xC = jsonObj.getJsonNumber("X").longValue();
-        this.yC = jsonObj.getJsonNumber("Y").longValue();
-        this.zC = jsonObj.getJsonNumber("Z").longValue();
-        this.exp = jsonObj.getJsonNumber("Expression").longValue();
+    public Nucleus(NucleusData data){
+        this.child1 = null;
+        this.child2 = null;
+        this.parent = null;
+        this.nucData = data;
+        this.cellName = data.getName();
+    }
 
-        
-        this.eigenA = new EigenDecomposition(A);
-        this.adjustedA = this.A.copy();
-        this.adjustedEigenA = new EigenDecomposition(adjustedA);
-        
-        double[] adj = new double[3];
-        adj[0] = adj[1] = adj[2] =1.0;        
-        this.setAdjustment(adj);
-    }
-    // contruct the Nucleus from a StarryNite Nucleus
-    public Nucleus(TimePointNucleus data){
-        this.time = data.getTime();
-        this.name = data.getName();
-        this.xC = data.getX();
-        this.yC = data.getY();
-        this.zC = (long)data.getZ();
- //       this.radius = data.getRadius();
-    }   
-/*    
-    public Nucleus(String[] headings,String[] data){
-        for (int i=0 ; i<headings.length ; ++i){
-            if (headings[i].equalsIgnoreCase("Time")){
-                time = Integer.valueOf(data[i]);
-            } else if (headings[i].equalsIgnoreCase("Name")){
-                name = data[i];
-            } else if (headings[i].equalsIgnoreCase("X")){
-                xC = Long.valueOf(data[i]);
-            } else if (headings[i].equalsIgnoreCase("Y")){
-                yC = Long.valueOf(data[i]);
-            } else if (headings[i].equalsIgnoreCase("Z")){
-                zC = Long.valueOf(data[i]);
-            } else if (headings[i].equalsIgnoreCase("Radius")){
-//                radius = Double.valueOf(data[i]);
-            }
+    public Nucleus(JsonObject jsonObj){
+        this(new BHCNucleusData(jsonObj));
+
+        JsonObject child1Obj = jsonObj.getJsonObject("child1");
+        if (child1Obj != null){
+            this.child1 = new Nucleus(child1Obj);
+            this.child1.parent = this;
         }
+        JsonObject child2Obj = jsonObj.getJsonObject("child2");
+        if (child2Obj != null){
+            this.child2 = new Nucleus(child2Obj);
+            this.child2.parent = this;
+        }        
     }
-    */
-    public Nucleus (int time,long[] center,double radius){
-        this(time,randomName(),center,radius);
+    public Nucleus clone(){
+        Nucleus clone = new Nucleus(this.nucData);
+        clone.child1 = this.child1;
+        clone.child2 = this.child2;
+        clone.cellName = this.cellName;
+        clone.parent = this.parent;
+        clone.userNamed = this.userNamed;
+        return clone;
     }
-    public Nucleus (int time,String name,long[] center,double radius){
-        this.time = time;
-        this.name = name;
-        this.xC = center[0];
-        this.yC = center[1];
-        this.zC = center[2];
-//        this.radius = radius;
-    } 
-    public Nucleus.Ellipse2d zPlaneEllipse(double v){
-        return ellipse(0,1,2,v);
-    }
-    public Nucleus.Ellipse2d yPlaneEllipse(double v){
-        return ellipse(0,2,1,v);
-    }
-    public Nucleus.Ellipse2d xPlaneEllipse(double v){
-        return ellipse(1,2,0,v);
-    }
-    public Nucleus.Ellipse2d ellipse(int xi,int yi,int zi,double v){
-        Nucleus.Coeff coef = coef(xi,yi,zi,v);
-        return ellipse(xi,yi,zi,coef);
-    } 
-    public Coeff coef(int xi,int yi,int zi,double v){
-        Coeff c = new Coeff();
-        double[] ce = this.getCenter();
-        double[][] a = adjustedA.getData();
-  //      double ff = - Math.log(eigenA.getDeterminant());
-        v = v-ce[zi];
-        c.A = ff*a[xi][xi];
-        c.B = ff*(a[xi][yi] + a[yi][xi]);
-        c.C = ff*a[yi][yi];
-        c.D = ff*v*(a[xi][zi] + a[zi][xi]);
-        c.E = ff*v*(a[yi][zi] + a[zi][yi]);
-        c.F = ff*a[zi][zi]*v*v-1.0;
-        return c;
-    }   
-    public  Ellipse2d ellipse(int xi,int yi,int zi,Coeff coef){
-        Array2DRowRealMatrix Q =  new Array2DRowRealMatrix(3,3);
-        Q.setEntry(0,0,coef.A);
-        Q.setEntry(1,0,coef.B/2);
-        Q.setEntry(0,1,coef.B/2);
-        Q.setEntry(1,1,coef.C);
-        Q.setEntry(2,0,coef.D/2);
-        Q.setEntry(0,2,coef.D/2);
-        Q.setEntry(2,1,coef.E/2);
-        Q.setEntry(1,2,coef.E/2);
-        Q.setEntry(2,2,coef.F);
-        EigenDecomposition ed = new EigenDecomposition(Q);
-        double detQ = ed.getDeterminant();
-        
-        RealMatrix rm = new Array2DRowRealMatrix(2,2);
-        rm.setEntry(0,0, coef.A);
-        rm.setEntry(1,1, coef.C);
-        rm.setEntry(0,1,coef.B/2.0);
-        rm.setEntry(1,0,coef.B/2.0);
-        EigenDecomposition eigenDecomp = new EigenDecomposition(rm);
-        double detA33 = eigenDecomp.getDeterminant();
-        double[] eigenValues = eigenDecomp.getRealEigenvalues();
-//System.out.printf("Eigenvalues: %f,%f\n",eigenValues[0],eigenValues[1])        ;
-        RealVector eigenvector0 = eigenDecomp.getEigenvector(0);
-        Ellipse2d e = new Ellipse2d();
-        double cot2theta  = (coef.A-coef.C)/coef.B;
-        if (Double.isFinite(cot2theta)){
-            double d= Math.sqrt(1.0+cot2theta*cot2theta);
-            double cos2theta = cot2theta/d;
-            e.cosine = Math.sqrt((1.0 + cos2theta)/2.0);
-            e.sine = Math.sqrt((1.0 - cos2theta)/2.0);
-        } else {
-            e.cosine = 1.0;
-            e.sine = 0.0;            
-        }
-       
-        double dd =  coef.B*coef.B - 4.0*coef.A*coef.C;
-        double xc = ( 2.0*coef.C*coef.D - coef.B*coef.E)/dd;
-        double yc = ( 2.0*coef.A*coef.E - coef.B*coef.D)/dd;
-// System.out.printf("dd=%f,xc=%f,xcn=%f,yc=%f,ycn%f\n",dd,xc,xcn,yc,ycn);
-        double[] ce = this.getCenter();
-        e.x = ce[xi] + xc;
-        e.y = ce[yi] + yc;
-       
- //       double f = -detQ/detA33 * 2;
-        double f = -detQ/detA33;
-        double a = eigenValues[0]/f;
-        double b = eigenValues[1]/f;
-        if (a <=0.0 || b<=0.0){
-            return null;
-        }
-        e.a = 1.0/Math.sqrt(a);
-        e.b = 1.0/Math.sqrt(b);
-//System.out.printf("detQ=%e,detA33=%e,f=%f,a=%e,b=%e\n",detQ,detA33,f,e.a,e.b);        
-//System.out.printf("eigenValues (%f,%f)\n",eigenValues[0],eigenValues[1]);
-        e.cosine = eigenvector0.getEntry(0);
-        e.sine = eigenvector0.getEntry(1);         
-        e.low[xi] = (long)(e.x - e.a);
-        e.low[yi] = (long)(e.y - e.b);
-        e.low[zi] = 0;
-        e.high[xi] = (long)(e.x + e.a);
-        e.high[yi] = (long)(e.y + e.b);
-        e.high[zi] = 0;
-//System.out.printf("Ellipse: a=%f,b=%f,x=%f,y=%f\n", e.a,e.b,e.x,e.y);
-        return e;
-    }    
     static public String randomName(){
-        if (rnd == null){
-            rnd = new Random();
-        }
-        return String.format("Nuc_%d",(new Date()).getTime());
+        return NucleusData.randomName();
     }
     static public void saveHeadings(PrintStream stream){
         stream.println("Time,Name,X,Y,Z,Radius,Child1,Child2");
@@ -200,45 +61,27 @@ public class Nucleus implements Comparable {
 //        stream.printf("%d,%s,%d,%d,%d,%f,%s,%s\n",time,getName(),x,y,z,radius,getChild1(),getChild2());
     }
     public int getTime(){
-        return this.time;
+        return nucData.getTime();
     }
-/*    
-    public double getRadius(){
-        return radius;
-    }
-    public void setRadius(double r){
-        this.radius = r;
-    }
-*/    
+   
     public double[] getCenter(){
-        double[] center = new double[3];
-        center[0] = xC;
-        center[1] = yC;
-        center[2] = zC;
-        return center;
+        return nucData.getCenter();
     }
     public void setCenter(long[] c){
-        xC = c[0];
-        yC = c[1];
-        zC = c[2];
+        nucData.setCenter(c);;
     }
     public void setCenter(double[] c){
-        xC = c[0];
-        yC = c[1];
-        zC = c[2];
+        nucData.setCenter(c);
     }    
     public String getName(){
-        if (name == null){
-            return this.toString();
-        }
-        return name;
+        return nucData.getName();
     }
 
     public void setMarked(boolean s){
-        this.marked = s;
+        nucData.setMarked(s);
     }
     public boolean getMarked(){
-        return this.marked;
+        return nucData.getMarked();
     }
 
     public double distanceSqaured(long[] p){
@@ -251,129 +94,67 @@ public class Nucleus implements Comparable {
         return d;
     }
     public Element asXML(){
-        Element ret = new Element("Nucleus");
-        ret.setAttribute("name", name);
-        ret.setAttribute("time",Integer.toString(time));
-        ret.setAttribute("x",Double.toString(xC));
-        ret.setAttribute("y",Double.toString(yC));
-        ret.setAttribute("z",Double.toString(zC));
-        ret.setAttribute("precision", precisionAsString(adjustedA));
-        if (cell != null){
-            ret.setAttribute("cell", cell.getName());
+        Element ret = nucData.asXML();
+        ret.setAttribute("cell", cellName);
+        ret.setAttribute("usernamed", Boolean.toString(userNamed));
+        
+        if (this.parent != null){
+            ret.setAttribute("parent", this.parent.getName());
         }
-        ret.setAttribute("expression", Double.toString(exp));
+        if (this.child1 != null){
+            ret.setAttribute("child1", this.child1.getName());
+        }
+        if (this.child2 != null){
+            ret.setAttribute("child2", this.child2.getName());
+        }        
         return ret;
     }
     public JsonObjectBuilder asJson(){
-        JsonObjectBuilder builder = Json.createObjectBuilder();
-        builder.add("Name", name);
-        builder.add("Time", time);
-        builder.add("X", xC);
-        builder.add("Y", yC);
-        builder.add("Z", zC);
-        builder.add("Precision",precisionAsString(adjustedA));
-        if (cell != null){
-            builder.add("Cell", cell.getName());
+        JsonObjectBuilder builder = nucData.asJson();
+        builder.add("cell", cellName);
+        builder.add("username",Boolean.toString(userNamed));
+        
+        if (this.parent != null){
+            builder.add("parent",this.parent.getName());
         }
-        builder.add("Expression",this.exp);
+        if (child1 != null){
+            builder.add("child1",this.child1.asJson() );
+        }    
+        if (child2 != null){
+            builder.add("child2",this.child2.asJson() );
+        }         
         return builder;
     }
-    public void setCell(Cell cell){
-        this.cell = cell;
+    public void setCell(String c){
+        this.cellName = c;
     }
-    public Cell getCell(){
-        return this.cell;
+    public String getCell(){
+ 
+        return this.cellName;
     }
     @Override
     public int compareTo(Object o) {
-        return this.name.compareTo(((Nucleus)o).name);
+        return nucData.compareTo(((Nucleus)o).getNucleusData());
     }  
     public boolean getLabeled(){
-        return this.labeled;
+        return nucData.getLabeled();
     }
     public void setLabeled(boolean lab){
-        this.labeled = lab;
+        nucData.setLabeled(lab);
     }
     public double getExpression(){
-        return exp;
+        return nucData.getExpression();
     }
     public void setExpression(double e){
-        this.exp = e;
+        nucData.setExpression(e);
     }
     
     public boolean isVisible(long slice,int dim){
-        Ellipse2d e;
-        switch(dim){
-            case 0:
-                e = xPlaneEllipse((double)slice);
-                break;
-            case 1:
-                e = yPlaneEllipse((double)slice);
-                break;            
-            default:
-                e = zPlaneEllipse((double)slice);
-                break;                 
-        }
-        return e!=null;
+        return nucData.isVisible(slice, dim);
     }
-/*    
-    public Shape getShape(long slice,int dim,int bufW,int bufH){
-            long[] center = getCenter();  // image corrdinates
-            double r = getRadius();   // image corrdinates
-            double delta = Math.abs(slice-center[dim]);   // image corrdinates
-            if (isVisible(slice, dim)){
-                double rad = Math.sqrt(r*r-delta*delta);  //image coordinates
-                int ix = imageXDirection(dim);
-                int iy = imageYDirection(dim);
-                long[] low = new long[center.length];
-                long[] high = new long[center.length];
-                low[dim] = slice;
-                high[dim] = slice;
-                low[ix] = center[ix] - (long)rad;
-                low[iy] = center[iy] - (long)rad;
-                high[ix] = center[ix] + (long)rad;
-                high[iy] = center[iy] + (long)rad;  
-                int scrX = SingleSlicePanel.screenX(low,dim,bufW);
-                int scrY = SingleSlicePanel.screenY(low,dim,bufH);
-                int scrHighX = SingleSlicePanel.screenX(high,dim,bufW);
-                int scrHighY = SingleSlicePanel.screenY(high,dim,bufH);
-                return new Ellipse2D.Double(scrX,scrY,scrHighX-scrX,scrHighY-scrY); 
-            }
-        return null;
-    }
-*/
-    public Shape getShape(long slice,int dim,int bufW,int bufH){
 
-//System.out.printf("Ellipsoid center = (%d,%d,%d)\n",this.xC,this.yC,this.zC);
-        Ellipse2d e;
-        switch(dim){
-            case 0:
-                e = xPlaneEllipse((double)slice);
-                break;
-            case 1:
-                e = yPlaneEllipse((double)slice);
-                break;            
-            default:
-                e = zPlaneEllipse((double)slice);
-                break;                 
-        }
-        if (e != null){
-//System.out.printf("%s dim=%d  slice=%d\n",this.getName(),dim,slice);
-            AffineTransform toOrigin = AffineTransform.getTranslateInstance(-e.x,-e.y);
-            AffineTransform back = AffineTransform.getTranslateInstance(e.x, e.y);
-            AffineTransform xform = AffineTransform.getRotateInstance(e.cosine, e.sine);
-            int scrX = SingleSlicePanel.screenX(e.low,dim,bufW);
-            int scrY = SingleSlicePanel.screenY(e.low,dim,bufH);
-            int scrHighX = SingleSlicePanel.screenX(e.high,dim,bufW);
-            int scrHighY = SingleSlicePanel.screenY(e.high,dim,bufH);
-            Shape shape = new Ellipse2D.Double(scrX,scrY,scrHighX-scrX,scrHighY-scrY); 
-            shape = toOrigin.createTransformedShape(shape);
-            shape =  xform.createTransformedShape(shape);
-            shape = back.createTransformedShape(shape);
-//System.out.printf("e.a:%f e.b:%f e.x:%f e.y:%f\n",e.a,e.b,e.x,e.y);
-            return shape;
-        }
-        return null;
+    public Shape getShape(long slice,int dim,int bufW,int bufH){
+        return nucData.getShape(slice, dim, bufW, bufH);
     }    
     public int imageXDirection(int dim){
         if (dim==0){
@@ -388,53 +169,18 @@ public class Nucleus implements Comparable {
         return 2;
     } 
     public Object getAdjustment(){
-        return this.R;
+        return nucData.getAdjustment();
     }
     public void setAdjustment(Object o){
-        double[] v = (double[])o;
-        R = new double[v.length];
-        R[0] = v[0];
-        R[1] = v[1];
-        R[2] = v[2];
-        adjustedA = adjustPrecision();
-        adjustedEigenA = new EigenDecomposition(adjustedA);
-        double[][]a = adjustedA.getData();
-        ff = -Math.log(adjustedEigenA.getDeterminant());
-        ff = 1.0;
+        nucData.setAdjustment(o);
     }       
     public RealMatrix adjustPrecision(){
-        DiagonalMatrix D = new DiagonalMatrix(eigenA.getRealEigenvalues());
-        for (int i=0 ; i<R.length ; ++i){
-            double lambda = D.getEntry(i,i);
-            D.setEntry(i,i,lambda/(R[i]*R[i]));
-        }
-        RealMatrix ret = eigenA.getV().multiply(D.multiply(eigenA.getVT()));
-        return ret;
+        return nucData.adjustPrecision();
     } 
     public String getRadiusLabel(int i){
-        switch(i){
-            case 0:
-                return "X";
-            case 1:
-                return "Y";
-            default:
-                return "Z";
-        }
+        return ((BHCNucleusData)nucData).getRadiusLabel(i);
     }
 
-
-    static public String precisionAsString(RealMatrix m){
-        StringBuffer buf = new StringBuffer();
-        for (int r=0 ; r<m.getRowDimension() ; ++r){
-            for (int c=0 ; c<m.getColumnDimension() ; ++c){
-                if (r !=0 || c!=0){
-                    buf.append(" ");
-                }
-                buf.append(Double.toString(m.getEntry(r, c)));
-            }
-        }
-        return buf.toString();
-    }
     public static RealMatrix precisionFromString(String s){
         double [][] ret = new double[3][3];
         String[] tokens = s.split(" ");
@@ -448,18 +194,10 @@ public class Nucleus implements Comparable {
     }
     // probability the given position (relative to the center)  belongs to this nucleus
     public double prob(double[] p){
-
-        RealVector v = new ArrayRealVector(p);
-        double d2 = Math.sqrt(this.adjustedEigenA.getDeterminant());
-        double ex = -0.5*v.dotProduct(adjustedA.operate(v));
-        return d2 * Math.exp(ex); 
+        return nucData.prob(p);
     }
     public double getRadius(int d){
-
-        double eigenVal = adjustedEigenA.getRealEigenvalue(d);
- //       double r = 1.0/Math.sqrt(Ace3D_Frame.R*eigenVal); 
-        double r = 1.0/Math.sqrt(eigenVal*ff);
-        return r;
+        return nucData.getRadius(d);
     } 
     public long[] getRadii(){
         long[] radii = new long[3];
@@ -471,36 +209,21 @@ public class Nucleus implements Comparable {
     }
     // return the direction vectors of the ellipsoid axes sorted by length of radii
     public RealVector[] getAxes(){
-        TreeMap<Double,RealVector> map = new TreeMap<>();
-        for (int d=0 ; d<this.getCenter().length ; ++d){
-            map.put(this.getRadius(d), this.adjustedEigenA.getEigenvector(d));
-        }
-        return map.values().toArray(new RealVector[0]);
+        return nucData.getAxes();
     }
     public String getFrobenius(){
- //       return (this.adjustedEigenA.getV().multiply(this.adjustedEigenA.getD()).subtract(MatrixUtils.createRealIdentityMatrix(3))).getFrobeniusNorm();
-      double f = this.adjustedA.getFrobeniusNorm();
-        double[] eigenValues = this.adjustedEigenA.getRealEigenvalues();
-        double sum = 0.0;
-        for (int i=0 ; i<eigenValues.length ; ++i){
-            sum = sum + eigenValues[i]*eigenValues[i];
-        }
-        return String.format("%.4f %.4f",Math.sqrt(sum),f);
+        return nucData.getFrobenius();
     }
-    
     public double[][] getEigenVectors(){
-        return adjustedEigenA.getV().getData();
+        return nucData.getEigenVectors();
     }
     public double[][] getEigenVectorsT(){
-        return adjustedEigenA.getVT().getData();
+        return nucData.getEigenVectorsT();
     }   
     
     // determine if this nucleus is dividing
     public boolean isDividing(){
-        if (cell == null || cell.lastTime() != this.time || cell.isLeaf()){
-            return false;
-        }
-        return true;
+        return child1!=null && child2!=null;
     }
     
     // return the next nuclei this nucleus is linked to
@@ -508,82 +231,27 @@ public class Nucleus implements Comparable {
     // return Nulcues[1] if linked in time
     // return Nucleus[2] if dividing
     public Nucleus[] nextNuclei(){
-
-        if (this.isDividing()){
+        if (isDividing()){
             Nucleus[] ret = new Nucleus[2];
-            Cell[] children = cell.getChildren();
-            ret[0] = children[0].firstNucleus();
-            ret[1] = children[1].firstNucleus();
-            return ret;
-        }else if(cell.lastTime() == this.time){
-            return new Nucleus[0]; // no next nucleus, it is the last nucleus in a lef cell
-        }
-        else {
+            ret[0] = child1;
+            ret[1] = child2;
+            return ret;  // dividing
+        }else if (child1==null && child2==null){
+            Nucleus[] ret = new Nucleus[0];
+            return ret;  // leaf nucleus
+        } else {
             Nucleus[] ret = new Nucleus[1];
-            Entry<Integer,Nucleus> entry = cell.nuclei.ceilingEntry(time+1);
-            if (entry == null){
-                System.err.println("Error in Nucleus:nextNuclei");
-                System.exit(time);}
-            
-            ret[0] = entry.getValue();
-            return ret;
+            ret[0] = child1;
+            return ret;  // linked in time
         }
+
     }
     // measure the distance to another nucleus
     public double distance(Nucleus other){
-        double delx = xC - other.xC;
-        double dely = yC - other.yC;
-        double delz = zC - other.zC;
-        return Math.sqrt(delx*delx + dely*dely + delz*delz);
+        return nucData.distance(other.nucData);
     }
     public double shapeDistance(Nucleus other){
-        double ret = 0.0;
-        double[] l = other.adjustedEigenA.getRealEigenvalues();
-        for (int i=0 ; i<l.length ; ++i){
-            l[i] = 1.0/Math.sqrt(l[i]);
-        }
-        Arrays.sort(l);
-        double[] k = this.adjustedEigenA.getRealEigenvalues();
-        for (int i=0 ; i<k.length ; ++i){
-            k[i] = 1.0/Math.sqrt(k[i]);
-        }
-        Arrays.sort(k);  
-        
-        for (int i=0 ; i<k.length ; ++i){
-            double del = k[i]-l[i];
-            ret = ret + del*del;
-        }
-        ret = Math.sqrt(ret);
-        return ret;
-/*        
-        RealMatrix Vt = other.adjustedEigenA.getVT();
-        RealMatrix V = other.adjustedEigenA.getV();
-        DiagonalMatrix D = new DiagonalMatrix(l);
-        
-        RealMatrix Bp = D.multiply(Vt.multiply(this.adjustedA.multiply(V.multiply(D))));
-//        reportMatrix(System.out,"\n\nBp",Bp);
-        EigenDecomposition dec = new EigenDecomposition(Bp);
-        double [] eigen = dec.getRealEigenvalues();
-        ret = eigen[0]/eigen[2];
-        if (ret < 1.0){
-            ret = 1.0/ret;
-        }
-        ret = ret*ret;
-        
-        double sum = 0.0;
-        for (int i=0 ; i<eigen.length ; ++i){
-            double del = 1.0 - 1.0/(eigen[i]*eigen[i]);
-            sum = sum + del*del;
-            System.out.printf("%f ",1.0/(eigen[i]*eigen[i]));
-        }
-        System.out.println();
-        RealMatrix del = Bp.subtract(MatrixUtils.createRealIdentityMatrix(l.length));
- //       reportMatrix(System.out,"del",del);
-        double f = del.getFrobeniusNorm();
-//        System.out.printf("%f \n",f);
-//System.out.printf("%s:%s  (%e,%e,%e):(%e,%e.%e)\n",this.getName(),other.getName(),this.getRadius(0),this.getRadius(1),this.getRadius(2),other.getRadius(0),other.getRadius(1),other.getRadius(2));
-        return ret;
-*/
+        return nucData.shapeDistance(other.nucData);
     }
     private void reportMatrix(PrintStream stream,String label,RealMatrix m){
         stream.printf("%s: ",label);
@@ -605,36 +273,24 @@ public class Nucleus implements Comparable {
     }
    
     public void report(PrintStream stream){
-        stream.printf("Nucleus:%s time=%d  cell=%s\n", name,time,cell.getName()); 
-        if (cell != null){
-            cell.report(stream);
+         
+        if (cellName != null){
+            stream.printf("Nucleus:%s time=%d  cell=%s\n",nucData.getName(),nucData.getTime(),cellName);
         } else {
-            stream.println("Cell is null");
+            stream.printf("Nucleus:%s time=%d  no cell\n",nucData.getName(),nucData.getTime());
         }
         
     }
     // return the root cell leading to this nucleus
-    public Cell getRoot(){
-        return this.getCell().getRoot();
+    public String getRoot(){
+        if (this.parent==null){
+            return this.cellName;
+        }
+        return parent.getRoot();
     }
     // return the sister nucleus if parent just divided
     public Nucleus getSisterNucleus(){
-        if (this.getCell().firstNucleus().getName().equals(this.getName())){
-           // this is the first nucleus in the cell, so parent just divided
-           Cell parentCell = this.getCell().getParent();
-           if (parentCell != null){
-               Cell[] children = parentCell.getChildren();
-               Nucleus sisterNuc = children[0].firstNucleus();
-               if (!sisterNuc.getName().equals(this.getName())){
-                   return sisterNuc;
-               }else {
-                   return children[1].firstNucleus();
-               }
-           }
-        }else {
-            return null;
-        }
-        return null;
+        return this.getSister();
     }
     public double[] eccentricity(){
         double[] r = new double[3];
@@ -657,49 +313,71 @@ public class Nucleus implements Comparable {
     
     // the time since this nucleus last divided
     public int timeSinceDivsion(){
-        Cell cell = this.getCell();
-        if (cell.isRoot()){
-            return -1;  // cannot determine time since division in a root cell
+        if (this.parent == null){
+            return -1;
         }
-        return this.time- cell.firstTime() ;
+        if (this.parent.child2!= null){
+            return 1;
+        }
+        int t = this.parent.timeSinceDivsion();
+        if (t != -1){
+            ++t;
+        }
+        return t;
     }
-    private int time;
-    private String name;
-    private double xC;
-    private double yC;
-    private double zC;
-    private Cell cell;  // the cell to which this nucleus belongs - can be null
-    
-    private boolean marked = false;
-    private boolean labeled = false;
-    static Random rnd;
-    double exp=100.0;
-    
-    RealMatrix A;  // unadjusted precision matrix
-    EigenDecomposition eigenA;  // eigendecompensation of the unadjusted precsion matrix
-    EigenDecomposition adjustedEigenA; 
-    double[] R;  // the adjustments to apply to the axis of the ellipsoid
-    RealMatrix adjustedA;  // the adjusted precsion matrix  
-    double ff;
-    List<InvalidationListener> listeners = new ArrayList<>();
+    public NucleusData getNucleusData(){
+        return nucData;
+    }
+    public Nucleus getSister(){
+        if (parent == null){
+            return null;  // must have a parent to have a sister
+        }
+        if (parent.child2 == null){
+            return null;  // must have a dividing parent
+        }
+        if (parent.child1.equals(this)){
+            return parent.child2;
+        }
+        return parent.child1;
+    }
+    public Nucleus getParent(){
+        return this.parent;
+    }
+    // link this nucleus to a daughter
+    // if this nucleus is dividing, then this cannot be done and false is returned
+    // if this nucleus is already linked in time then it will result in a division
+    public boolean linkTo(Nucleus daughter){
+        if (child2 != null){
+            return false;
+        }
+        if (child1 != null){
+            child2 = daughter;
+        } else {
+            this.child1 = daughter;
+        }
+        daughter.parent = this;
+        return true;
+    }
+    @Override
+    public String toString(){
+        return nucData.toString();
+    }
 
-    
-    public class Coeff {
-        double A;
-        double B;
-        double C;
-        double D;
-        double E;
-        double F; 
+    public void setDaughters(Nucleus c1,Nucleus c2){
+        this.child1 = c1;
+        this.child2 = c2;
     }
-    public class Ellipse2d {
-        double x;
-        double y;
-        double sine;
-        double cosine;
-        double a;
-        double b;
-        long[] low = new long[3];
-        long[] high = new long[3];
+    public Nucleus getChild1(){
+        return this.child1;
     }
+    public Nucleus getChild2(){
+        return this.child2;
+    }    
+    private Nucleus child1;
+    private Nucleus child2;
+    private Nucleus parent; 
+    private String cellName;  // the cell to which this nucleus belongs - initially cellname = nucname until nuc is linked to a parent
+    private boolean userNamed = false;  // made true if the user names the cell for this nucleus
+    final private NucleusData nucData;
+
 }

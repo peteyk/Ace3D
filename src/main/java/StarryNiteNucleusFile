@@ -61,7 +61,7 @@ public class StarryNiteNucleusFile extends Ace3DNucleusFile {
         
         // add all the nuclei
         while (tpn != null){
-            Nucleus nuc = new Nucleus(tpn);
+            Nucleus nuc = new Nucleus(new NucleusData(tpn));
             this.addNucleus(nuc,false);
             cell.addNucleus(nuc);
             TimePointNucleus[] succs = tpn.getSuccessors();
@@ -85,3 +85,4 @@ public class StarryNiteNucleusFile extends Ace3DNucleusFile {
         return cell;
     }    
 }
+

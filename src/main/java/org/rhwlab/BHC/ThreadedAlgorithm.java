@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.TreeSet;
 import java.util.concurrent.ForkJoinPool;
 import org.apache.commons.math3.dfp.DfpField;
+import org.apache.commons.math3.linear.RealMatrix;
 import org.rhwlab.dispim.datasource.DataSource;
 import org.rhwlab.dispim.datasource.MicroCluster;
 import org.rhwlab.dispim.datasource.MicroClusterDataSource;
@@ -33,8 +34,10 @@ public class ThreadedAlgorithm implements Runnable {
         mu = source.getDataMean().toArray();
         NodeBase.maxN = 6000;
         StdNode.setParameters(nu,beta,mu,s);
-        DfpNode.setParameters(nu,beta,mu,s);
-
+//        DfpNode.setParameters(nu,beta,mu,s);
+//        RealMatrix s0 = source.getDataVariance();
+//        StdNode.setS(s0);
+        
         CellCounts cc = new CellCounts();
         this.alpha = alpha;
         StdNode.setAlpha(alpha);  // for time point 75
@@ -186,16 +189,25 @@ public class ThreadedAlgorithm implements Runnable {
     public void setSource(DataSource src){
         this.source = (MicroClusterDataSource)src;
     }
+    public void setPrecision(double prec){
+        this.s = prec;
+    }
+    public void setNu(int v){
+        this.nu = v;
+    }
     static public void setDfpField(DfpField fld){
         field = fld;
     }
     
     // saves the result as a BHC tree xml
-    public void saveResultAsXML(String file)throws Exception {
+    public BHCTree saveResultAsXML(String file)throws Exception {
         BHCTree tree = new BHCTree(alpha,s,nu,mu,clusters);
         tree.saveAsXML(file);
-          
+        return tree; 
     } 
+    public BHCTree resultAsBHCTree(){
+        return new BHCTree(alpha, s, nu, mu, clusters);
+    }
     static public void main(String[] args) throws Exception {
         System.out.println("GaussianGIWPrior");
 //        SegmentedTiffDataSource source = new SegmentedTiffDataSource("/nfs/waterston/pete/Segmentation/Cherryimg75.tif",
@@ -226,7 +238,8 @@ public class ThreadedAlgorithm implements Runnable {
 //    TreeMap<Double,Node> posteriorMap = new TreeMap<>();
     TreeSet<Node> posteriors;
     int nu = 20;
-    double s = 100;
+//    double s = 100;
+    double s = 50;
     double[] mu;
     double beta = 0.0000001; 
     double alpha = 10000000;

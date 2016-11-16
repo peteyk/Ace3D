@@ -7,6 +7,7 @@ package org.rhwlab.dispim;
 
 import java.util.Collection;
 import java.util.List;
+import org.jdom2.Element;
 
 
 /**
@@ -22,5 +23,5 @@ public interface ImageSource {
     public String getFile();
     public Collection<DataSetDesc> getDataSets();
     public void setFirstTime(int minTime);
-
+    public Element toXML();
 }

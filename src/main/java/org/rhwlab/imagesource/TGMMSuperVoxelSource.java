@@ -19,6 +19,7 @@ import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.img.array.ArrayRandomAccess;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
+import org.jdom2.Element;
 import org.rhwlab.dispim.DataSetDesc;
 import org.rhwlab.dispim.DataSetDescImpl;
 import org.rhwlab.dispim.ImageSource;
@@ -211,6 +212,11 @@ public class TGMMSuperVoxelSource implements ImageSource {
 
     @Override
     public void setFirstTime(int minTime) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public Element toXML() {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 }

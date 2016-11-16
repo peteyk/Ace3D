@@ -30,4 +30,5 @@ public interface Node extends Comparable {
     public int saveAsXML(Element root,int id);
     public  int saveAsXMLByThreshold(Element root,double threshold,int id);
     public int getN();
+    public boolean isLeaf();
 }

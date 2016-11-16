@@ -9,19 +9,22 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import org.apache.commons.math3.analysis.function.Logistic;
 import org.apache.commons.math3.fitting.SimpleCurveFitter;
 import org.apache.commons.math3.fitting.WeightedObservedPoints;
+import org.apache.commons.math3.stat.StatUtils;
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.input.SAXBuilder;
 import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
-import org.rhwlab.dispim.nucleus.BHC_NucleusDirectory;
-import org.rhwlab.dispim.nucleus.BHC_NucleusFile;
+import org.rhwlab.dispim.nucleus.BHCNucleusData;
+import org.rhwlab.dispim.nucleus.BHCNucleusDirectory;
+import org.rhwlab.dispim.nucleus.BHCNucleusFile;
 
 /**
  *
@@ -31,7 +34,7 @@ public class BHCTree {
     public BHCTree(String file)throws Exception {
         this.fileName = file;
         readTreeXML(file);
-        time = BHC_NucleusDirectory.getTime(new File(file));
+        time = BHCNucleusDirectory.getTime(new File(file));
     }
     
     public BHCTree(double alpha,double s,int nu, double[] mu,List<Node> roots){
@@ -106,14 +109,14 @@ public class BHCTree {
     public void saveCutAtThresholdAsXML(String file,double thresh)throws Exception {
         saveXML(file,cutTreeAtThreshold(thresh));
     }  
-    public BHC_NucleusFile cutToNucleusFile(double threshold){
-        return new BHC_NucleusFile(cutTreeAtThreshold(threshold));
+    public BHCNucleusFile cutToNucleusFile(double threshold){
+        return new BHCNucleusFile(cutTreeAtThreshold(threshold));
     }
     // cut this tree at the given threshold into an XML element
     // the children of the returned Element are the GaussianMixtureModel descriptions of a nucleus
     public Element cutTreeAtThreshold(double threshold){
         Element root = new Element("BHCNucleusList"); 
-        root.setAttribute("treefile",fileName);
+        if (fileName != null) root.setAttribute("treefile",fileName);
         root.setAttribute("threshold", Double.toString(threshold));
         root.setAttribute("time", Integer.toString(time));
         int id = 1;
@@ -125,6 +128,10 @@ public class BHCTree {
         }
         return root;
     } 
+    public int nodeCountAtThreshold(double thresh){
+        Element el = this.cutTreeAtThreshold(thresh);
+        return el.getChildren("GaussianMixtureModel").size();
+    }
     
     public TreeSet<Double> allPosteriors(){
         if (this.allPosts == null){
@@ -134,6 +141,68 @@ public class BHCTree {
             }
         }        
         return allPosts;
+    }
+    public void allPosteriorProb(TreeMap<Integer,Double> probs){
+        TreeSet<Node> leaves = new TreeSet<>();
+        for (Node root : roots){
+            leaves.add(root);
+        }
+        this.allPosteriorProb(leaves, probs);
+    }
+    public void allPosteriorProb(TreeSet<Node> leaves,TreeMap<Integer,Double> probs){
+        if (leaves.isEmpty()){
+            return ;
+        }
+        // find the leaf with the lowest probability
+        Node minNode = leaves.first();
+        if (minNode.getPosterior() == 1.0){
+            return;
+        }
+        // add the minMode prob into the result
+        probs.put(probs.size()+1, minNode.getPosterior());
+        
+        // update the leaf set
+        leaves.remove(minNode);
+        // add the children of minNode to the input list
+        if (minNode.getLeft()!=null && minNode.getRight()!=null){
+            leaves.add(minNode.getLeft());
+            leaves.add(minNode.getRight());
+        }
+        allPosteriorProb(leaves,probs);
+    }
+    public BHCNucleusFile cutToN(int n){
+        TreeSet<Node> leaves =  new TreeSet<>();
+        leaves.addAll(roots);
+        this.cutToN(n,leaves);
+        Node[] nodeArray = leaves.toArray(new Node[0]);
+        BHCNucleusData[] nucData= new BHCNucleusData[leaves.size()];
+        
+        for (int i=0 ; i<nodeArray.length ; ++i){
+            NodeBase nodeBase = (NodeBase)nodeArray[i];
+            Element ele = nodeBase.formElementXML(i);
+            nucData[i] = new BHCNucleusData(time,ele);
+        }
+        return new BHCNucleusFile(time,fileName,0.,nucData);
+    }
+    public void cutToN(int n,TreeSet<Node> leaves){
+        if (leaves.size() == n){
+            return;  // done - found n nodes
+        }
+        // find the minimum node that has children    
+        Iterator<Node> iter = leaves.iterator();
+        Node minNode = iter.next();
+        while (minNode.isLeaf()){
+            if (!iter.hasNext()){
+                return;  // all the leaves are nodes , can't add any more nodes
+            }
+            minNode = iter.next();
+        }
+        
+        // increases the leaves by one
+        leaves.remove(minNode);
+        leaves.add(minNode.getLeft());
+        leaves.add(minNode.getRight());
+        cutToN(n,leaves);
     }
     public int getTime(){
         return time;
@@ -226,6 +295,7 @@ public class BHCTree {
         }
         return ret;
     }
+
     double lmsError(int x0,int x1,Double[] y){
         double e = 0.0;
         double xDel = (double)(x1-x0);
@@ -277,6 +347,15 @@ public class BHCTree {
         double[] params = fitter.fit(points.toList());
         return null;
 //        double[] results = fitter.fit(points);
+    }
+    public double getAlpha(){
+        return alpha;
+    }
+    public double getS(){
+        return s;
+    }
+    public int getNu(){
+        return nu;
     }
     static public void main(String[] args) throws Exception {
         String f = "/net/waterston/vol2/home/gevirl/rnt-1/xml/img_TL017_Simple_SegmentationBHCTree.xml";

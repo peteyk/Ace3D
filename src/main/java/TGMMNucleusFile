@@ -51,6 +51,7 @@ public class TGMM_NucleusFile {
                 }
             }
         }
+        /*
         for (TGMMNucleus rootNuc : rootNucs){
             aceFile.addNucleus(rootNuc,false);
             Cell rootCell = new Cell(rootNuc.getName());
@@ -80,7 +81,8 @@ public class TGMM_NucleusFile {
                 Nucleus parentNuc = aceFile.byName.get(nuc.getParentName());
                 aceFile.linkInTime(parentNuc, nuc);
             }
-        }        
+        }     
+*/
     }
     public File getBHCTreeFile(){
         String fileName = file.getName();
@@ -93,3 +95,4 @@ public class TGMM_NucleusFile {
     int time;
     double cutThreshold;
 }
+

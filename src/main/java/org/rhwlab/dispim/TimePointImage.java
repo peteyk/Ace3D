@@ -146,7 +146,8 @@ public class TimePointImage{
 
     }
     static private TimePointImage addToCache(String dataset,int time){
-        TimePointImage tpi = embryo.sourceForDataset(dataset).getImage(dataset,time);
+        ImageSource img = embryo.sourceForDataset(dataset);
+        TimePointImage tpi = img.getImage(dataset,time);
         if (timePointCache.size()==cacheSize){
             
             // cache is full, remove the last
@@ -181,14 +182,16 @@ public class TimePointImage{
         timePointCache.clear();
         initCache();
     }
-    String dataset;
-    int time;
+    String dataset;  // the dataset of this TimePointImage
+    int time;  // the time of this TimePointImage
     private RandomAccessibleInterval image;
     float[] minmax;
 //    long[] dims;
+    
+    
     static ImagedEmbryo embryo;
     static int cacheSize = 20;
 //    static ImageSource source;
-    static LinkedList<TimePointImage> timePointCache = new LinkedList<>();    
-    static HashMap<String,HashMap<Integer,TimePointImage>> imageIndex = new HashMap<>();
+    static LinkedList<TimePointImage> timePointCache = new LinkedList<>();   // cach of TimePointImages - any dataset any time    
+    static HashMap<String,HashMap<Integer,TimePointImage>> imageIndex = new HashMap<>();  // TimePointImages indexed by dataset,time
 }

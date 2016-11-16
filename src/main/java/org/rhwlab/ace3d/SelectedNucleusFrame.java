@@ -9,6 +9,9 @@ import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.List;
+import javafx.beans.InvalidationListener;
+import javafx.beans.Observable;
+import javafx.beans.value.ObservableValue;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -17,14 +20,14 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import org.rhwlab.dispim.ImagedEmbryo;
 import org.rhwlab.dispim.TimePointImage;
-import org.rhwlab.dispim.nucleus.Ace3DNucleusFile;
 import org.rhwlab.dispim.nucleus.Nucleus;
+import org.rhwlab.dispim.nucleus.NucleusFile;
 
 /**
  *
  * @author gevirl
  */
-public class SelectedNucleusFrame extends JFrame implements ChangeListener    {
+public class SelectedNucleusFrame extends JFrame implements javafx.beans.value.ChangeListener   {
     public SelectedNucleusFrame(Ace3D_Frame owner,ImagedEmbryo emb){
         this.embryo = emb;
         this.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
@@ -70,7 +73,7 @@ public class SelectedNucleusFrame extends JFrame implements ChangeListener    {
             }
         });
         buttonPanel.add(calcExp);
-        
+/*        
         JButton child1 = new JButton("Unlink Child1");
         child1.addActionListener(new ActionListener(){
             @Override
@@ -122,7 +125,7 @@ public class SelectedNucleusFrame extends JFrame implements ChangeListener    {
                 }
             }
         });
-        
+  */      
         content.add(panel,BorderLayout.CENTER);
         content.add(buttonPanel,BorderLayout.SOUTH);
         this.setContentPane(content);
@@ -130,10 +133,11 @@ public class SelectedNucleusFrame extends JFrame implements ChangeListener    {
     }
 
     @Override
-    public void stateChanged(ChangeEvent e) {
+    public void changed(ObservableValue observable, Object oldValue, Object newValue) {
         npPanel.invalidated(embryo);
         radiusControl.invalidated(embryo);
     }
+
     ImagedEmbryo embryo;  
     NucleusPropertiesPanel npPanel;
     RadiusControlPanel radiusControl;

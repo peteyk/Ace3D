@@ -25,7 +25,7 @@ public class Division {
     public boolean isPossible(){
         System.out.printf("P:%s  C1:%s   C2:%s  ",parent.getName(),child1.getName(),child2.getName());
         
-        if (parent.getCell().getName().contains("Polar")){
+        if (parent.getCell() != null && parent.getCell().contains("Polar")){
             System.out.println("Polar");
             return false;  // polar bodies do not divide
         }
@@ -35,7 +35,7 @@ public class Division {
             return false;  // daughters are to far from parent
         }   
         
-        double ratio = ((BHC_Nucleus)child1).getVolume()/((BHC_Nucleus)child2).getVolume();
+        double ratio = ((BHCNucleusData)child1.getNucleusData()).getVolume()/((BHCNucleusData)child2.getNucleusData()).getVolume();
         if (ratio < 1.0) {
             ratio = 1.0/ratio;
         }
@@ -44,7 +44,7 @@ public class Division {
             return false;
         }
         
-        double intensityRatio = ((BHC_Nucleus)parent).getAverageIntensity()/((BHC_Nucleus)child1).getAverageIntensity();
+        double intensityRatio = ((BHCNucleusData)parent.getNucleusData()).getAverageIntensity()/((BHCNucleusData)child1.getNucleusData()).getAverageIntensity();
         if (intensityRatio < 1.0){
             intensityRatio = 1.0/intensityRatio;
         }
@@ -52,7 +52,7 @@ public class Division {
             System.out.println("Intensity child1");
             return false;
         }
-        intensityRatio = ((BHC_Nucleus)parent).getAverageIntensity()/((BHC_Nucleus)child2).getAverageIntensity();
+        intensityRatio = ((BHCNucleusData)parent.getNucleusData()).getAverageIntensity()/((BHCNucleusData)child2.getNucleusData()).getAverageIntensity();
         if (intensityRatio < 1.0){
             intensityRatio = 1.0/intensityRatio;
         }

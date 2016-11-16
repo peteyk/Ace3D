@@ -5,22 +5,20 @@
  */
 package org.rhwlab.dispim.nucleus;
 
-import java.math.BigDecimal;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import org.apache.commons.math3.linear.EigenDecomposition;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.jdom2.Element;
-import static org.rhwlab.dispim.nucleus.Nucleus.precisionFromString;
 
 /**
  *
  * @author gevirl
  */
-public class BHC_Nucleus extends Nucleus {
+public class BHCNucleusData extends NucleusData {
     // construct the nucleus from a GaussianMixtureModel xml element
-        public BHC_Nucleus(JsonObject jsonObj){
+    public BHCNucleusData(JsonObject jsonObj){
             super(jsonObj);
             this.sourceNode = jsonObj.getString("SourceNode");
             this.id = super.getName().substring(super.getName().indexOf('_')+1);
@@ -29,7 +27,7 @@ public class BHC_Nucleus extends Nucleus {
             this.intensity = jsonObj.getJsonNumber("Intensity").longValue();
             init();
         }
-    public BHC_Nucleus(int time,Element gmm){
+    public BHCNucleusData(int time,Element gmm){
         super(time,name(time,gmm),center(gmm),10.0);  // for now make all radii the same
         id = gmm.getAttributeValue("id");
         count = Integer.valueOf(gmm.getAttributeValue("count"));
@@ -99,6 +97,10 @@ public class BHC_Nucleus extends Nucleus {
         return id;
     }
 
+    @Override
+    public String toString(){
+        return name(this.getTime(),this.getID());
+    }
     public String getRadiusLabel(int i){
         // find the adjusted eigenvector closest to the original unadjusted eigenvector for dimension i
         // this keeps the order of the adjusted eigenvectors the same as the original unadjusted eigenvectors
@@ -132,6 +134,17 @@ public class BHC_Nucleus extends Nucleus {
     }
     public double getAverageIntensity(){
         return ((double)intensity)/voxels;
+    }
+    public double distance(BHCNucleusData other){
+        double v = this.volume/other.volume;
+        if (v <1.0){
+            v = 1.0/v;
+        }
+        double ir = this.intensity/other.intensity;
+        if (ir<1.0){
+            ir = 1.0/ir;
+        }
+        return v*ir*super.distance(other);
     }
     static double vf = 4.0*Math.PI/3.0;
     String id;

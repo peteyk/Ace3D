@@ -9,6 +9,7 @@ import java.awt.BorderLayout;
 import java.util.List;
 import javafx.beans.InvalidationListener;
 import javafx.beans.Observable;
+import javafx.beans.value.ObservableValue;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JPanel;
@@ -24,7 +25,7 @@ import org.rhwlab.dispim.nucleus.Nucleus;
  *
  * @author gevirl
  */
-public class SynchronizedMultipleSlicePanel extends JPanel implements ChangeListener,InvalidationListener  {
+public class SynchronizedMultipleSlicePanel extends JPanel implements ChangeListener,InvalidationListener,javafx.beans.value.ChangeListener  {
     public SynchronizedMultipleSlicePanel(int n){
         this.nDims = n;
         position = new long[n];
@@ -76,6 +77,7 @@ public class SynchronizedMultipleSlicePanel extends JPanel implements ChangeList
 //                        next.get(1).setLabeled(true);
                     }
                     this.changePosition(next.get(0).getCenter());
+                    this.changeTime(next.get(0).getTime());
                 } else {
                    slider.setValue(time+1); 
                 }
@@ -93,6 +95,7 @@ public class SynchronizedMultipleSlicePanel extends JPanel implements ChangeList
                 if (prev != null){
                     embryo.setSelectedNucleus(prev);
                     this.changePosition(prev.getCenter());
+                    this.changeTime(prev.getTime());
                 }
             }  else {          
                 slider.setValue(time-1);
@@ -177,13 +180,21 @@ public class SynchronizedMultipleSlicePanel extends JPanel implements ChangeList
             p.stateChanged(e);
         }
     }    
-
+    @Override
+    public void changed(ObservableValue observable, Object oldValue, Object newValue) {
+        Nucleus sel = embryo.selectedNucleus();
+        this.changePosition(sel.getCenter());
+        this.changeTime(sel.getTime());
+         for (SingleSlicePanel p : panels){
+            p.stateChanged(null);
+        }
+    }
     @Override
     public void invalidated(Observable observable) {
         ImagedEmbryo emb = (ImagedEmbryo)observable;
         this.embryo = emb;
         ChangeEvent e = new ChangeEvent(observable);
-        time = emb.getTimes()/2;
+        time = emb.getMinTime();
         timePointImage = emb.getImage(time);
         double[] minPosition = timePointImage.getMinPosition();
         double[] maxPosition = timePointImage.getMaxPosition();        
@@ -198,7 +209,7 @@ public class SynchronizedMultipleSlicePanel extends JPanel implements ChangeList
         }
         slider.setMinimum(emb.getMinTime());
         slider.setMaximum(emb.getMaxTime());
-        slider.setValue( (emb.getMaxTime()+emb.getMinTime())/2);        
+        slider.setValue( (emb.getMinTime()));        
         for (SingleSlicePanel p : panels){
             p.stateChanged(e);
         }
@@ -210,6 +221,12 @@ public class SynchronizedMultipleSlicePanel extends JPanel implements ChangeList
         slider.setMinimum(minTime);
         slider.setMaximum(maxTime);
     }
+    public int getMinTime(){
+        return slider.getMinimum();
+    }
+    public int getMaxTime(){
+        return slider.getMaximum();
+    }
     int nDims;
     JSlider slider;
     int time;
@@ -218,6 +235,8 @@ public class SynchronizedMultipleSlicePanel extends JPanel implements ChangeList
     TitledBorder titledBorder;
     SingleSlicePanel[] panels;
     long[] position;
+
+
 
 
 }

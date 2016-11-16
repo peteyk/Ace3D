@@ -14,7 +14,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import org.rhwlab.dispim.ImagedEmbryo;
-import org.rhwlab.dispim.nucleus.BHC_Nucleus;
+import org.rhwlab.dispim.nucleus.BHCNucleusData;
 import org.rhwlab.dispim.nucleus.Cell;
 import org.rhwlab.dispim.nucleus.Nucleus;
 
@@ -27,10 +27,7 @@ public class NucleusPropertiesPanel extends JPanel implements InvalidationListen
         this.setLayout(new GridLayout(15,2));
         this.add(new JLabel("Selected Nucleus"));
         this.add(name);
-        this.add(new JLabel("In Cell"));
-        this.add(cell);
-        this.add(new JLabel("Root Cell"));
-        this.add(root);
+
         this.add(new JLabel("Parent Nucleus"));
         this.add(parent);
         this.add(new JLabel("Child1 Nucleus"));
@@ -53,6 +50,11 @@ public class NucleusPropertiesPanel extends JPanel implements InvalidationListen
         this.add(volume);
         this.add(new JLabel("Intensity"));
         this.add(intensity);
+        
+        this.add(new JLabel("In Cell"));
+        this.add(cell);
+        this.add(new JLabel("Root Cell"));
+        this.add(root);        
 
         cell.addActionListener(new ActionListener(){
             @Override
@@ -69,10 +71,6 @@ public class NucleusPropertiesPanel extends JPanel implements InvalidationListen
     public void renameCell(){
         if (embryo == null) return;
         embryo.renameSelectedCell(this.cell.getText().trim());
-        
-
-        
-//        sel.nameChildren(null);
     }
     @Override
     public void invalidated(Observable observable) {
@@ -83,7 +81,7 @@ public class NucleusPropertiesPanel extends JPanel implements InvalidationListen
                 return;
             }
             name.setText(selected.getName());
-            root.setText(selected.getRoot().getName());
+            root.setText(selected.getRoot());
             express.setText(String.format("%.2f",selected.getExpression()));
             double[] c = selected.getCenter();
             center.setText(String.format("(%d,%d,%d)",(int)c[0],(int)c[1],(int)c[2]));
@@ -92,48 +90,31 @@ public class NucleusPropertiesPanel extends JPanel implements InvalidationListen
             cRadius.setText(selected.getRadiusLabel(2));
             double[] ecc = selected.eccentricity();
             frob.setText(String.format("%.3f,%.3f,%.3f",ecc[0],ecc[1],ecc[2]));
-            BHC_Nucleus bhcNuc = (BHC_Nucleus)selected;
+            BHCNucleusData bhcNuc = (BHCNucleusData)selected.getNucleusData();
             density.setText(String.format("%f",bhcNuc.getDensity()));
             volume.setText(String.format("%f",bhcNuc.getVolume()));
             intensity.setText(String.format("%f", bhcNuc.getAverageIntensity()));
             if (selected.getCell() != null){
-                cell.setText(selected.getCell().getName());
-                // is it the first nucleus in the cell
-                Nucleus firstNuc = selected.getCell().firstNucleus();
-                Nucleus lastNuc = selected.getCell().lastNucleus();
-                Cell[] children = selected.getCell().getChildren();
-                Cell parentCell = selected.getCell().getParent();
-                
-                if (!firstNuc.getName().equals(selected.getName())){
-                    parent.setText(selected.getCell().getNucleus(selected.getTime()-1).getName());
-                } else {
-                    if (parentCell != null){
-                        parent.setText(parentCell.lastNucleus().getName());
-                    } else {
-                        parent.setText("Not linked");
-                    }
-                }
-                
-                if (!lastNuc.getName().equals(selected.getName())){
-                    child1.setText(selected.getCell().getNucleus(selected.getTime()+1).getName());
-                    child2.setText("Not linked");
-
-                } else {
-                    if (children.length != 0){
-                        child1.setText(children[0].firstNucleus().getName());
-                        child2.setText(children[1].firstNucleus().getName());
-                    } else {
-                        child1.setText("Not linked");
-                        child2.setText("Not linked");
-                    }
-                   
-                }
-            } else {
+                cell.setText(selected.getCell());
+            }else {
                 cell.setText("No cell");
-                parent.setText("Not linked");
-                child1.setText("Not linked");
-                child2.setText("Not linked");
             }
+            if (selected.getParent() != null){
+                parent.setText(selected.getParent().getName());
+            } else {
+                parent.setText("Not linked");
+            }
+            Nucleus[] children = selected.nextNuclei();
+            if (children.length<1 ){
+                child1.setText("Not linked");
+            } else {
+                child1.setText(children[0].getName());
+            }
+            if (children.length <2){
+                child2.setText("Not linked");
+            } else {
+                child2.setText(children[1].getName());
+            }                
         }
     }
     public String getChild1(){
@@ -151,7 +132,6 @@ public class NucleusPropertiesPanel extends JPanel implements InvalidationListen
     JLabel bRadius = new JLabel(initial);
     JLabel cRadius = new JLabel(initial); 
     JLabel frob = new JLabel(initial);
-//    JLabel cell = new JLabel(initial);
     JTextField cell = new JTextField(initial);
     JLabel parent = new JLabel(initial);
     JLabel child1 = new JLabel(initial);

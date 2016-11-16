@@ -232,6 +232,9 @@ abstract public class NodeBase implements Node {
     public int getLabel(){
         return label;
     }
+    public boolean isLeaf(){
+        return left==null && right == null;
+    }
    
     Integer N; // number of microclusters in assigned to this node  
     Node left;

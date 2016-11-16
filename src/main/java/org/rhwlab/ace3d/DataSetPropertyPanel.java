@@ -91,7 +91,8 @@ public class DataSetPropertyPanel extends JPanel {
         setAllEnabled(false);
                 
         autoButton = new JRadioButton("Auto");
-        autoButton.setSelected(true);
+        autoButton.setSelected(false);
+        this.setAllEnabled(true);
         autoButton.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -110,7 +111,7 @@ public class DataSetPropertyPanel extends JPanel {
         centerPanel.add(sliderPanel,BorderLayout.CENTER);
         this.add(centerPanel,BorderLayout.CENTER);
         
-        JButton colorButton = new JButton("Color");
+        colorButton = new JButton("Color");
         colorButton.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -160,13 +161,25 @@ public class DataSetPropertyPanel extends JPanel {
     }  
     public void notifyChange(){
         
-        DataSetProperties props = new DataSetProperties(autoButton.isSelected(),(float)minSlider.getValue(),(float)maxSlider.getValue(),color,box.isSelected());
+        DataSetProperties props = getProperties();
         Ace3D_Frame.setProperties(dataset, props);
         frame.stateChanged(new ChangeEvent(this));
  
     } 
     public JCheckBox getCheckBox(){
         return box;
+    }
+    public DataSetProperties getProperties(){
+        return new DataSetProperties(autoButton.isSelected(),(float)minSlider.getValue(),(float)maxSlider.getValue(),color,box.isSelected());
+    }
+    public void setProperties(DataSetProperties props){
+        autoButton.setSelected(props.autoContrast);
+        minSlider.setValue((int)props.min);
+        maxSlider.setValue((int)props.max);
+        box.setSelected(props.selected);
+        color = props.color;
+        colorButton.setBackground(props.color);
+        this.notifyChange();
     }
     Ace3D_Frame frame;
     String dataset;
@@ -175,6 +188,7 @@ public class DataSetPropertyPanel extends JPanel {
     JSlider maxSlider;
     JTextField minField;
     JTextField maxField;
+    JButton colorButton;
     public Color color = Color.white;
     JCheckBox box;
 }

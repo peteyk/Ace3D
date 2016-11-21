@@ -13,6 +13,7 @@ import javafx.beans.InvalidationListener;
 import javafx.beans.Observable;
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
 import javax.swing.JTree;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.TreeSelectionEvent;
@@ -37,12 +38,23 @@ public class Navigation_Frame extends JFrame implements PlugIn,InvalidationListe
         this.panel = p;
         this.getContentPane().setLayout(new BorderLayout());
         
+        treePanel = new NavigationTreePanel(embryo);
+        JScrollPane treeScroll = new JScrollPane(treePanel);
+        
+        headPanel = new NavigationHeaderPanel();
+        headPanel.setTreePanel(treePanel);
+        treePanel.setHeadPanel(headPanel);
+        
+        this.add(headPanel,BorderLayout.NORTH);        
         rootsRoot = new DefaultMutableTreeNode("Cell Tree",true);
         rootsTree = new JTree(rootsRoot);
-        rootsTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);    
+        rootsTree.getSelectionModel().setSelectionMode(TreeSelectionModel.DISCONTIGUOUS_TREE_SELECTION);    
         rootsTree.addTreeSelectionListener(new TreeSelectionListener(){
             @Override
             public void valueChanged(TreeSelectionEvent e) {
+                ChangeEvent event = new ChangeEvent(rootsTree);
+                treePanel.stateChanged(event);
+ /*               
                 DefaultMutableTreeNode node = (DefaultMutableTreeNode)rootsTree.getLastSelectedPathComponent();
                 if (node == null){
                     return;
@@ -55,10 +67,10 @@ public class Navigation_Frame extends JFrame implements PlugIn,InvalidationListe
                 if (nuc.getParent()==null){
                     headPanel.setRoot(nuc);
                 }
+*/
             }
         });
         JScrollPane rootsScroll = new JScrollPane(rootsTree);
-        this.getContentPane().add(rootsScroll,BorderLayout.WEST);
  
         nucsRoot = new DefaultMutableTreeNode("Nuclei by Time",true);
         nucsTree = new JTree(nucsRoot);
@@ -79,12 +91,10 @@ public class Navigation_Frame extends JFrame implements PlugIn,InvalidationListe
         JScrollPane nucsScroll = new JScrollPane(nucsTree);
         this.getContentPane().add(nucsScroll,BorderLayout.EAST);  
         
-        treePanel = new NavigationTreePanel(embryo);
-        JScrollPane treeScroll = new JScrollPane(treePanel);
-        this.add(treeScroll,BorderLayout.CENTER);
-        
-        headPanel = new NavigationHeaderPanel(treePanel);
-        this.add(headPanel,BorderLayout.NORTH);
+
+        JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,rootsScroll,treeScroll);
+        this.add(split,BorderLayout.CENTER);
+
         pack();
         
 
@@ -126,7 +136,7 @@ public class Navigation_Frame extends JFrame implements PlugIn,InvalidationListe
         }
         rootsTree.setModel(new DefaultTreeModel(rootsRoot));
         nucsTree.setModel(new DefaultTreeModel(nucsRoot));
-        treePanel.stateChanged(new ChangeEvent(headPanel));
+        treePanel.stateChanged(new ChangeEvent(rootsTree));
         this.invalidate();
         
     }

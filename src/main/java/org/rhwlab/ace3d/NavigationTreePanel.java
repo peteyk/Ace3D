@@ -18,8 +18,11 @@ import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 import java.util.TreeMap;
 import javax.swing.JPanel;
+import javax.swing.JTree;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.TreePath;
 import org.rhwlab.dispim.ImagedEmbryo;
 import org.rhwlab.dispim.nucleus.CellImage;
 import org.rhwlab.dispim.nucleus.CellImage.CellLocation;
@@ -42,7 +45,17 @@ public class NavigationTreePanel extends JPanel implements ChangeListener{
             public void mouseClicked(MouseEvent e){
                 int x = e.getX();
                 int y = e.getY();
-                CellLocation cellLoc = cellImage.cellAtLocation(x, y);
+                int offset = 0;
+                int index = -1;
+                for (int i=0 ; i<cellImage.length ; ++i){
+                    if (x < offset + buffered[i].getWidth()) {
+                        index = i;
+                        break;
+                    }
+                    offset = offset + buffered[i].getWidth();
+                }
+                
+                CellLocation cellLoc = cellImage[index].cellAtLocation(x-offset, y);
                 if (cellLoc != null){
                     Nucleus firstNuc = cellLoc.firstNuc;
                     if (e.getButton() == MouseEvent.BUTTON1) {
@@ -60,6 +73,7 @@ public class NavigationTreePanel extends JPanel implements ChangeListener{
                         embryo.setSelectedNucleus(nuc);                        
                     }
                 }
+                
             }
         });
  /*       
@@ -87,6 +101,27 @@ public class NavigationTreePanel extends JPanel implements ChangeListener{
     }
     @Override
     public void stateChanged(ChangeEvent e) {
+        if (e.getSource() instanceof JTree){
+            JTree jTree = (JTree)e.getSource();
+            treePaths = jTree.getSelectionPaths();
+            if (treePaths == null) {
+                return;
+            }            
+        } 
+        if (treePaths  == null) {
+            return;
+        }
+
+        cellImage = new CellImage[treePaths.length];
+        buffered = new BufferedImage[treePaths.length];
+        for (int i=0 ; i<treePaths.length ; ++i){
+            DefaultMutableTreeNode node = (DefaultMutableTreeNode)treePaths[i].getPathComponent(1);
+            Nucleus nuc = (Nucleus)node.getUserObject();
+            cellImage[i] = new CellImage();
+            buffered[i] = cellImage[i].getImage(nuc,headPanel.getMaxTime(),lut,headPanel.labelNodes(),headPanel.labelLeaves(),
+                    headPanel.getTimeScale(),headPanel.getCellWidth());
+        }
+ /*       
         NavigationHeaderPanel headPanel = (NavigationHeaderPanel)e.getSource();
         rootNuc = headPanel.getRoot();
         if (rootNuc == null)return;
@@ -98,6 +133,7 @@ public class NavigationTreePanel extends JPanel implements ChangeListener{
 
         this.setSize(w,h);
         this.setPreferredSize(new Dimension(w,h));
+*/
         this.invalidate();
         this.repaint();
     }
@@ -111,7 +147,7 @@ public class NavigationTreePanel extends JPanel implements ChangeListener{
         if (nucFile == null){
             return;
         }
-        if (rootNuc == null){
+        if (buffered == null){
             return;
         }
         Graphics2D g2 = (Graphics2D) g;
@@ -128,12 +164,20 @@ public class NavigationTreePanel extends JPanel implements ChangeListener{
         
 //        AffineTransform xForm = AffineTransform.getScaleInstance(scale, scale);
         AffineTransform xForm = new AffineTransform();
-        g2.drawImage(buffered,new AffineTransformOp(xForm,AffineTransformOp.TYPE_NEAREST_NEIGHBOR),0,0);      
+        int xPos =0;
+        for (BufferedImage bufImage : buffered){
+            g2.drawImage(bufImage,new AffineTransformOp(xForm,AffineTransformOp.TYPE_NEAREST_NEIGHBOR),xPos,0);    
+            xPos = xPos + bufImage.getWidth();
+        }
     }
+    public void setHeadPanel(NavigationHeaderPanel headPanel){
+        this.headPanel=headPanel;
+    }
+    TreePath[] treePaths;
+    NavigationHeaderPanel headPanel;
     LUT lut;
     ImagedEmbryo embryo;
-    BufferedImage buffered;
-    Nucleus rootNuc;
-    CellImage cellImage;
+    BufferedImage[] buffered;
+    CellImage[] cellImage;
     String nucName;
 }

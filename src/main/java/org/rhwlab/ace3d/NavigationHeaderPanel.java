@@ -19,19 +19,7 @@ import org.rhwlab.dispim.nucleus.Nucleus;
  * @author gevirl
  */
 public class NavigationHeaderPanel extends JPanel {
-    public NavigationHeaderPanel(NavigationTreePanel p){
-        this.treePanel = p;
-        
-        this.add(new JLabel("Root: "));
-        rootField = new JTextField();
-        rootField.setColumns(20);
-        rootField.addActionListener(new ActionListener(){
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                treePanel.stateChanged(new ChangeEvent(NavigationHeaderPanel.this));
-            }
-        });
-        this.add(rootField);
+    public NavigationHeaderPanel(){
         
         this.add(new JLabel("Max Time:"));
         maxTime = new JTextField();
@@ -86,8 +74,8 @@ public class NavigationHeaderPanel extends JPanel {
         this.add(cellWidth);        
     }
 
-    public Nucleus getRoot(){
-        return root;
+    public void setTreePanel(NavigationTreePanel treePanel){
+        this.treePanel = treePanel;
     }
     public int getMaxTime(){
         return Integer.valueOf(maxTime.getText().trim());
@@ -104,17 +92,11 @@ public class NavigationHeaderPanel extends JPanel {
     public double getCellWidth(){
         return Double.valueOf(cellWidth.getText().trim());
     }
-    public void setRoot(Nucleus nuc){
-        this.rootField.setText(nuc.getCellName());
-        root = nuc;
-        treePanel.stateChanged(new ChangeEvent(NavigationHeaderPanel.this));
-    }
+
     NavigationTreePanel treePanel;
-    JTextField rootField;
     JTextField maxTime;
     JCheckBox labelNodes;
     JCheckBox labelLeaves;
     JTextField timeScale;
     JTextField cellWidth;
-    Nucleus root;
 }

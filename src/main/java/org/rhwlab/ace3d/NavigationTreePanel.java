@@ -114,12 +114,19 @@ public class NavigationTreePanel extends JPanel implements ChangeListener{
 
         cellImage = new CellImage[treePaths.length];
         buffered = new BufferedImage[treePaths.length];
+        int W = 0;
+        int H = -1;
         for (int i=0 ; i<treePaths.length ; ++i){
             DefaultMutableTreeNode node = (DefaultMutableTreeNode)treePaths[i].getPathComponent(1);
             Nucleus nuc = (Nucleus)node.getUserObject();
             cellImage[i] = new CellImage();
             buffered[i] = cellImage[i].getImage(nuc,headPanel.getMaxTime(),lut,headPanel.labelNodes(),headPanel.labelLeaves(),
                     headPanel.getTimeScale(),headPanel.getCellWidth());
+            W = W + buffered[i].getWidth();
+            int h = buffered[i].getHeight();
+            if (h > H){
+                H = h;
+            }
         }
  /*       
         NavigationHeaderPanel headPanel = (NavigationHeaderPanel)e.getSource();
@@ -130,10 +137,10 @@ public class NavigationTreePanel extends JPanel implements ChangeListener{
                 headPanel.getTimeScale(),headPanel.getCellWidth());
         int h = buffered.getHeight();
         int w = buffered.getWidth(); 
-
-        this.setSize(w,h);
-        this.setPreferredSize(new Dimension(w,h));
 */
+        this.setSize(W,H);
+        this.setPreferredSize(new Dimension(W,H));
+
         this.invalidate();
         this.repaint();
     }

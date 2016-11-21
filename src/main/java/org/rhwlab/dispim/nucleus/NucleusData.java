@@ -53,6 +53,24 @@ public class NucleusData implements Comparable {
         adj[0] = adj[1] = adj[2] =1.0;        
         this.setAdjustment(adj);
     }
+    public NucleusData(Element ele){
+        
+        this.time = Integer.valueOf(ele.getAttributeValue("time"));
+        this.name = ele.getAttributeValue("name");
+        String precString = ele.getAttributeValue("precision");
+        this.A = precisionFromString(precString);
+        this.xC = Double.valueOf(ele.getAttributeValue("x"));
+        this.yC = Double.valueOf(ele.getAttributeValue("y"));
+        this.zC = Double.valueOf(ele.getAttributeValue("z"));
+        
+        this.eigenA = new EigenDecomposition(A);
+        this.adjustedA = this.A.copy();
+        this.adjustedEigenA = new EigenDecomposition(adjustedA);
+        
+        double[] adj = new double[3];
+        adj[0] = adj[1] = adj[2] =1.0;        
+        this.setAdjustment(adj);        
+    }
     // contruct the Nucleus from a StarryNite Nucleus
     public NucleusData(TimePointNucleus data){
         this.time = data.getTime();
@@ -62,11 +80,12 @@ public class NucleusData implements Comparable {
         this.zC = (long)data.getZ();
     }   
 
-    public NucleusData (int time,long[] center,double radius){
+    public NucleusData (int time,double[] center,double radius){
         this(time,randomName(),center,radius);
     }
-    public NucleusData (int time,String name,long[] center,double radius){
+    public NucleusData (int time,String name,double[] center,double radius){
         this.time = time;
+
         this.name = name;
         this.xC = center[0];
         this.yC = center[1];

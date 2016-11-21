@@ -124,17 +124,15 @@ abstract public class NodeBase implements Node {
             clusterEle.setAttribute("voxels", String.format("%d",voxels));
             clusterEle.setAttribute("intensity", String.format("%d",intensity));
             clusterEle.setAttribute("sourceNode", String.format("%d", label));
-            StringBuilder builder = new StringBuilder();
-            for (int j=0 ; j<mu.getDimension() ; ++j){
-                if (j > 0){
-                    builder.append(" ");
-                }
-                builder.append(mu.getEntry(j));
+            
 
-            }
             clusterEle.setAttribute("posterior",Double.toString(realR));
-            clusterEle.setAttribute("m", builder.toString());
-            builder = new StringBuilder();
+            
+            clusterEle.setAttribute("x", Double.toString(mu.getEntry(0)));
+            clusterEle.setAttribute("y", Double.toString(mu.getEntry(1)));
+            clusterEle.setAttribute("z", Double.toString(mu.getEntry(2)));
+            
+            StringBuilder builder = new StringBuilder();
             for (int row=0 ; row<W.getRowDimension() ; ++row){
                 for (int col=0 ; col<W.getColumnDimension() ; ++col){
                     if (row>0 || col>0){
@@ -143,7 +141,7 @@ abstract public class NodeBase implements Node {
                     builder.append(W.getEntry(row, col));
                 }
             }
-            clusterEle.setAttribute("W", builder.toString());
+            clusterEle.setAttribute("precision", builder.toString());
             return clusterEle;
         }else {
             return null;

@@ -22,8 +22,9 @@ import javax.swing.event.ListSelectionListener;
 import org.jdom2.Element;
 import org.rhwlab.BHC.BHCTree;
 import org.rhwlab.ace3d.Ace3D_Frame;
+import org.rhwlab.dispim.ImagedEmbryo;
 import org.rhwlab.dispim.nucleus.BHCNucleusData;
-import org.rhwlab.dispim.nucleus.BHCNucleusFile;
+import org.rhwlab.dispim.nucleus.BHCNucleusSet;
 import org.rhwlab.dispim.nucleus.NucleusFile;
 
 /**
@@ -31,9 +32,10 @@ import org.rhwlab.dispim.nucleus.NucleusFile;
  * @author gevirl
  */
 public class BHCTreeCutDialog extends JDialog {
-    public BHCTreeCutDialog(Ace3D_Frame owner,NucleusFile nucleusFile){
+    public BHCTreeCutDialog(Ace3D_Frame owner,ImagedEmbryo embryo){
         super(owner,false);
-        this.nucleusFile = nucleusFile;
+        this.embryo = embryo;
+        this.nucleusFile = embryo.getNucleusFile();
         this.setTitle("Cut the BHC Tree");
         this.setSize(300, 500);
         this.getContentPane().setLayout(new BorderLayout());
@@ -78,7 +80,7 @@ public class BHCTreeCutDialog extends JDialog {
         
         if (sel != null){
             int t = tree.getTime();
-            BHCNucleusFile bhc = tree.cutToN(((Posterior)sel).n);
+            BHCNucleusSet bhc = tree.cutToN(((Posterior)sel).n);
             nucleusFile.addNuclei(bhc,true);
 /*            
             nucleusFile.unlinkTime(t);
@@ -135,6 +137,7 @@ public class BHCTreeCutDialog extends JDialog {
     }
     boolean result = false;
     double thresh;
+    ImagedEmbryo embryo;
     NucleusFile nucleusFile;
     BHCTree tree;
     JList jList;

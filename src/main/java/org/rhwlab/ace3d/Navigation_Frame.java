@@ -8,6 +8,7 @@ package org.rhwlab.ace3d;
 import ij.plugin.PlugIn;
 import java.awt.BorderLayout;
 import java.util.Set;
+import java.util.TreeMap;
 import javafx.beans.InvalidationListener;
 import javafx.beans.Observable;
 import javax.swing.JFrame;
@@ -20,7 +21,6 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeSelectionModel;
 import org.rhwlab.dispim.ImagedEmbryo;
-import org.rhwlab.dispim.nucleus.Cell;
 import org.rhwlab.dispim.nucleus.Nucleus;
 import org.rhwlab.dispim.nucleus.NucleusFile;
 
@@ -47,14 +47,13 @@ public class Navigation_Frame extends JFrame implements PlugIn,InvalidationListe
                 if (node == null){
                     return;
                 }
-                Cell cell = (Cell)node.getUserObject();
-                Nucleus nuc = cell.firstNucleus();
+                Nucleus nuc = (Nucleus)node.getUserObject();
                 emb.setSelectedNucleus(nuc);
                 panel.changeTime(nuc.getTime());
                 panel.changePosition(nuc.getCenter());                
                 
                 if (nuc.getParent()==null){
-                    headPanel.setRoot(nuc.getCell());
+                    headPanel.setRoot(nuc);
                 }
             }
         });
@@ -116,9 +115,13 @@ public class Navigation_Frame extends JFrame implements PlugIn,InvalidationListe
             }
         }
         
-        rootsRoot = new DefaultMutableTreeNode("Root Cells",true);
-        for (Cell root : embryo.getRootCells()){
-            addRootToNode(root,rootsRoot);
+        rootsRoot = new DefaultMutableTreeNode("Roots",true);
+        TreeMap<Integer,Set<Nucleus>> rootMap = embryo.getRootNuclei();
+        for (Integer t : rootMap.keySet()){
+            for (Nucleus root : rootMap.get(t)){
+                addFirstNucToNode(root,rootsRoot);
+            }
+            
            
         }
         rootsTree.setModel(new DefaultTreeModel(rootsRoot));
@@ -127,12 +130,16 @@ public class Navigation_Frame extends JFrame implements PlugIn,InvalidationListe
         this.invalidate();
         
     }
-    private void addRootToNode(Cell root,DefaultMutableTreeNode node){
-        DefaultMutableTreeNode cellNode = new DefaultMutableTreeNode(root);
+    private void addFirstNucToNode(Nucleus firstNuc,DefaultMutableTreeNode node){
+        DefaultMutableTreeNode cellNode = new DefaultMutableTreeNode(firstNuc);
         node.add(cellNode);
-        for (Cell child : root.getChildren()){
-            addRootToNode(child,cellNode);
+        Nucleus lastNuc = firstNuc.lastNucleusOfCell();
+        if (lastNuc.isDividing()){
+            Nucleus[] next = lastNuc.nextNuclei();
+            addFirstNucToNode(next[0],cellNode);
+            addFirstNucToNode(next[1],cellNode);
         }
+
         
     }
     ImagedEmbryo embryo;

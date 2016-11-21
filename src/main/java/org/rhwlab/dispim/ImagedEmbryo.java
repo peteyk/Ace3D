@@ -7,7 +7,6 @@ package org.rhwlab.dispim;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collection;
 import org.rhwlab.dispim.nucleus.Nucleus;
 import java.util.List;
 import java.util.Set;
@@ -30,7 +29,7 @@ import net.imglib2.view.Views;
 import org.jdom2.Element;
 import org.rhwlab.ace3d.Ace3D_Frame;
 import org.rhwlab.ace3d.SynchronizedMultipleSlicePanel;
-import org.rhwlab.dispim.nucleus.Cell;
+import org.rhwlab.dispim.nucleus.LinkedNucleusFile;
 import org.rhwlab.dispim.nucleus.NucleusFile;
 
 /**
@@ -41,16 +40,22 @@ import org.rhwlab.dispim.nucleus.NucleusFile;
 public class ImagedEmbryo implements Observable {
     public ImagedEmbryo(){
         sources = new ArrayList<>();
+        nucFile = new LinkedNucleusFile();
     }
     public void fromXML(Element root){
+        
         Element sourcesEle = root.getChild("Sources");
         for (Element src : sourcesEle.getChildren()){
             String name = src.getName();
             if (name.equals("ImageJHyperStack")){
-                ImageJHyperstackSource source = new ImageJHyperstackSource(src,this);
-                addSource(source);
+                new ImageJHyperstackSource(src,this);
             }
-        }               
+            else if (name.equals("TifDirectorySource")){
+                new TifDirectoryImageSource(src,this);
+            }
+        }   
+        Element nucFileEle = root.getChild("Nuclei");
+        nucFile.fromXML(nucFileEle);
     }
 /*
     public void save()throws Exception {
@@ -72,11 +77,22 @@ public class ImagedEmbryo implements Observable {
     */
     public Element toXML(){
         Element ret = new Element("ImagedEmbryo");
+        
         Element sourcesEle = new Element("Sources");
         ret.addContent(sourcesEle);
-        
         for (ImageSource src : sources){
             sourcesEle.addContent(src.toXML());
+        }
+        
+        ret.addContent(nucFile.toXML());
+        
+        File bhcDir  = nucFile.getTreeDirectory().getDirectory();
+        File f = nucFile.getFile();
+        if (f != null){
+            Element nucFileEle = new Element("NucleusFile");
+            nucFileEle.setAttribute("file", f.getPath());
+
+            ret.addContent(nucFileEle);
         }
         return ret;
     }
@@ -116,7 +132,6 @@ public class ImagedEmbryo implements Observable {
     }
     public void setNucleusFile(NucleusFile file){
         nucFile = file;
-        rebuildCellTrees();
 
     }
     public Nucleus selectedNucleus(){
@@ -335,33 +350,30 @@ public class ImagedEmbryo implements Observable {
         return tree
     } 
 */
-    public void rebuildCellTrees(){
-        rootCells.clear();
-        for (Integer t : nucFile.getAllTimes() ){
-            Set<Nucleus> rootNucs = nucFile.getRoots(t);
-            if (!rootNucs.isEmpty()){
-                for (Nucleus rootNuc : rootNucs){
-                    Cell rootCell = new Cell(rootNuc.getName(),rootNuc);  // recursively build the cells
-                    rootCells.put(rootCell.getName(), rootCell);
-                }
-            }
-        }
-    }
-    public Cell getRoot(String name){
-        return rootCells.get(name);
-    }
-    public Collection<Cell> getRootCells(){
-        return rootCells.values();
-    }
+
+
+
     public List<ImageSource> getSources(){
         return sources;
     }
-//    HashMap<Integer,BHCTree> bhcTreeMap = new HashMap<>();
-    File xml;
-    TreeMap<String,Cell> rootCells = new TreeMap<>();
+
+
+
+    public TreeMap<Integer,Set<Nucleus>> getRootNuclei(){
+        TreeMap<Integer,Set<Nucleus>> ret = new TreeMap<>();
+        for (Integer t : nucFile.getAllTimes()){
+            Set<Nucleus> roots = nucFile.getRoots(t);
+            if (!roots.isEmpty()){
+                ret.put(t,roots);
+            }
+        }
+        return ret;
+    }
+    NucleusFile nucFile;
+    List<ImageSource>  sources;
+    
     SynchronizedMultipleSlicePanel panel;
     ArrayList<InvalidationListener> listeners = new ArrayList<>();
-    NucleusFile nucFile;
-    List<ImageSource>  sources; 
+ 
 //    Nucleus selectedNuc;
 }

@@ -7,6 +7,7 @@ package org.rhwlab.dispim.nucleus;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeMap;
@@ -16,20 +17,73 @@ import javafx.beans.value.ChangeListener;
 import javax.json.Json;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonObjectBuilder;
+import org.jdom2.Element;
 import org.rhwlab.BHC.BHCTree;
 
 /**
  *
  * @author gevirl
  */
-abstract public class LinkedNucleusFile implements NucleusFile {
+public class LinkedNucleusFile implements NucleusFile {
+    public LinkedNucleusFile(){
+        
+    }
     public LinkedNucleusFile(File xml){
+        this();
         this.file = xml;
     }
-    public LinkedNucleusFile(BHCTreeDirectory bhc){
-        this.bhcTreeDir = bhc;
-    }
 
+    @Override
+    public void fromXML(Element nucleiEle) {
+        TreeMap<Integer,Element> timeEleMap = new TreeMap<>();
+        for (Element timeEle : nucleiEle.getChildren("Time")){
+            int t = Integer.valueOf(timeEle.getAttributeValue("time"));
+            timeEleMap.put(t, timeEle);
+        }
+        for (int t : timeEleMap.descendingKeySet()){
+            TreeMap<String,Nucleus> nucMap = new TreeMap<>();
+            Element timeEle = timeEleMap.get(t);
+            this.curatedMap.put(t,Boolean.valueOf(timeEle.getAttributeValue("curated")));
+            for (Element nucEle : timeEle.getChildren("Nucleus")){
+                BHCNucleusData bhcNuc = new BHCNucleusData(nucEle);             
+                Nucleus nuc = new Nucleus(bhcNuc);
+                nuc.setCellName(nucEle.getAttributeValue("cell"), Boolean.valueOf(nucEle.getAttributeValue("usernamed")));
+                nucMap.put(nuc.getName(), nuc);
+                
+                // link children
+                String c1 = nucEle.getAttributeValue("child1");
+                if (c1 != null){
+                    TreeMap<String,Nucleus> nextNucs = byTime.get(t+1);
+                    Nucleus child1Nuc = nextNucs.get(c1);
+                    Nucleus child2Nuc = null;
+                    String c2 = nucEle.getAttributeValue("child2");
+                    if (c2 != null){
+                        child2Nuc = nextNucs.get(c2);
+                    }
+                    nuc.setDaughters(child1Nuc, child2Nuc);
+                }
+            }
+            this.byTime.put(t, nucMap);
+        }
+    }
+    
+    public Element toXML(){
+        Element ret = new Element("Nuclei");
+        ret.setAttribute("BHCTreeDirectory", this.bhcTreeDir.dir.getPath());
+        for (Integer t : this.byTime.keySet()){
+            ret.addContent(timeAsXML(t));
+        }
+        return ret;
+    }
+    public Element timeAsXML(int time){
+        Element ret = new Element("Time");
+        ret.setAttribute("time", Integer.toString(time));
+        ret.setAttribute("curated", Boolean.toString(this.curatedMap.get(time)));
+        for (Nucleus nuc : byTime.get(time).values()){
+            ret.addContent(nuc.asXML());
+        }
+        return ret;
+    }
     public JsonObjectBuilder asJson(){
         JsonObjectBuilder builder = Json.createObjectBuilder();
         builder.add("BHC", this.bhcTreeDir.dir.getPath());
@@ -41,23 +95,23 @@ abstract public class LinkedNucleusFile implements NucleusFile {
         for (Integer time : byTime.navigableKeySet()){
             Set<Nucleus> roots = this.getRoots(time);
             if (roots.size()>0){
-                builder.add(timeAsJson(time));
+                builder.add(timeAsJson(time,this.curatedMap.get(time)));
             }
         } 
         return builder;
     }
-    public JsonObjectBuilder timeAsJson(int t){
+    public JsonObjectBuilder timeAsJson(int t,boolean cur){
  
         JsonObjectBuilder builder = Json.createObjectBuilder();
         builder.add("Time",t);
-
+        builder.add("Curated", cur);
         builder.add("Nuclei", nucleiAsJson(t));
+        
         return builder;
     }
     public JsonArrayBuilder nucleiAsJson(int t){
         JsonArrayBuilder builder = Json.createArrayBuilder();
-        Set<Nucleus> nucs = byTime.get(t);
-        for (Nucleus nuc : nucs){
+        for (Nucleus nuc : byTime.get(t).values()){
             if (nuc.getParent()==null){
                 builder.add(nuc.asJson());
             }
@@ -67,9 +121,9 @@ abstract public class LinkedNucleusFile implements NucleusFile {
 
     @Override
     public Set<Nucleus> getNuclei(int time) {
-        Set<Nucleus> ret = this.byTime.get(time);
-        if (ret == null){
-            ret = new TreeSet<>();
+        TreeSet ret = new TreeSet<>();
+        if (this.byTime.get(time) != null){
+            ret.addAll(this.byTime.get(time).values());
         }
         return ret;
     }
@@ -124,12 +178,12 @@ abstract public class LinkedNucleusFile implements NucleusFile {
     @Override
     public void addNucleus(Nucleus nuc) {
         int t= nuc.getTime();
-        TreeSet<Nucleus> nucSet = byTime.get(t);
-        if (nucSet == null){
-            nucSet = new TreeSet<>();
-            byTime.put(t, nucSet);
+        TreeMap<String,Nucleus> nucMap = byTime.get(t);
+        if (nucMap == null){
+            nucMap = new TreeMap<>();
+            byTime.put(t, nucMap);
         }
-        nucSet.add(nuc);
+        nucMap.put(nuc.getName(),nuc);
 //        byName.put(nuc.getName(),nuc);
     }
 
@@ -153,11 +207,7 @@ abstract public class LinkedNucleusFile implements NucleusFile {
         return (Nucleus)this.selectedNucleus.getValue();
     }
 
-    @Override
-    public Cell getCell(String name) {
-       
-       return null;
-    }
+
 
     @Override
     public void addListener(InvalidationListener listener) {
@@ -170,19 +220,15 @@ abstract public class LinkedNucleusFile implements NucleusFile {
     }
     
     @Override
-    public void addNuclei(BHCNucleusFile bhcToAdd,boolean curated){
+    public void addNuclei(BHCNucleusSet bhcToAdd,boolean curated){
         curatedMap.put(bhcToAdd.getTime(), curated);
+        TreeMap<String,Nucleus> nucsAtTime = new TreeMap<>();
         for (NucleusData nuc : bhcToAdd.getNuclei()){
             Nucleus linkedNuc = new Nucleus(nuc);
-//            byName.put(nuc.getName(), linkedNuc);
-            
-            TreeSet<Nucleus> nucsAtTime = byTime.get(nuc.getTime());
-            if (nucsAtTime == null){
-                nucsAtTime = new TreeSet<>();
-                byTime.put(nuc.getTime(),nucsAtTime);
-            }
-            nucsAtTime.add(linkedNuc);
+
+            nucsAtTime.put(linkedNuc.getName(),linkedNuc);
         }
+        byTime.put(bhcToAdd.getTime(),nucsAtTime);
         notifyListeners();
     }
     public void notifyListeners(){
@@ -209,7 +255,7 @@ abstract public class LinkedNucleusFile implements NucleusFile {
     // if the next time point is not curated, it will be segmented to the optimal level
     // if it is curated, then the segmentation of the next time is not changed
     public void autoLink(int time)throws Exception {
-        TreeSet<Nucleus> src = this.byTime.get(time);
+        TreeMap<String,Nucleus> src = this.byTime.get(time);
         if (src == null){
             return;  // no nuclei at the given time
         }
@@ -240,10 +286,10 @@ abstract public class LinkedNucleusFile implements NucleusFile {
         } while (true);
 
         // put the two new sets(from and to) of nuclei into this file
-        TreeSet<Nucleus> newFrom = current.getFromNuclei();
+        TreeMap<String,Nucleus> newFrom = current.getFromNuclei();
         byTime.put(time, newFrom);
         // fix the links from the parent of the from nuclei
-        for (Nucleus nuc : newFrom){
+        for (Nucleus nuc : newFrom.values()){
             Nucleus parent = nuc.getParent();
             if (parent != null){
                 if (parent.getChild1().getNucleusData() == nuc.getNucleusData()){
@@ -267,7 +313,7 @@ abstract public class LinkedNucleusFile implements NucleusFile {
         Nucleus[] fromNucs = cloneTime(time);
         
         // build the to nuclei from the tree with n nuclei
-        BHCNucleusFile nextNucFile = nextTree.cutToN(n);
+        BHCNucleusSet nextNucFile = nextTree.cutToN(n);
         Set<BHCNucleusData> nucData = nextNucFile.getNuclei();
         Nucleus[] toNucs = new Nucleus[nucData.size()];
         int i=0;
@@ -279,7 +325,7 @@ abstract public class LinkedNucleusFile implements NucleusFile {
         return new Linkage(fromNucs, toNucs);        
     }
     private Nucleus[] cloneTime(int t){
-        TreeSet<Nucleus> src = byTime.get(t);
+        Collection<Nucleus> src = byTime.get(t).values();
         Nucleus[] ret = new Nucleus[src.size()];
         int i=0;
         for (Nucleus nuc : src){
@@ -288,9 +334,19 @@ abstract public class LinkedNucleusFile implements NucleusFile {
         }
         return ret;
     }
+    @Override
+    public void setFile(File f){
+        this.file = f;
+    }
+
+    @Override
+    public void setBHCTreeDirectory(BHCTreeDirectory bhc) {
+        this.bhcTreeDir = bhc;
+    }    
     
     File file;
-    TreeMap<Integer,TreeSet<Nucleus>> byTime=new TreeMap<>();
+//    TreeMap<Integer,TreeSet<Nucleus>> byTime=new TreeMap<>();
+    TreeMap<Integer,TreeMap<String,Nucleus>> byTime=new TreeMap<>();
     TreeMap<Integer,Boolean> curatedMap = new TreeMap<>();
  //   TreeMap<String,Nucleus> byName=new TreeMap<>();
     
@@ -300,4 +356,7 @@ abstract public class LinkedNucleusFile implements NucleusFile {
     
     boolean opening = false;
     static double threshold= 1.0E-14;
+
+
+
 }

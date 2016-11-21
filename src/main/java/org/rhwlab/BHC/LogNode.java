@@ -14,6 +14,7 @@ import org.apache.commons.math3.linear.LUDecomposition;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.special.Gamma;
+import org.jdom2.Element;
 import static org.rhwlab.BHC.NodeBase.beta;
 import static org.rhwlab.BHC.NodeBase.maxN;
 import org.rhwlab.dispim.datasource.MicroCluster;
@@ -24,7 +25,7 @@ import org.rhwlab.dispim.datasource.MicroCluster;
  *
  * @author gevirl
  */
-public class LogNode extends StdNode {
+public class LogNode extends StdNode  {
     public LogNode(MicroCluster micro){
         super(micro);
         lnd = lnAlpha;
@@ -33,6 +34,19 @@ public class LogNode extends StdNode {
     public LogNode(LogNode l,LogNode r){
         super(l,r);
     }
+    public LogNode(Element ele,Node par){
+        this.parent = par;
+        this.label = Integer.valueOf(ele.getAttributeValue("label"));
+        this.realR = Double.valueOf(ele.getAttributeValue("posterior"));
+        String centerStr = ele.getAttributeValue("center");
+        if (centerStr == null){
+            List<Element> children = ele.getChildren("Node");
+            this.left = new LogNode(children.get(0),this);
+            this.right = new LogNode(children.get(1),this);
+        } else {
+            this.micro = new MicroCluster(ele);
+        }
+    }    
     @Override
     public void  posterior() {
         if (lnPi == null){
@@ -166,7 +180,7 @@ public class LogNode extends StdNode {
         if (realR == 1.0){
             int sahdfuis=0;
         }
-        dfpR = field.newDfp(realR);
+//        dfpR = field.newDfp(realR);
         
     }   
     @Override

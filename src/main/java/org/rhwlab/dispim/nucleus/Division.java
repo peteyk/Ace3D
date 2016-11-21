@@ -25,7 +25,7 @@ public class Division {
     public boolean isPossible(){
         System.out.printf("P:%s  C1:%s   C2:%s  ",parent.getName(),child1.getName(),child2.getName());
         
-        if (parent.getCell() != null && parent.getCell().contains("Polar")){
+        if (parent.getCellName().contains("Polar")){
             System.out.println("Polar");
             return false;  // polar bodies do not divide
         }

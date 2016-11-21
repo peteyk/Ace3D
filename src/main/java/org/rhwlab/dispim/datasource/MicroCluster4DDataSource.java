@@ -7,10 +7,6 @@ package org.rhwlab.dispim.datasource;
 
 import java.io.File;
 import java.util.List;
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.apache.commons.math3.linear.ArrayRealVector;
-import org.apache.commons.math3.linear.RealMatrix;
-import org.apache.commons.math3.linear.RealVector;
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.input.SAXBuilder;
@@ -19,12 +15,11 @@ import org.jdom2.input.SAXBuilder;
  *
  * @author gevirl
  */
-public class MicroClusterDataSource implements DataSource {
-    // construct this from a ClusteredDataSource file
-    public MicroClusterDataSource(String file)throws Exception {
-        this.openFromClusteredDataSourceFile(file);
-    }    
-    public void openFromClusteredDataSourceFile(String xml)throws Exception {
+public class MicroCluster4DDataSource extends MicroClusterDataSource {
+    public MicroCluster4DDataSource(String file)throws Exception {
+        super(file);
+    }
+    final public void openFromClusteredDataSourceFile(String xml)throws Exception {
         SAXBuilder saxBuilder = new SAXBuilder();
         Document doc = saxBuilder.build(new File(xml));
         Element root = doc.getRootElement();
@@ -55,50 +50,12 @@ public class MicroClusterDataSource implements DataSource {
                 }
                 ++n;
             }          
-            micros[k] = new MicroCluster(v,points,intensities);
+            micros[k] = new MicroCluster4D(v,points,intensities);
             ++k;
         }
-    }
-    @Override
-    public int getN() {
-        return N;
-    }
-
+    }   
     @Override
     public int getD() {
-        return D;
-    }
-
-    @Override
-    public MicroCluster get(long i) {
-        return micros[(int)i];
-    }
-    public int getK(){
-        return K;
-    }
-    public RealVector getCenter(int cl){
-        return micros[cl].asRealVector();
-    } 
-    public RealVector getDataMean(){
-        ArrayRealVector ret = new ArrayRealVector(getD());
-        for (int k=0 ; k<micros.length ; ++k){
-            ret = ret.add(micros[k].asRealVector());
-        }
-        return ret.mapDivide(micros.length);
-    } 
-    public RealMatrix getDataVariance(){
-        RealMatrix ret = new Array2DRowRealMatrix(getD(),getD());
-        for (int k=0 ; k<micros.length ; ++k){
-            RealVector v = micros[k].asRealVector();
-            ret = ret.add(v.outerProduct(v));
-        } 
-        return ret.scalarMultiply(1.0/micros.length);
-    }
-    public static void main(String[] args)throws Exception {
-        MicroClusterDataSource source = new MicroClusterDataSource("/nfs/waterston/pete/Segmentation/Cherryimg_SimpleSegmentation0075.save");
-    }
-    int D;
-    int N;
-    int K;
-    MicroCluster[] micros;
+        return super.getD()+1;
+    }    
 }

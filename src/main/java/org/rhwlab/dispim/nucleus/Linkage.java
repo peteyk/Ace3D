@@ -5,9 +5,9 @@
  */
 package org.rhwlab.dispim.nucleus;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 
 /**
@@ -58,10 +58,8 @@ public class Linkage implements Comparable {
                 fromNucs[i].linkTo(toNucs[linkage[i]]);
                 
                 // if the from nuc is in a named cell , put child nuc in same cell
-                String cellname = fromNucs[i].getCell();
-                if (cellname != null){
-                    toNucs[i].setCell(cellname);
-                }
+                String cellname = fromNucs[i].getCellName();
+                toNucs[linkage[i]].setCellName(cellname,fromNucs[i].isUsernamed());
             }
         }
     }
@@ -95,11 +93,19 @@ public class Linkage implements Comparable {
         }
         return ret;        
     }
-    public TreeSet<Nucleus> getToNuclei(){
-        return new TreeSet<>(Arrays.asList(to));
+    public TreeMap<String,Nucleus> getToNuclei(){
+        TreeMap ret = new TreeMap<>();
+        for (Nucleus nuc : to){
+            ret.put(nuc.getName(), nuc);
+        }
+        return ret;
     }
-    public TreeSet<Nucleus> getFromNuclei(){
-        return new TreeSet<>(Arrays.asList(from));
+    public TreeMap<String,Nucleus> getFromNuclei(){
+        TreeMap ret = new TreeMap<>();
+        for (Nucleus nuc : from){
+            ret.put(nuc.getName(), nuc);
+        }
+        return ret;
     }
     Nucleus[] from;
     Nucleus[] to;    

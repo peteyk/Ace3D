@@ -30,7 +30,9 @@ public class NamedNucleusFile extends LinkedNucleusFile {
         this.opening = true;
         JsonReader reader = Json.createReader(new FileReader(file));
         JsonObject obj = reader.readObject();
+        
         this.bhcTreeDir = new BHCTreeDirectory(new File(obj.getJsonString("BHC").getString()));
+        
         JsonArray jsonTimes = obj.getJsonArray("Times");
         for (int t=0 ; t<jsonTimes.size() ; ++t){
             JsonObject timeObj = jsonTimes.getJsonObject(t);
@@ -62,5 +64,5 @@ public class NamedNucleusFile extends LinkedNucleusFile {
         this.file = file;
         save();
     }    
-    TreeMap<String,Cell> byName;  // all the cells indexed by name
 }
+

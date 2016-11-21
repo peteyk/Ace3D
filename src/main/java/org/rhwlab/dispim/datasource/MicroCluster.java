@@ -6,12 +6,8 @@
 package org.rhwlab.dispim.datasource;
 
 import java.util.List;
-import org.apache.commons.math3.dfp.Dfp;
-import org.apache.commons.math3.dfp.DfpField;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.apache.commons.math3.linear.ArrayFieldVector;
 import org.apache.commons.math3.linear.ArrayRealVector;
-import org.apache.commons.math3.linear.FieldVector;
 import org.apache.commons.math3.linear.LUDecomposition;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
@@ -56,6 +52,7 @@ public class MicroCluster {
     public RealVector asRealVector(){
         return new ArrayRealVector(v);
     }
+/*
     public FieldVector asDfpVector(){
         Dfp[] dfp = new Dfp[v.length];
         for (int i=0 ; i<dfp.length ; ++i){
@@ -63,13 +60,15 @@ public class MicroCluster {
         }
         return new ArrayFieldVector(dfp);
     }
+*/
     // calculate the mean of all the data points in a list of microclusters
     public static RealVector mean(List<MicroCluster> data) {
         if (data.isEmpty()){
             return null;
         }
+        RealVector first = data.get(0).asRealVector();
         long n = 0;
-        long[] mu = new long[data.get(0).v.length];
+        long[] mu = new long[first.getDimension()];
         for (MicroCluster micro : data){
             for (int p=0 ; p<micro.points.length ; ++p){
                 for (int d=0 ; d<mu.length ; ++d){
@@ -78,7 +77,7 @@ public class MicroCluster {
                 ++n;
             }
         }
-        RealVector ret = new ArrayRealVector(data.get(0).v.length);
+        RealVector ret = new ArrayRealVector(first.getDimension());
         for (int d=0 ; d<mu.length ; ++d){
             ret.setEntry(d,(double)mu[d]/(double)n);
         }        
@@ -121,9 +120,11 @@ public class MicroCluster {
         node.addContent(pointsAsString());
         return points.length;
     }
+/*    
     static public void setField(DfpField fld){
         field = fld;
     }
+*/
     // record the point as 4D (x,y,z,intensity)
     public String pointsAsString(){
         StringBuilder builder = new StringBuilder();
@@ -149,7 +150,10 @@ public class MicroCluster {
         }
         return ret;
     }
-    static DfpField field ;
+    public double getAverageIntensity(){
+        return (double)this.getIntensity()/(double)this.getPointCount();
+    }
+//    static DfpField field ;
     double[] v;  // center
     short[][] points;
     int[] intensities;

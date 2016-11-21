@@ -24,7 +24,7 @@ import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
 import org.rhwlab.dispim.nucleus.BHCNucleusData;
 import org.rhwlab.dispim.nucleus.BHCNucleusDirectory;
-import org.rhwlab.dispim.nucleus.BHCNucleusFile;
+import org.rhwlab.dispim.nucleus.BHCNucleusSet;
 
 /**
  *
@@ -37,7 +37,7 @@ public class BHCTree {
         time = BHCNucleusDirectory.getTime(new File(file));
     }
     
-    public BHCTree(double alpha,double s,int nu, double[] mu,List<Node> roots){
+    public BHCTree(double alpha,double[] s,int nu, double[] mu,List<Node> roots){
         this.roots = roots;
         this.alpha = alpha;
         this.s = s;
@@ -54,17 +54,25 @@ public class BHCTree {
         Element root = doc.getRootElement();  
         
         alpha = Double.valueOf(root.getAttributeValue("alpha"));
-        s = Double.valueOf(root.getAttributeValue("s"));
+        
+        String sStr = root.getAttributeValue("s");
+        String[] tokens = sStr.substring(1).split(" ");
+        s = new double[tokens.length-1];
+        for (int i=0 ; i<s.length ; ++i){
+            s[i] = Double.valueOf(tokens[i]);
+        }
+        
         nu = Integer.valueOf(root.getAttributeValue("nu"));
+        
         String muStr = root.getAttributeValue("mu");
-        String[] tokens = muStr.substring(1).split(" ");
+        tokens = muStr.substring(1).split(" ");
         mu = new double[tokens.length-1];
         for (int i=0 ; i<mu.length ; ++i){
             mu[i] = Double.valueOf(tokens[i]);
         }
         
         for (Element nodeEle : root.getChildren("Node")){
-            StdNode std = new StdNode(nodeEle,null);  // build the node and all the children
+            LogNode std = new LogNode(nodeEle,null);  // build the node and all the children
             roots.add(std);
         }
     }    
@@ -73,9 +81,18 @@ public class BHCTree {
         OutputStream stream = new FileOutputStream(file);
         Element root = new Element("BHCTrees"); 
         root.setAttribute("alpha", Double.toString(alpha));
-        root.setAttribute("s", Double.toString(s));
-        root.setAttribute("nu", Integer.toString(nu));
+        
         StringBuilder builder = new StringBuilder();
+        builder.append("(");
+        for (int i=0 ; i<s.length ; ++i){
+            builder.append(s[i]);
+            builder.append(" ");
+        }
+        builder.append(")");
+        root.setAttribute("s",  builder.toString());
+        
+        root.setAttribute("nu", Integer.toString(nu));
+        builder = new StringBuilder();
         builder.append("(");
         for (int d=0 ; d<mu.length ; ++d){
             builder.append(mu[d]);
@@ -83,6 +100,7 @@ public class BHCTree {
         }
         builder.append(")");
         root.setAttribute("mu", builder.toString());
+        
         for (Node node : roots){
             ((NodeBase)node).saveAsTreeXML(root);
             TreeSet<Double> posts = new TreeSet<>();
@@ -109,8 +127,8 @@ public class BHCTree {
     public void saveCutAtThresholdAsXML(String file,double thresh)throws Exception {
         saveXML(file,cutTreeAtThreshold(thresh));
     }  
-    public BHCNucleusFile cutToNucleusFile(double threshold){
-        return new BHCNucleusFile(cutTreeAtThreshold(threshold));
+    public BHCNucleusSet cutToNucleusFile(double threshold){
+        return new BHCNucleusSet(cutTreeAtThreshold(threshold));
     }
     // cut this tree at the given threshold into an XML element
     // the children of the returned Element are the GaussianMixtureModel descriptions of a nucleus
@@ -170,7 +188,7 @@ public class BHCTree {
         }
         allPosteriorProb(leaves,probs);
     }
-    public BHCNucleusFile cutToN(int n){
+    public BHCNucleusSet cutToN(int n){
         TreeSet<Node> leaves =  new TreeSet<>();
         leaves.addAll(roots);
         this.cutToN(n,leaves);
@@ -181,8 +199,9 @@ public class BHCTree {
             NodeBase nodeBase = (NodeBase)nodeArray[i];
             Element ele = nodeBase.formElementXML(i);
             nucData[i] = new BHCNucleusData(time,ele);
+            int iusdfi=0;
         }
-        return new BHCNucleusFile(time,fileName,0.,nucData);
+        return new BHCNucleusSet(time,fileName,0.,nucData);
     }
     public void cutToN(int n,TreeSet<Node> leaves){
         if (leaves.size() == n){
@@ -351,7 +370,7 @@ public class BHCTree {
     public double getAlpha(){
         return alpha;
     }
-    public double getS(){
+    public double[] getS(){
         return s;
     }
     public int getNu(){
@@ -367,7 +386,7 @@ public class BHCTree {
     int time;
     List<Node> roots;
     double alpha;
-    double s;
+    double[] s;
     int nu;
     double[] mu;
     TreeSet<Double> allPosts = null;

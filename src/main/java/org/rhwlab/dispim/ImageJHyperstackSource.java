@@ -129,11 +129,9 @@ public class ImageJHyperstackSource implements ImageSource {
     @Override
     public Collection<DataSetDesc> getDataSets() {
         ArrayList<DataSetDesc> ret = new ArrayList<>();
-        for (int d=0 ; d<dims[2] ; ++d){
-            DataSetDescImpl desc = new DataSetDescImpl();
-            desc.name = String.format("%s%d",id,d+1);
-            ret.add(desc);
-        }
+        DataSetDescImpl desc = new DataSetDescImpl();
+        desc.name = id;
+        ret.add(desc);
         return ret;
     }
     String id;

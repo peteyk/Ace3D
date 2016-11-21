@@ -76,7 +76,7 @@ public class Cell  implements Comparable {
             if (nuc != null){
                 nuclei.put(nuc.getTime(),nuc);
             }
-            nuc.setCell(this.name);
+
         }
     }
     // name the children using the supplied embryo orientatation rotation matrix
@@ -186,7 +186,6 @@ public class Cell  implements Comparable {
     // add the given nucleus recursively to this cell
     // entire cell tree is constructed under this cell if needed
     public void addNucleus(Nucleus nuc){
-        nuc.setCell(this.name);
         nuclei.put(nuc.getTime(),nuc);
         
         Nucleus[] childrenNucs = nuc.nextNuclei();
@@ -465,6 +464,7 @@ public class Cell  implements Comparable {
     }
 */
     String name;
+    boolean userNamed = false;
     Cell parent;  // the parent cell - can be null
     List<Cell> children = new ArrayList<>();  // children after division of this cell - can be empty
     TreeMap<Integer,Nucleus> nuclei =  new TreeMap<>();  // the time-linked nuclei in this cell
@@ -485,3 +485,4 @@ public class Cell  implements Comparable {
         double[] v;
     }
 }
+

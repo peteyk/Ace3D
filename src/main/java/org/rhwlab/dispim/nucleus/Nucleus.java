@@ -8,6 +8,8 @@ package org.rhwlab.dispim.nucleus;
 import java.awt.Shape;
 import java.io.PrintStream;
 import java.util.Arrays;
+import java.util.Set;
+import java.util.TreeMap;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
@@ -47,8 +49,8 @@ public class Nucleus implements Comparable {
         clone.child1 = this.child1;
         clone.child2 = this.child2;
         clone.cellName = this.cellName;
-        clone.parent = this.parent;
         clone.userNamed = this.userNamed;
+        clone.parent = this.parent;
         return clone;
     }
     static public String randomName(){
@@ -97,7 +99,6 @@ public class Nucleus implements Comparable {
         Element ret = nucData.asXML();
         ret.setAttribute("cell", cellName);
         ret.setAttribute("usernamed", Boolean.toString(userNamed));
-        
         if (this.parent != null){
             ret.setAttribute("parent", this.parent.getName());
         }
@@ -112,8 +113,7 @@ public class Nucleus implements Comparable {
     public JsonObjectBuilder asJson(){
         JsonObjectBuilder builder = nucData.asJson();
         builder.add("cell", cellName);
-        builder.add("username",Boolean.toString(userNamed));
-        
+        builder.add("usernamed",this.userNamed);
         if (this.parent != null){
             builder.add("parent",this.parent.getName());
         }
@@ -125,12 +125,21 @@ public class Nucleus implements Comparable {
         }         
         return builder;
     }
-    public void setCell(String c){
-        this.cellName = c;
+    // rename the cell containing this nucleus
+    // will rename all the nuclei in the cell
+    public void setCellName(String name,boolean user){
+        this.cellName = name;
+        this.userNamed = user;
+        
     }
-    public String getCell(){
- 
+    public String getCellName(){
+        if (cellName == null){
+            return this.getName();  // return the nuc name if nuc not given a cell name yet
+        }
         return this.cellName;
+    }
+    public boolean isUsernamed(){
+        return this.userNamed;
     }
     @Override
     public int compareTo(Object o) {
@@ -348,36 +357,100 @@ public class Nucleus implements Comparable {
     // if this nucleus is already linked in time then it will result in a division
     public boolean linkTo(Nucleus daughter){
         if (child2 != null){
-            return false;
+            return false;  // can't link
         }
         if (child1 != null){
-            child2 = daughter;
+            // now a division 
+            child2 = daughter;  
+            child1.cellName = child1.getName();  // child1 now forms a new cell, was previously in parents cell
+            
         } else {
-            this.child1 = daughter;
+            this.child1 = daughter;  // linking in time
+            daughter.cellName = this.cellName;  // daughter and parent are in the same cell now
         }
         daughter.parent = this;
         return true;
     }
     @Override
     public String toString(){
-        return nucData.toString();
+        return this.getCellName();
     }
 
     public void setDaughters(Nucleus c1,Nucleus c2){
         this.child1 = c1;
+        if (this.child1 != null) {
+            this.child1.parent = this;
+        }
+        
         this.child2 = c2;
+        if (c2 != null){
+            this.child2.parent = this;
+        }
     }
     public Nucleus getChild1(){
         return this.child1;
     }
     public Nucleus getChild2(){
         return this.child2;
-    }    
+    }  
+    public Nucleus firstNucleusInCell(){
+        if (this.parent == null){
+            return this;
+        }
+        if (this.parent.isDividing()){
+            return this;
+        }
+        return parent.firstNucleusInCell();
+    }
+    public void renameContainingCell(String name){
+        this.cellName = name;
+        if (child1 == null){
+            return ;
+        }
+        if (this.isDividing()){
+            return;
+        }
+        child1.renameContainingCell(name);
+    }
+    // find the terminal nuclei under this nucleus
+    public void findLeaves(Set<Nucleus> leaves){
+        if (this.isLeaf()){
+            leaves.add(this);
+            return;
+        }
+        if (child1 != null){
+            child1.findLeaves(leaves);
+        }
+        if (child2 != null){
+            child2.findLeaves(leaves);
+        }
+    }
+    public boolean isLeaf(){
+        return this.child1==null && this.child2==null;
+    }
+    public Nucleus lastNucleusOfCell(){
+        if (this.isDividing()){
+            return this;
+        }
+        if (child1==null){
+            return this;
+        }
+        return child1.lastNucleusOfCell();
+    }
+    public void descedentsInCell(TreeMap<Integer,Nucleus> ret){
+        ret.put(this.getTime(), this);
+        if (this.isDividing() || this.isLeaf()){
+            return ;
+        }
+        this.child1.descedentsInCell(ret);
+        
+    }
+
     private Nucleus child1;
     private Nucleus child2;
     private Nucleus parent; 
-    private String cellName;  // the cell to which this nucleus belongs - initially cellname = nucname until nuc is linked to a parent
-    private boolean userNamed = false;  // made true if the user names the cell for this nucleus
+    private String cellName;  // the cell to which this nucleus belongs 
+    boolean userNamed = false;  // indicates if the user has named the cell to which this nucleus belongs
     final private NucleusData nucData;
 
 }

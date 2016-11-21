@@ -6,12 +6,7 @@
 package org.rhwlab.ace3d;
 
 import ij.ImageJ;
-import ij.ImagePlus;
-import ij.io.FileInfo;
-import ij.io.OpenDialog;
-import ij.io.TiffDecoder;
 import ij.macro.Interpreter;
-import ij.plugin.FileInfoVirtualStack;
 import ij.plugin.PlugIn;
 import ij.process.LUT;
 import java.awt.EventQueue;
@@ -23,10 +18,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import javax.swing.ButtonGroup;
@@ -48,19 +41,14 @@ import org.rhwlab.BHC.BHCTree;
 import org.rhwlab.ace3d.dialogs.BHCTreeCutDialog;
 import org.rhwlab.ace3d.dialogs.PanelDisplay;
 import org.rhwlab.dispim.DataSetDesc;
-import org.rhwlab.dispim.Hdf5ImageSource;
 import org.rhwlab.dispim.ImageJHyperstackSource;
 import org.rhwlab.dispim.ImageSource;
 import org.rhwlab.dispim.ImagedEmbryo;
 import org.rhwlab.dispim.TifDirectoryImageSource;
 import org.rhwlab.dispim.TimePointImage;
-import org.rhwlab.dispim.nucleus.BHCNucleusDirectory;
-import org.rhwlab.dispim.nucleus.BHCNucleusFile;
 import org.rhwlab.dispim.nucleus.BHCTreeDirectory;
 import org.rhwlab.dispim.nucleus.LinkedNucleusFile;
-import org.rhwlab.dispim.nucleus.NamedNucleusFile;
 import org.rhwlab.dispim.nucleus.Nucleus;
-import org.rhwlab.dispim.nucleus.NucleusFile;
 
 /**
  *
@@ -76,6 +64,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
         contrastDialog.setVisible(true);
         
         panel = new SynchronizedMultipleSlicePanel(3);
+        panel.setEmbryo(imagedEmbryo);
         imagedEmbryo.addListener(panel);
         this.add(panel);
         
@@ -87,7 +76,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
         selectedNucFrame.setVisible(true);        
         buildMenu();
         this.pack();
-        buildChooser();
+   
         String homeDir = System.getProperty("user.home");
         File propFile = new File(homeDir,"Ace3D_Frame.properties");
         props.open(propFile.getPath());
@@ -101,6 +90,9 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
                 }
             }
         });
+        imagedEmbryo.getNucleusFile().addListener(navFrame);
+        imagedEmbryo.getNucleusFile().addSelectionOberver(selectedNucFrame);
+        imagedEmbryo.getNucleusFile().addSelectionOberver(panel);        
     }
 
     public void close() throws Exception {
@@ -131,8 +123,9 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
                     File sel = nucChooser.getSelectedFile();
                     String timeStr = setMinTime();
                     if (timeStr != null){
-                        source = new ImageJHyperstackSource(sel,Integer.valueOf(timeStr),"Lineaging",imagedEmbryo); 
-                        initToSource(source);
+                        ImageJHyperstackSource source = new ImageJHyperstackSource(sel,Integer.valueOf(timeStr),"Lineaging",imagedEmbryo); 
+                        panel.setTimeRange(Math.max(source.getMinTime(),panel.getMinTime())
+                            ,Math.min(source.getMaxTime(),panel.getMaxTime()) );  
                         imagedEmbryo.notifyListeners();
                         props.setProperty("VirtualStack",sel.getPath());
                     }
@@ -151,8 +144,9 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
                 } 
                 if (nucChooser.showOpenDialog(panel) == JFileChooser.APPROVE_OPTION){    
                     File sel = nucChooser.getSelectedFile();
-                    source = new TifDirectoryImageSource(sel.getPath(),"Segmented",imagedEmbryo);
-                    initToSource(source);
+                    TifDirectoryImageSource source = new TifDirectoryImageSource(sel.getPath(),"Segmented",imagedEmbryo);
+                        panel.setTimeRange(Math.max(source.getMinTime(),panel.getMinTime())
+                            ,Math.min(source.getMaxTime(),panel.getMaxTime()) );
                     imagedEmbryo.notifyListeners();
                     props.setProperty("SegTiffs",sel.getPath());
                 }                 
@@ -277,7 +271,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
         });
         fileMenu.add(openTif);        
         fileMenu.addSeparator();
-*/     
+     
         JMenuItem nucOpen = new JMenuItem("Open Nuclei File");
         nucOpen.addActionListener(new ActionListener(){
             @Override
@@ -291,7 +285,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
             }
         });
         fileMenu.add(nucOpen);
-        
+*/        
        
  /*       
         JMenuItem snOpen = new JMenuItem("Open Starry Nite Nuclei File");
@@ -309,7 +303,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
         fileMenu.add(snOpen); 
 */        
         
-
+/*
         JMenuItem nucSave = new JMenuItem("Save Nuclei File");
         nucSave.addActionListener(new ActionListener(){
             @Override
@@ -339,14 +333,12 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
             }
         });
         fileMenu.add(nucSaveAs); 
-        
+ */       
         JMenuItem calcExp = new JMenuItem("Calculate Expression");
         calcExp.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (Ace3D_Frame.this.source != null && Ace3D_Frame.this.nucFile != null){
-                    Ace3D_Frame.this.imagedEmbryo.calculateExpression();
-                }
+                Ace3D_Frame.this.imagedEmbryo.calculateExpression();
             }
         });
         fileMenu.add(calcExp);
@@ -403,7 +395,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
             @Override
             public void actionPerformed(ActionEvent e) {
                 int time = getCurrentTime();
-                BHCTreeDirectory bhcTree = nucFile.getTreeDirectory();
+                BHCTreeDirectory bhcTree = imagedEmbryo.getNucleusFile().getTreeDirectory();
                 try {
 /*                    
                     BHCNucleusFile bhcNucFile = bhc.getFileforTime(time);
@@ -485,8 +477,8 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
                     }
                     for (int t=getCurrentTime() ; t<=endTime ; ++t){
                         try {
-                            ((LinkedNucleusFile)nucFile).autoLink(t);
-                            imagedEmbryo.rebuildCellTrees();
+                            ((LinkedNucleusFile)imagedEmbryo.getNucleusFile()).autoLink(t);
+
  //                           ((Ace3DNucleusFile)nucFile).linkTimePointAdjustable(t,Ace3D_Frame.this.imagedEmbryo.getBHCTree(t+1));
 //                            ((Ace3DNucleusFile)nucFile).linkTimePoint(t);
                         } catch (Exception exc){
@@ -503,7 +495,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
         unlink.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
-                Set<Nucleus> nucs = nucFile.getNuclei(getCurrentTime());
+                Set<Nucleus> nucs = imagedEmbryo.getNucleusFile().getNuclei(getCurrentTime());
                 for (Nucleus nuc : nucs){
 //                    ((Ace3DNucleusFile)nucFile).unlink(nuc,true);
                 }
@@ -574,21 +566,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
         this.setJMenuBar(menuBar);        
     }
    
-    private void initToSource(ImageSource src){
-        
-                // set up the dataset properties map
-//        dataSetProperties.clear();
 
-        
-        panel.setEmbryo(imagedEmbryo);
-        if (nucFile != null){
-            imagedEmbryo.setNucleusFile(nucFile);
-
-        }
-        panel.setTimeRange(Math.max(src.getMinTime(),panel.getMinTime())
-                ,Math.min(src.getMaxTime(),panel.getMaxTime()) );         
-                
-    }
     private void moveToTime(){
         boolean valid = false;
         while (!valid) {
@@ -623,6 +601,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
     public int getCurrentTime(){
         return panel.getTime();
     }
+/*    
     private void openNucFile()throws Exception {
         String f = props.getProperty("NucFile");
         if (f != null){
@@ -643,6 +622,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
 
         }
     }
+*/    
     // starting from BHC directory, no nucleus file exists yet
     private void openBHCDir(File sel)throws Exception {
         if (sel == null){
@@ -657,11 +637,8 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
         }
         
         bhc  = new BHCTreeDirectory(sel);
-        nucFile = new NamedNucleusFile(bhc);
-        imagedEmbryo.setNucleusFile(nucFile);
-        nucFile.addListener(navFrame);
-        nucFile.addSelectionOberver(selectedNucFrame);
-        nucFile.addSelectionOberver(panel);
+        imagedEmbryo.getNucleusFile().setBHCTreeDirectory(bhc);
+
         props.setProperty("BHC",sel.getPath());            
         
     } 
@@ -678,8 +655,9 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
             openBHCDir(new File(bhcEle.getAttributeValue("path")));
         }
         imagedEmbryo.fromXML(root.getChild("ImagedEmbryo"));
-        for (ImageSource src : imagedEmbryo.getSources()){
-            initToSource(src);
+        for (ImageSource source : imagedEmbryo.getSources()){
+            panel.setTimeRange(Math.max(source.getMinTime(),panel.getMinTime())
+                ,Math.min(source.getMaxTime(),panel.getMaxTime()) );
         }
         imagedEmbryo.notifyListeners();  
         
@@ -690,6 +668,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
             dataSetProperties.put(name, p);
         }
         this.sessionXML = xml;
+        
     }
     private void saveSession()throws Exception {
         
@@ -706,10 +685,12 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
                 return;
             }
         }
+        
         Element root = new Element("Ace3DSession");
         if (bhc != null){
             root.addContent(bhc.toXML());
         }
+       
         root.addContent(imagedEmbryo.toXML());
         
         Element dsProps = new Element("DataSets");
@@ -726,6 +707,10 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
         out.output(root, stream);
         stream.close();
         props.setProperty("Session",sessionXML.getPath());
+        
+        // save the nuclei and cells
+//        imagedEmbryo.getNucleusFile().save();
+
     }
     
     /*
@@ -763,13 +748,11 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
     }
     private void cutTree()throws Exception {
         int time = this.getCurrentTime();
-        if (nucFile == null){
-            return;
-        }
-        BHCTreeDirectory bhcTree = nucFile.getTreeDirectory();
+
+        BHCTreeDirectory bhcTree = imagedEmbryo.getNucleusFile().getTreeDirectory();
         BHCTree tree = bhcTree.getTree(this.getCurrentTime());
         if (treeCutDialog == null){
-            treeCutDialog = new BHCTreeCutDialog(this,this.nucFile);
+            treeCutDialog = new BHCTreeCutDialog(this,this.imagedEmbryo);
         }
         treeCutDialog.setBHCTree(tree);
         treeCutDialog.setVisible(true);
@@ -789,7 +772,6 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
             ((Ace3DNucleusFile)this.nucFile).replaceTime(replace);
         }
     }
-*/
     private void saveAsNucFile()throws Exception {
         buildChooser();
         if (nucFile != null && nucFile.getFile()!=null){
@@ -812,19 +794,10 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
             }
         }
     }
-    
-    private void buildChooser(){
-        if (nucChooser == null){
-            if (source != null){
-                File xml = new File(source.getFile());
-                nucChooser = new JFileChooser(xml.getParentFile());
-            } else {
-                nucChooser = new JFileChooser();
-            }
-        }        
-    }
+ */   
 
 
+/*
     private void buildLutMenu(){
         lutMenu.removeAll();
         Iterator<DataSetDesc> dataSetIter = source.getDataSets().iterator();
@@ -861,7 +834,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
             dataSetLuts.put(dataset,lookUpTables.getLUT("Gray"));
         }
     }
-
+*/
 
     @Override
     public void stateChanged(ChangeEvent e) {
@@ -927,15 +900,15 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
     JMenu lutMenu;
     JMenu colorMenu;
     
-    ImageSource source;
-    NucleusFile nucFile;
+//    ImageSource source;
+//    NucleusFile nucFile;
     ImagedEmbryo imagedEmbryo;
     
     
     SynchronizedMultipleSlicePanel panel;
     SelectedNucleusFrame selectedNucFrame;
-    JFileChooser nucChooser;
-    JFileChooser sourceChooser = new JFileChooser();
+    JFileChooser nucChooser = new JFileChooser();
+//    JFileChooser sourceChooser = new JFileChooser();
     static DataSetsDialog contrastDialog;
     Navigation_Frame navFrame;
     LookUpTables lookUpTables = new LookUpTables();

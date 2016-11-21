@@ -52,15 +52,13 @@ public class BHCNucleusDirectory {
             }
         }        
     }
-    public BHCNucleusFile getFileforTime(int time)throws Exception {
+    public BHCNucleusSet getFileforTime(int time)throws Exception {
         if (fileMap== null){
             buildMap();
         }
         return fileMap.get(time);
     }
-    public void putFileForTime(int time,BHCNucleusFile file){
-        this.fileMap.put(time,file);
-    }
+
     
     // extract the time from the BHCNucleusFile name
     static public int getTime(File file){

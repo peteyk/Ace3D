@@ -8,17 +8,17 @@ package org.rhwlab.dispim.nucleus;
 import java.io.File;
 import java.util.List;;
 import java.util.Set;
+import org.jdom2.Element;
 
 /**
  *
  * @author gevirl
  */
 public interface NucleusFile extends javafx.beans.Observable{
-    public void open()throws Exception ;
-    public void save()throws Exception ;
-    public void saveAs(File file) throws Exception ;
+
     public Set<Nucleus> getNuclei(int time);
     public File getFile();
+    public void setFile(File f);
     public Set<Nucleus> getRoots(int time);
     public List<Nucleus> linkedForward(Nucleus nuc);
     public Nucleus linkedBack(Nucleus nuc);
@@ -29,8 +29,10 @@ public interface NucleusFile extends javafx.beans.Observable{
 //    public void setSelected(int time,String name);
     public void setSelected(Nucleus nuc);
     public Nucleus getSelected();
-    public Cell getCell(String name);
     public BHCTreeDirectory getTreeDirectory();
-    public void addNuclei(BHCNucleusFile bhcToAdd,boolean curated);
+    public void setBHCTreeDirectory(BHCTreeDirectory bhc);
+    public void addNuclei(BHCNucleusSet bhcToAdd,boolean curated);
     public void addSelectionOberver(javafx.beans.value.ChangeListener obs);
+    public Element toXML();
+    public void fromXML(Element ele);
 }

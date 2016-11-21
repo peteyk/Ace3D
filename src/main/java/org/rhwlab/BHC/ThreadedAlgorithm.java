@@ -27,10 +27,11 @@ public class ThreadedAlgorithm implements Runnable {
     }
     public void init(double alpha)throws Exception {
         posteriors = new TreeSet(new NodeComparator());
+/*        
         field= new DfpField(100);
         NodeBase.setDfpField(field);
         MicroCluster.setField(field);
-        
+*/        
         mu = source.getDataMean().toArray();
         NodeBase.maxN = 6000;
         StdNode.setParameters(nu,beta,mu,s);
@@ -41,7 +42,7 @@ public class ThreadedAlgorithm implements Runnable {
         CellCounts cc = new CellCounts();
         this.alpha = alpha;
         StdNode.setAlpha(alpha);  // for time point 75
-        DfpNode.setAlpha(alpha);  // for time point 75
+ //       DfpNode.setAlpha(alpha);  // for time point 75
         
         clusters = new ArrayList<>();
         // build the initial clusters with one data point in each standard cluster
@@ -189,16 +190,17 @@ public class ThreadedAlgorithm implements Runnable {
     public void setSource(DataSource src){
         this.source = (MicroClusterDataSource)src;
     }
-    public void setPrecision(double prec){
+    public void setPrecision(double[] prec){
         this.s = prec;
     }
     public void setNu(int v){
         this.nu = v;
     }
+    /*
     static public void setDfpField(DfpField fld){
         field = fld;
     }
-    
+ */   
     // saves the result as a BHC tree xml
     public BHCTree saveResultAsXML(String file)throws Exception {
         BHCTree tree = new BHCTree(alpha,s,nu,mu,clusters);
@@ -230,7 +232,7 @@ public class ThreadedAlgorithm implements Runnable {
 //        NodeBase.saveClusterListAsXML("/nfs/waterston/pete/Segmentation/350/Cherryimg_SimpleSegmentationBHC0350.xml", alg.clusters,0.999);
         int hfuis=0;
     }    
-    static DfpField field;
+//    static DfpField field;
     MicroClusterDataSource source;
     List<Node> clusters;
 //    HashMap<Cluster,HashMap<Cluster,Cluster>> pairs;
@@ -239,7 +241,7 @@ public class ThreadedAlgorithm implements Runnable {
     TreeSet<Node> posteriors;
     int nu = 20;
 //    double s = 100;
-    double s = 50;
+    double[] s;
     double[] mu;
     double beta = 0.0000001; 
     double alpha = 10000000;

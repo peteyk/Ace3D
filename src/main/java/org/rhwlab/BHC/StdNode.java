@@ -24,7 +24,10 @@ import org.rhwlab.dispim.datasource.MicroCluster;
  *
  * @author gevirl
  */
-public class StdNode extends  NodeBase {
+abstract public class StdNode extends  NodeBase {
+    public StdNode(){
+        
+    }
     public StdNode(MicroCluster micro) throws ArithmeticException {
         this.micro = micro;
         this.left = null;
@@ -44,6 +47,7 @@ public class StdNode extends  NodeBase {
         ((NodeBase)this.right).parent = this;
         posterior();
     }
+ /*   
     public StdNode(Element ele,Node par){
         this.parent = par;
         this.label = Integer.valueOf(ele.getAttributeValue("label"));
@@ -57,7 +61,7 @@ public class StdNode extends  NodeBase {
             this.micro = new MicroCluster(ele);
         }
     }
-
+*/
     // the likelihood of the data in this node/cluster only - given the priors
     public double marginalLikelihood(List<RealVector> data) throws ArithmeticException {
 
@@ -168,12 +172,13 @@ public class StdNode extends  NodeBase {
                 throw new ArithmeticException();
             }        
         realR = this.pi * this.likelihood / dpm;
-        dfpR = field.newDfp(realR);
+//        dfpR = field.newDfp(realR);
     }
-
+/*
     public Dfp getPosteriorDfp(){
         return dfpR;
     }
+*/
     public double getPosterior(){
         return this.realR;
     }
@@ -230,7 +235,7 @@ public class StdNode extends  NodeBase {
             return dfp;
         }
     }
-*/
+
     @Override
     public Node mergeWith(Node other) {
         if (other instanceof StdNode){
@@ -260,7 +265,7 @@ public class StdNode extends  NodeBase {
         left.getDataAsFieldVector(list);
         right.getDataAsFieldVector(list);
     }
-
+*/
     @Override
     public void getDataAsRealVector(List<RealVector> list) {
         if (micro != null){
@@ -271,12 +276,12 @@ public class StdNode extends  NodeBase {
         right.getDataAsRealVector(list);
     }
    
-    static void setParameters(int n,double beta,double[] mu,double s){
+    static void setParameters(int n,double beta,double[] mu,double[] s){
         StdNode.nu = n;
         
-        StdNode.S = new Array2DRowRealMatrix(mu.length,mu.length);
-        for (int i=0 ; i<mu.length ; ++i){
-            S.setEntry(i, i, s);
+        StdNode.S = new Array2DRowRealMatrix(s.length,s.length);
+        for (int i=0 ; i<s.length ; ++i){
+            S.setEntry(i, i, s[i]);
         }
         LUDecomposition ed = new LUDecomposition(S);
         detS = Math.pow(ed.getDeterminant(),nu/2.0);
@@ -315,9 +320,10 @@ public class StdNode extends  NodeBase {
     double pi;
     double onePi;  // 1.0 - pi;   
     double dpm;
-    Dfp dfpR;
+//    Dfp dfpR;
     
     static double alpha;
     static double detS;
     static GammaRatio ratio;
+
 }

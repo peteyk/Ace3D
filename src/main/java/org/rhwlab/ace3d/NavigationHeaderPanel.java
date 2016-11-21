@@ -12,6 +12,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.event.ChangeEvent;
+import org.rhwlab.dispim.nucleus.Nucleus;
 
 /**
  *
@@ -85,8 +86,8 @@ public class NavigationHeaderPanel extends JPanel {
         this.add(cellWidth);        
     }
 
-    public String getRoot(){
-        return rootField.getText().trim();
+    public Nucleus getRoot(){
+        return root;
     }
     public int getMaxTime(){
         return Integer.valueOf(maxTime.getText().trim());
@@ -103,8 +104,9 @@ public class NavigationHeaderPanel extends JPanel {
     public double getCellWidth(){
         return Double.valueOf(cellWidth.getText().trim());
     }
-    public void setRoot(String r){
-        this.rootField.setText(r);
+    public void setRoot(Nucleus nuc){
+        this.rootField.setText(nuc.getCellName());
+        root = nuc;
         treePanel.stateChanged(new ChangeEvent(NavigationHeaderPanel.this));
     }
     NavigationTreePanel treePanel;
@@ -114,4 +116,5 @@ public class NavigationHeaderPanel extends JPanel {
     JCheckBox labelLeaves;
     JTextField timeScale;
     JTextField cellWidth;
+    Nucleus root;
 }

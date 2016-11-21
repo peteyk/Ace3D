@@ -20,7 +20,7 @@ import java.util.Set;
  * @author gevirl
  */
 public class CellImage {
-    public BufferedImage getImage(Cell cell,int maxTime,LUT lut,boolean nodes,boolean leaves,double timeScale,double cellWidth){
+    public BufferedImage getImage(Nucleus firstNuc,int maxTime,LUT lut,boolean nodes,boolean leaves,double timeScale,double cellWidth){
         
         this.lut = lut;
         this.maxTime = maxTime;
@@ -28,38 +28,47 @@ public class CellImage {
         this.labelLeaves = leaves;
         this.timeScale = timeScale;
         this.cellWidth = cellWidth;
-        int h = (int)(timeScale*(maxTime - cell.firstTime() +1));
-        int w = (int)(cellWidth*(cell.leaves(maxTime).size()+1));
+        int h = (int)(timeScale*(maxTime - firstNuc.getTime() +1));
+        HashSet<Nucleus> leafNucs = new HashSet<>();
+        firstNuc.findLeaves(leafNucs);
+        int w = (int)(cellWidth*(leafNucs.size()+1));
         BufferedImage image = new BufferedImage((int)w+20,(int)h,BufferedImage.TYPE_INT_ARGB);
         g2 = image.createGraphics();
         BasicStroke stroke = new BasicStroke(strokeWidth);
         g2.setStroke(stroke);
         locations.clear();
-        drawCell(0,w,0,cell);
+        drawCell(0,w,0,firstNuc);
 
         return image;
     }
     // draw a cell and its descendents into a portion of the bufferedimage
     // xLeft,width, and yStart determine the portion of the bufferimage to use
     // returns the x position where the cell was drawn
-    private double drawCell(int xLeft,int width,double yStart,Cell cell){
+    private double drawCell(int xLeft,int width,double yStart,Nucleus firstNuc){
         double xStart = xLeft+width/2; // cell is drawn in middle if no children are drawn
         double c0 = 0;
         double c1 = 0;
         boolean hasChildren = false;
+        Nucleus lastNuc = firstNuc.lastNucleusOfCell();
         // ?? draw children
-        if (this.maxTime >= cell.lastTime()){
+        if (this.maxTime >= lastNuc.getTime()){
             
-            double childY0  = yStart + (timeScale*(1+cell.lastTime()-cell.firstTime()));
-            if (!cell.children.isEmpty()){
+            double childY0  = yStart + (timeScale*(1+lastNuc.getTime()-firstNuc.getTime()));
+            if (lastNuc.isDividing()){
+                Nucleus[] nextNucs = lastNuc.nextNuclei();
                 //draw the children
-                int n1 = cell.children.get(1).leaves(maxTime).size();
-                int n0 = cell.children.get(0).leaves(maxTime).size();
+                Set<Nucleus> child0Leaves = new HashSet<>();
+                nextNucs[0].findLeaves(child0Leaves);
+                int n0 = child0Leaves.size();                
+                Set<Nucleus> child1Leaves = new HashSet<>();
+                nextNucs[1].findLeaves(child1Leaves);
+                int n1 = child1Leaves.size();
+                
                 double f = (double)n0/(double)(n0+n1);
                 int w0 = (int)(f*(double)width);
                 int w1 = width - w0;
-                c0 = drawCell(xLeft   ,w0,childY0,cell.children.get(0));
-                c1 = drawCell(xLeft+w0,w1,childY0,cell.children.get(1));
+                c0 = drawCell(xLeft   ,w0,childY0,nextNucs[0]);
+                c1 = drawCell(xLeft+w0,w1,childY0,nextNucs[1]);
                 xStart = (c0+c1)/2;  // draw the parent in the middle of the children
                 hasChildren = true;
             }            
@@ -69,21 +78,22 @@ public class CellImage {
         double y0 = yStart;
         double x0 = xStart;
         double yend = 0;
-        int endt = Math.min(cell.lastTime(), this.maxTime);
-        for (int t = cell.firstTime() ; t <=endt ; ++t){
-            Nucleus nuc = cell.getNucleus(t);
+        int endt = Math.min(lastNuc.getTime(), this.maxTime);
+        Nucleus currentNuc = firstNuc;
+        for (int t = firstNuc.getTime() ; t <=endt ; ++t){
             double y1 = y0 + timeScale;
             Line2D.Double line = new Line2D.Double(x0,y0,x0,y1);
 
-            int exp = (int)nuc.getExpression();
+            int exp = (int)currentNuc.getExpression();
             int rgb = lut.getRGB(exp);
             Color c = new Color(rgb);
             g2.setColor(c);
             g2.draw(line);
             y0 = y1;
             yend = y0;
+            currentNuc = currentNuc.getChild1();
         }
-        CellLocation loc = new CellLocation(cell.getName(),xStart,yStart,yend);
+        CellLocation loc = new CellLocation(firstNuc,xStart,yStart,yend);
         locations.add(loc);
         if(hasChildren){
              // drawing the horizontal line
@@ -93,16 +103,16 @@ public class CellImage {
   //          System.out.printf("Horiz %s c0=%f,c1=%f,yend=%f\n", cell.getName(),c0,c1,yend);
         }
  //       System.out.printf("Vertical %s x=%f,y0=%f,y1=%f\n", cell.getName(),xStart,yStart,yend);
-        if (cell.isLeaf()){
+        if (lastNuc.isLeaf()){
             if (labelLeaves){
-                labelCell(cell,x0,(yStart+yend)/2.0);
+                labelCell(firstNuc.getCellName(),x0,(yStart+yend)/2.0);
             }
         } else if (labelNodes){
-            labelCell(cell,x0,(yStart+yend)/2.0);
+            labelCell(firstNuc.getCellName(),x0,(yStart+yend)/2.0);
         }
         return xStart;
     }
-    private void labelCell(Cell cell, double x,double y){
+    private void labelCell(String label, double x,double y){
         g2.setColor(Color.BLACK);
         AffineTransform save = g2.getTransform();
         AffineTransform xform = (AffineTransform)save.clone();
@@ -111,7 +121,7 @@ public class CellImage {
         xform.rotate(-Math.PI/4.0);
         g2.setTransform(xform);
         float zero = (float)0.0;
-        g2.drawString(cell.getName(),zero,zero);
+        g2.drawString(label,zero,zero);
         g2.setTransform(save);
     }
     public CellLocation cellAtLocation(int x,int y){
@@ -129,13 +139,13 @@ public class CellImage {
         return ret;
     }
     public class CellLocation {
-        public CellLocation(String name,double x,double y0,double y1){
-            this.name = name;
+        public CellLocation(Nucleus firstNuc,double x,double y0,double y1){
+            this.firstNuc = firstNuc;
             this.x = x;
             this.y0 = y0;
             this.y1 = y1;
         }
-        public String name;
+        public Nucleus firstNuc;
         public double x;
         public double y0;
         public double y1;

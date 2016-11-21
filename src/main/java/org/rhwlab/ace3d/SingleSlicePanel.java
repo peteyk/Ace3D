@@ -220,7 +220,7 @@ public class SingleSlicePanel extends JPanel implements ChangeListener {
                     if (( e.getModifiersEx()&mask) == mask){
                         // making a new nucleus  - shift left button
                         long[] parentPos = parent.getPosition();
-                        long[] center = new long[parentPos.length];
+                        double[] center = new double[parentPos.length];
                         double radius = 0.0;
                         for (int d=0 ; d<pos.length ; ++d){
                             center[d] = parentPos[d];     //(image coordinates)

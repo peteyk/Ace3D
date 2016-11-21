@@ -14,6 +14,7 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.jdom2.Element;
+import org.rhwlab.dispim.datasource.MicroCluster4DDataSource;
 import org.rhwlab.dispim.datasource.MicroClusterDataSource;
 import org.rhwlab.dispim.datasource.SegmentedTiffDataSource;
 import org.rhwlab.dispim.datasource.SegmentedTiffIntensityDataSource;
@@ -70,7 +71,7 @@ public class Nuclei_Identification implements Runnable {
         File gmmFile = xmls[2];
         if (study){
             try {
-                runBHCStudy(microClusterFile);
+//                runBHCStudy(microClusterFile);
             } catch (Exception exc){
                 exc.printStackTrace();
             }
@@ -118,11 +119,15 @@ public class Nuclei_Identification implements Runnable {
     }
     private void runBHC(File microClusterFile,File BHCTreeFile)throws Exception {
 
-        MicroClusterDataSource microDataSource = new MicroClusterDataSource(microClusterFile.getPath());
+       MicroClusterDataSource microDataSource = new MicroClusterDataSource(microClusterFile.getPath());
+//        MicroCluster4DDataSource microDataSource = new MicroCluster4DDataSource(microClusterFile.getPath());
         int nClusters = microDataSource.getK();
         ThreadedAlgorithm alg = new ThreadedAlgorithm();
         alg.setSource(microDataSource);
-        alg.setPrecision(20);
+        double[] precision = new double[microDataSource.getD()];
+        precision[0] = precision[1] = precision[2] = 20.0;
+//        precision[3] = 200.0;
+        alg.setPrecision(precision);
         alg.setNu(10);
   //      double alpha = Math.pow(2.0*nClusters,2.0);
         double alpha = 1.0E3;
@@ -143,6 +148,7 @@ public class Nuclei_Identification implements Runnable {
         }
 */        
     }
+/*    
     static public void runBHCStudy(File microClusterFile)throws Exception {
         double[] alphas = new double[8];
         alphas[0] = 1000.0;
@@ -178,6 +184,7 @@ public class Nuclei_Identification implements Runnable {
             }
         }
     }
+    */
     // determine the number of microclusters to form given the number of voxels in the segmented tiff
     static int clusterCount(int nVox){
         int ret = nVox/125;
@@ -226,7 +233,7 @@ public class Nuclei_Identification implements Runnable {
         scriptStream.close();
         
         // start the submission script
-        ProcessBuilder pb = new ProcessBuilder("ssh","whead.gs.washington.edu",scriptFile.getPath());
+        ProcessBuilder pb = new ProcessBuilder("ssh","grid.gs.washington.edu",scriptFile.getPath());
         Process p = pb.start();        
     }
     static public void submitTimePoints(File directory,TreeMap<Integer,String[]> tiffs,boolean force)throws Exception {
@@ -271,7 +278,7 @@ public class Nuclei_Identification implements Runnable {
         scriptStream.close();
         
         // start the submission script
-        ProcessBuilder pb = new ProcessBuilder("ssh","whead.gs.washington.edu",scriptFile.getPath());
+        ProcessBuilder pb = new ProcessBuilder("ssh","grid.gs.washington.edu",scriptFile.getPath());
         Process p = pb.start(); 
     }
     

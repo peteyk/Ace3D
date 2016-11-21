@@ -15,14 +15,14 @@ import org.jfree.chart.renderer.xy.XYDotRenderer;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import org.rhwlab.dispim.nucleus.BHCNucleusData;
-import org.rhwlab.dispim.nucleus.BHCNucleusFile;
+import org.rhwlab.dispim.nucleus.BHCNucleusSet;
 
 /**
  *
  * @author gevirl
  */
 public class SegmentationScatterPlot extends JPanel {
-    public void setNuceli(BHCNucleusFile nucFile){
+    public void setNuceli(BHCNucleusSet nucFile){
         XYSeriesCollection collect = new XYSeriesCollection();
         XYSeries series = new XYSeries("");
         collect.addSeries(series);

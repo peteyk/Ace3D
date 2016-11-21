@@ -7,17 +7,12 @@ package org.rhwlab.dispim;
 
 import ij.ImagePlus;
 import ij.io.Opener;
-import io.scif.img.ImgIOException;
 import io.scif.img.ImgOpener;
-import io.scif.img.SCIFIOImgPlus;
 import java.io.File;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.TreeMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.imglib2.img.Img;
@@ -25,41 +20,47 @@ import net.imglib2.img.display.imagej.ImageJFunctions;
 import org.jdom2.Element;
 import org.rhwlab.ace3d.Ace3D_Frame;
 import org.rhwlab.ace3d.DataSetProperties;
-import org.scijava.Context;
-import spim.process.fusion.FusionHelper;
+//import org.scijava.Context;
 
 /**
  *
  * @author gevirl
  */
 public class TifDirectoryImageSource implements ImageSource {
-    public TifDirectoryImageSource(String dirName,String id,ImagedEmbryo emb){
+    public TifDirectoryImageSource(String typical,String dataset,String dir,ImagedEmbryo emb){
         emb.addSource(this);
-        File d = new File(dirName);
-        if (!d.isDirectory()){
-            this.directory = d.getParent();
-        } else {
-            this.directory = dirName;
-        }
-        this.datasetname = id;
-        open();
+        this.datasetname = dataset;
+        this.typical = typical;
+        this.directory = dir;
+        open();        
+    }
+    public TifDirectoryImageSource(String typicalFile,String id,ImagedEmbryo emb){
+        this(new File(typicalFile).getName(),id,new File(typicalFile).getParent(),emb);
+    }
+    public TifDirectoryImageSource(Element e,ImagedEmbryo emb){
+        this(e.getAttributeValue("typicalFile"),e.getAttributeValue("dataset"),e.getAttributeValue("directory"),emb);
     }
     @Override
     public boolean open(){
  //       Pattern pattern = Pattern.compile("(\\D+)(\\d+).tif");
-        Pattern pattern = Pattern.compile("(\\d+)");
-        File dir = new File(this.directory);
+        Pattern p = Pattern.compile("(\\D+)(\\d{1,4})(\\D+)");
+        Matcher matcher = p.matcher(typical);
+        matcher.find();
+        String prefix = matcher.group(1);
+        String suffix = matcher.group(3);   
         
+        File dir = new File(this.directory);     
         File[] files = dir.listFiles();
         minTime = Integer.MAX_VALUE;
         maxTime = Integer.MIN_VALUE;
         for (File file : files){
             String fileName = file.getName();
-            if (fileName.endsWith("tif")||fileName.endsWith("tiff")){
-                Matcher matcher = pattern.matcher(fileName);
-                matcher.find();
-//                matcher.matches();
-                Integer time = new Integer(matcher.group(1));
+            matcher = p.matcher(fileName);
+
+            if (matcher.find() && matcher.group(1).equals(prefix) && matcher.group(3).equals(suffix)){
+                String timeStr = matcher.group(2);
+                Integer time = new Integer(timeStr);
+
                 if (time < minTime){
                     minTime = time;
                 }
@@ -68,8 +69,9 @@ public class TifDirectoryImageSource implements ImageSource {
                 }
                 fileNames.put(time,file.getPath());
             }
+            
         }
-        opener = new ImgOpener(new Context());
+//        opener = new ImgOpener(new Context());
         
         Iterator<DataSetDesc> iter = getDataSets().iterator();
         while (iter.hasNext()){
@@ -136,11 +138,16 @@ public class TifDirectoryImageSource implements ImageSource {
         ret.add(ds);
         return ret;
     }
-    ImgOpener opener;
-    String directory;
-    String datasetname;
-    TreeMap<Integer,String> fileNames = new TreeMap<Integer,String>();
-    
+
+    @Override
+    public Element toXML() {
+        Element ret = new Element("TifDirectorySource");
+        ret.setAttribute("directory", directory);
+        ret.setAttribute("typicalFile", typical);
+        ret.setAttribute("dataset", datasetname);
+        return ret;
+    }    
+
 
     @Override
     public int getMinTime() {
@@ -158,11 +165,12 @@ public class TifDirectoryImageSource implements ImageSource {
     public void setFirstTime(int minTime) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
-
-    @Override
-    public Element toXML() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
+    String typical;
+ //   ImgOpener opener;
+    String directory;
+    String datasetname;
+    TreeMap<Integer,String> fileNames = new TreeMap<Integer,String>();
+    static Pattern p = Pattern.compile("(\\D+)(\\d+)(\\D+)");
 
 
 }

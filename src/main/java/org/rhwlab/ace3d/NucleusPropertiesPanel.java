@@ -8,6 +8,7 @@ package org.rhwlab.ace3d;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.TreeMap;
 import javafx.beans.InvalidationListener;
 import javafx.beans.Observable;
 import javax.swing.JLabel;
@@ -15,7 +16,6 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import org.rhwlab.dispim.ImagedEmbryo;
 import org.rhwlab.dispim.nucleus.BHCNucleusData;
-import org.rhwlab.dispim.nucleus.Cell;
 import org.rhwlab.dispim.nucleus.Nucleus;
 
 /**
@@ -69,8 +69,14 @@ public class NucleusPropertiesPanel extends JPanel implements InvalidationListen
     }
 
     public void renameCell(){
-        if (embryo == null) return;
-        embryo.renameSelectedCell(this.cell.getText().trim());
+        Nucleus selected = embryo.selectedNucleus();
+        Nucleus first = selected.firstNucleusInCell();
+        TreeMap<Integer,Nucleus> desc = new TreeMap<>();
+        first.descedentsInCell(desc);
+        for (Nucleus d : desc.values()){
+            d.setCellName(this.cell.getText().trim(),true);
+        }
+        embryo.notifyListeners();
     }
     @Override
     public void invalidated(Observable observable) {
@@ -94,11 +100,8 @@ public class NucleusPropertiesPanel extends JPanel implements InvalidationListen
             density.setText(String.format("%f",bhcNuc.getDensity()));
             volume.setText(String.format("%f",bhcNuc.getVolume()));
             intensity.setText(String.format("%f", bhcNuc.getAverageIntensity()));
-            if (selected.getCell() != null){
-                cell.setText(selected.getCell());
-            }else {
-                cell.setText("No cell");
-            }
+            cell.setText(selected.getCellName());
+
             if (selected.getParent() != null){
                 parent.setText(selected.getParent().getName());
             } else {

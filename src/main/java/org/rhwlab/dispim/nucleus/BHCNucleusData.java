@@ -19,22 +19,33 @@ import org.jdom2.Element;
 public class BHCNucleusData extends NucleusData {
     // construct the nucleus from a GaussianMixtureModel xml element
     public BHCNucleusData(JsonObject jsonObj){
-            super(jsonObj);
-            this.sourceNode = jsonObj.getString("SourceNode");
-            this.id = super.getName().substring(super.getName().indexOf('_')+1);
-            this.count = jsonObj.getInt("Count");
-            this.voxels = jsonObj.getInt("Voxels");
-            this.intensity = jsonObj.getJsonNumber("Intensity").longValue();
-            init();
-        }
+        super(jsonObj);
+        this.sourceNode = jsonObj.getString("SourceNode");
+        this.id = super.getName().substring(super.getName().indexOf('_')+1);
+        this.count = jsonObj.getInt("Count");
+        this.voxels = jsonObj.getInt("Voxels");
+        this.intensity = jsonObj.getJsonNumber("Intensity").longValue();
+        init();
+    }
+    public BHCNucleusData(Element nucleusEle){
+        super(nucleusEle);
+        this.id = super.getName().substring(super.getName().indexOf('_')+1);
+        count = Integer.valueOf(nucleusEle.getAttributeValue("count"));
+        sourceNode = nucleusEle.getAttributeValue("sourceNode");
+        intensity = Long.valueOf(nucleusEle.getAttributeValue("intensity"));
+        voxels = Integer.valueOf(nucleusEle.getAttributeValue("voxels"));
+        init();        
+        
+    }
+    // contruct the nucleus from a gmm nodebase element
     public BHCNucleusData(int time,Element gmm){
-        super(time,name(time,gmm),center(gmm),10.0);  // for now make all radii the same
+        super(time,name(time,gmm.getAttributeValue("id")),center(gmm),10.0);  // for now make all radii the same
         id = gmm.getAttributeValue("id");
         count = Integer.valueOf(gmm.getAttributeValue("count"));
         sourceNode = gmm.getAttributeValue("sourceNode");
         intensity = Long.valueOf(gmm.getAttributeValue("intensity"));
         voxels = Integer.valueOf(gmm.getAttributeValue("voxels"));
-        A = precisionFromString(gmm.getAttributeValue("W"));
+        A = precisionFromString(gmm.getAttributeValue("precision"));
         eigenA = new EigenDecomposition(A);
         adjustedA = A.copy();
         adjustedEigenA = new EigenDecomposition(adjustedA);
@@ -49,12 +60,14 @@ public class BHCNucleusData extends NucleusData {
         for (int i=0 ; i<3 ; ++i){
             volume = volume*this.getRadius(i);
         }
-        density = count/volume;        
+        density = voxels/volume;        
     }
     public Element asXML(){
         Element ret = super.asXML();
         ret.setAttribute("sourceNode", this.sourceNode);
         ret.setAttribute("count",Integer.toString(this.count));
+        ret.setAttribute("voxels",Integer.toString(this.voxels));
+        ret.setAttribute("intensity", Long.toString(intensity));
         return ret;
     }
 
@@ -76,12 +89,12 @@ public class BHCNucleusData extends NucleusData {
         }
     }
 
-    static long[] center(Element gmm){
-        long[] ret = new long[3];
-        String[] tokens = gmm.getAttributeValue("m").split(" ");
-        for (int i =0 ; i<ret.length ; ++i) {
-            ret[i] = (long)(Double.parseDouble(tokens[i])+.5);
-        }
+    static double[] center(Element ele){
+        double[] ret = new double[3];
+        ret[0] = Double.valueOf(ele.getAttributeValue("x"));
+        ret[1] = Double.valueOf(ele.getAttributeValue("y"));
+        ret[2] = Double.valueOf(ele.getAttributeValue("z"));
+
         return ret;
     }
 
@@ -90,8 +103,8 @@ public class BHCNucleusData extends NucleusData {
         int n = Integer.valueOf(id);
         return String.format("%03d_%03d", time,n);
     }
-    static String name(int time,Element gmm){
-        return name(time,gmm.getAttributeValue("id"));
+    static String name(Element gmm){
+        return gmm.getAttributeValue("name");
     }
     public String getID(){
         return id;

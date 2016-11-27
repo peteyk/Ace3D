@@ -74,7 +74,8 @@ public class Nucleus implements Comparable {
     }
     public void setCenter(double[] c){
         nucData.setCenter(c);
-    }    
+    } 
+    // returns the nucleus unique identfier 
     public String getName(){
         return nucData.getName();
     }
@@ -402,13 +403,14 @@ public class Nucleus implements Comparable {
         }
         return parent.firstNucleusInCell();
     }
+    // rename this cell and all its time descendents
     public void renameContainingCell(String name){
         this.cellName = name;
         if (child1 == null){
             return ;
         }
         if (this.isDividing()){
-            return;
+            return;  // do not go past division
         }
         child1.renameContainingCell(name);
     }

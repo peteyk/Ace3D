@@ -29,7 +29,7 @@ public class BHCNucleusSet {
     public BHCNucleusSet(){
         nuclei = new HashSet<>();
     }
-    public BHCNucleusSet(int time,String treeFile,double thresh,BHCNucleusData[] nucs){
+    public BHCNucleusSet(int time,String treeFile,double thresh,Set<BHCNucleusData> nucs){
         this();
         this.time = time;
         this.cutThreshold = thresh;

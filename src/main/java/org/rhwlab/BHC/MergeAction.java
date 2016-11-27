@@ -35,6 +35,9 @@ public class MergeAction extends RecursiveAction {
 
     @Override
     protected void compute() {
+        if (start ==0 && end == 1){
+            int jiashdfuis=0;
+        }
         if (end - start < 500){
 //            Map pairsa = Collections.synchronizedMap(new HashMap<>());
             for (int i=start ; i<=end ; ++i){

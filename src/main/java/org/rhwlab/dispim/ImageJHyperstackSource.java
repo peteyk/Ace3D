@@ -14,6 +14,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import net.imglib2.img.Img;
 import net.imglib2.img.display.imagej.ImageJFunctions;
 import org.jdom2.Element;
@@ -40,7 +41,7 @@ public class ImageJHyperstackSource implements ImageSource {
             Ace3D_Frame.setProperties(dataset,new DataSetProperties());
             Ace3D_Frame.getDataSetsDialog().addDataSet(dataset);
         }   
-        
+        List<String> props = Ace3D_Frame.datasetsSelected();
         iter = getDataSets().iterator();
         while (iter.hasNext()){
             String dataset = iter.next().getName();
@@ -49,7 +50,8 @@ public class ImageJHyperstackSource implements ImageSource {
             ps.max = (float)0.1*tpi.getMax();
             Ace3D_Frame.getDataSetsDialog().setProperties(dataset, ps);
         }
-       
+        props = Ace3D_Frame.datasetsSelected();
+        int ashdf=0;
         
     }
     public ImageJHyperstackSource(Element xml,ImagedEmbryo emb){

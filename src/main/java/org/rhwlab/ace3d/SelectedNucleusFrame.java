@@ -8,20 +8,12 @@ package org.rhwlab.ace3d;
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.List;
-import javafx.beans.InvalidationListener;
-import javafx.beans.Observable;
 import javafx.beans.value.ObservableValue;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 import org.rhwlab.dispim.ImagedEmbryo;
-import org.rhwlab.dispim.TimePointImage;
-import org.rhwlab.dispim.nucleus.Nucleus;
-import org.rhwlab.dispim.nucleus.NucleusFile;
 
 /**
  *
@@ -55,6 +47,15 @@ public class SelectedNucleusFrame extends JFrame implements javafx.beans.value.C
         JPanel buttonPanel = new JPanel();
         buttonPanel.setLayout(new BoxLayout(buttonPanel,BoxLayout.X_AXIS));
         
+        JButton unselectButton = new JButton("Unselect");
+        unselectButton.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                embryo.setSelectedNucleus(null);
+            }
+        });
+        buttonPanel.add(unselectButton);
+/*        
         JButton calcExp = new JButton("Calc Expression");
         calcExp.addActionListener(new ActionListener(){
             @Override
@@ -73,35 +74,29 @@ public class SelectedNucleusFrame extends JFrame implements javafx.beans.value.C
             }
         });
         buttonPanel.add(calcExp);
-/*        
-        JButton child1 = new JButton("Unlink Child1");
-        child1.addActionListener(new ActionListener(){
+*/       
+        JButton unlink = new JButton("Unlink Selected");
+        unlink.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
-                Ace3DNucleusFile file = (Ace3DNucleusFile)embryo.getNucleusFile();
-                String childName = npPanel.getChild1();
-                Nucleus childNuc = file.getNucleus(childName);
-                if (childNuc != null) {
-                    file.unlink(embryo.selectedNucleus(), true);
+                if (embryo.selectedNucleus() != null){
+                    embryo.getNucleusFile().unlinkNucleus(embryo.selectedNucleus(),true);
                 }
             }
         });
-        buttonPanel.add(child1);
+        buttonPanel.add(unlink);
         
-        JButton child2 = new JButton("Unlink Child2");
-        buttonPanel.add(child2); 
-        child2.addActionListener(new ActionListener(){
+        JButton remove = new JButton("Remove Selected");
+        buttonPanel.add(remove); 
+        remove.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
-                Ace3DNucleusFile file = (Ace3DNucleusFile)embryo.getNucleusFile();
-                String childName = npPanel.getChild2();
-                Nucleus childNuc = file.getNucleus(childName);
-                if (childNuc != null) {
-                    file.unlink(embryo.selectedNucleus(),true);
+                if (embryo.selectedNucleus() != null){
+                    embryo.getNucleusFile().removeNucleus(embryo.selectedNucleus());
                 }
             }
         });
-        
+/*       
         JButton link = new JButton("Link to Marked");
         buttonPanel.add(link);
         link.addActionListener(new ActionListener(){

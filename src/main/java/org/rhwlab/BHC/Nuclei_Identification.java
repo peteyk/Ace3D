@@ -118,21 +118,26 @@ public class Nuclei_Identification implements Runnable {
         segSource.kMeansCluster(nucleiSegment, nClusters, nPartitions).saveAsXML(microClusterFile.getPath());
     }
     private void runBHC(File microClusterFile,File BHCTreeFile)throws Exception {
-
-       MicroClusterDataSource microDataSource = new MicroClusterDataSource(microClusterFile.getPath());
-//        MicroCluster4DDataSource microDataSource = new MicroCluster4DDataSource(microClusterFile.getPath());
-        int nClusters = microDataSource.getK();
-        ThreadedAlgorithm alg = new ThreadedAlgorithm();
-        alg.setSource(microDataSource);
-        double[] precision = new double[microDataSource.getD()];
-        precision[0] = precision[1] = precision[2] = 20.0;
-//        precision[3] = 200.0;
-        alg.setPrecision(precision);
-        alg.setNu(10);
-  //      double alpha = Math.pow(2.0*nClusters,2.0);
         double alpha = 1.0E3;
-        alg.init(alpha);
-        alg.run();
+        MicroClusterDataSource microDataSource = new MicroClusterDataSource(microClusterFile.getPath());
+        ThreadedAlgorithm alg;
+//        MicroCluster4DDataSource microDataSource = new MicroCluster4DDataSource(microClusterFile.getPath());
+        do {
+            alg = new ThreadedAlgorithm();
+            alg.setTime(time);
+            alg.setSource(microDataSource);
+            double[] precision = new double[microDataSource.getD()];
+            precision[0] = precision[1] = precision[2] = 20.0;
+    //        precision[3] = 200.0;
+            alg.setPrecision(precision);
+            alg.setNu(10);
+      //      double alpha = Math.pow(2.0*nClusters,2.0);
+
+            alg.init(alpha);
+            alg.run();
+            alpha = 10.*alpha;
+        } while (alg.getFinalCluster().getPosterior()!=0.0);
+        
         alg.saveResultAsXML(BHCTreeFile.getPath());
     }
     private void runTreeCut(File BHCTreeFile,File gmmFile) throws Exception {
@@ -199,7 +204,7 @@ public class Nuclei_Identification implements Runnable {
         if (tiffs.isEmpty()) return;
         
         File scriptFile = new File(directory,"SubmitStudyTimes.sh");
-        scriptFile.setExecutable(true, false);
+       
         PrintStream scriptStream = new PrintStream(scriptFile);
         scriptStream.printf("cd %s\n", directory.getPath());
         
@@ -215,15 +220,15 @@ public class Nuclei_Identification implements Runnable {
             // write the qsub file
             PrintStream qsubStream = new PrintStream(new File(directory,baseName+".qsub"));
             qsubStream.println("#$ -S /bin/bash");
-            qsubStream.println("#$ -l mfree=30G");
-            qsubStream.println("#$ -l h_rt=96:0:0");
+            qsubStream.println("#$ -l mfree=40G");
+            
      //       qsubStream.println("#$ -l h=w014");
             qsubStream.println("#$ -pe serial 1-10");
             qsubStream.println("cd /nfs/waterston/Ace3D");
             qsubStream.println("PATH=/nfs/waterston/jdk1.8.0_102/bin:$PATH");
             qsubStream.println("JAVA_HOME=/nfs/waterston/jdk1.8.0_102");
             qsubStream.println("M2_HOME=/nfs/waterston/apache-maven-3.3.9");
-            qsubStream.print("/nfs/waterston/apache-maven-3.3.9/bin/mvn \"-Dexec.args=-Xms26000m -Xmx26000m -classpath %classpath org.rhwlab.BHC.Nuclei_Identification ");
+            qsubStream.print("/nfs/waterston/apache-maven-3.3.9/bin/mvn \"-Dexec.args=-Xms36000m -Xmx36000m -classpath %classpath org.rhwlab.BHC.Nuclei_Identification ");
             qsubStream.printf("-study -first %d -last %d -segTiff %s  -lineageTiff %s -dir %s  ",time,time,names[1],names[0],directory.getPath());
 
             qsubStream.print("\" -Dexec.executable=/nfs/waterston/jdk1.8.0_102/bin/java -Dexec.classpathScope=runtime org.codehaus.mojo:exec-maven-plugin:1.2.1:exec");
@@ -231,16 +236,17 @@ public class Nuclei_Identification implements Runnable {
             qsubStream.close();
         }
         scriptStream.close();
-        
+         scriptFile.setExecutable(true, false);
+ 
         // start the submission script
         ProcessBuilder pb = new ProcessBuilder("ssh","grid.gs.washington.edu",scriptFile.getPath());
         Process p = pb.start();        
     }
-    static public void submitTimePoints(File directory,TreeMap<Integer,String[]> tiffs,boolean force)throws Exception {
+    static public void submitTimePoints(File directory,TreeMap<Integer,String[]> tiffs,boolean force,String memory)throws Exception {
         if (tiffs.isEmpty()) return;
         
         File scriptFile = new File(directory,"SubmitTimePoints.sh");
-        scriptFile.setExecutable(true, false);
+        
         PrintStream scriptStream = new PrintStream(scriptFile);
         scriptStream.printf("cd %s\n", directory.getPath());
         
@@ -258,7 +264,7 @@ public class Nuclei_Identification implements Runnable {
             // write the qsub file
             PrintStream qsubStream = new PrintStream(new File(directory,baseName+".qsub"));
             qsubStream.println("#$ -S /bin/bash");
-            qsubStream.println("#$ -l mfree=20G");
+            qsubStream.printf("#$ -l mfree=%s\n",memory);
             qsubStream.println("#$ -l h_rt=96:0:0");
      //       qsubStream.println("#$ -l h=w014");
             qsubStream.println("#$ -pe serial 1-10");
@@ -266,7 +272,8 @@ public class Nuclei_Identification implements Runnable {
             qsubStream.println("PATH=/nfs/waterston/jdk1.8.0_102/bin:$PATH");
             qsubStream.println("JAVA_HOME=/nfs/waterston/jdk1.8.0_102");
             qsubStream.println("M2_HOME=/nfs/waterston/apache-maven-3.3.9");
-            qsubStream.print("/nfs/waterston/apache-maven-3.3.9/bin/mvn \"-Dexec.args=-Xms40000m -Xmx40000m -classpath %classpath org.rhwlab.BHC.Nuclei_Identification ");
+            qsubStream.printf("/nfs/waterston/apache-maven-3.3.9/bin/mvn \"-Dexec.args=-Xms%s -Xmx%s  ",memory,memory);
+            qsubStream.print(" -classpath %classpath org.rhwlab.BHC.Nuclei_Identification ");
             qsubStream.printf(" -first %d -last %d -segTiff %s  -lineageTiff %s -dir %s  ",time,time,names[1],names[0],directory.getPath());
             if (force){
                 qsubStream.print(" -force ");
@@ -276,11 +283,11 @@ public class Nuclei_Identification implements Runnable {
             qsubStream.close();
         }
         scriptStream.close();
-        
+        scriptFile.setExecutable(true, false);
         // start the submission script
         ProcessBuilder pb = new ProcessBuilder("ssh","grid.gs.washington.edu",scriptFile.getPath());
         Process p = pb.start(); 
-    }
+        }
     
     static public void main(String[] args)throws Exception {
         Nuclei_IdentificationCLI cli = new Nuclei_IdentificationCLI();
@@ -291,7 +298,7 @@ public class Nuclei_Identification implements Runnable {
             submitStudyTimes(new File(cli.getDirectory()),tiffs);
         }
         else if (cli.getQsub()){
-            submitTimePoints(new File(cli.getDirectory()),tiffs,cli.getForce());
+            submitTimePoints(new File(cli.getDirectory()),tiffs,cli.getForce(),cli.getMemory());
         } else {
             for (int time : tiffs.keySet()){
                 String[] names = tiffs.get(time);

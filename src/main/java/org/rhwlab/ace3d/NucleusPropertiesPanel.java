@@ -24,7 +24,7 @@ import org.rhwlab.dispim.nucleus.Nucleus;
  */
 public class NucleusPropertiesPanel extends JPanel implements InvalidationListener  {
     public NucleusPropertiesPanel() {
-        this.setLayout(new GridLayout(15,2));
+        this.setLayout(new GridLayout(16,2));
         this.add(new JLabel("Selected Nucleus"));
         this.add(name);
 
@@ -50,7 +50,8 @@ public class NucleusPropertiesPanel extends JPanel implements InvalidationListen
         this.add(volume);
         this.add(new JLabel("Intensity"));
         this.add(intensity);
-        
+        this.add(new JLabel("IntensityRSD"));
+        this.add(intensityRSD);        
         this.add(new JLabel("In Cell"));
         this.add(cell);
         this.add(new JLabel("Root Cell"));
@@ -100,6 +101,7 @@ public class NucleusPropertiesPanel extends JPanel implements InvalidationListen
             density.setText(String.format("%f",bhcNuc.getDensity()));
             volume.setText(String.format("%f",bhcNuc.getVolume()));
             intensity.setText(String.format("%f", bhcNuc.getAverageIntensity()));
+            intensityRSD.setText(String.format("%f", bhcNuc.getIntensityRSD()));
             cell.setText(selected.getCellName());
 
             if (selected.getParent() != null){
@@ -143,4 +145,5 @@ public class NucleusPropertiesPanel extends JPanel implements InvalidationListen
     JLabel density = new JLabel(initial);
     JLabel volume = new JLabel(initial);
     JLabel intensity = new JLabel(initial);
+    JLabel intensityRSD = new JLabel(initial);
 }

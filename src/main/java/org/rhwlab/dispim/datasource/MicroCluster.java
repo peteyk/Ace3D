@@ -143,18 +143,28 @@ public class MicroCluster {
     public int getPointCount(){
         return points.length;
     }
-    public long getIntensity(){
-        long ret = 0;
-        for (int i : this.intensities){
-            ret = ret + i;
+    public int[] getIntensities(){
+        return this.intensities;
+    }
+    public long getTotalIntensity(){
+        if (totalIntensity == null){
+            long ret = 0;
+            for (int i : this.intensities){
+                ret = ret + i;
+            }
+            totalIntensity = ret;
         }
-        return ret;
+        return totalIntensity;
     }
     public double getAverageIntensity(){
-        return (double)this.getIntensity()/(double)this.getPointCount();
+        if (avgIntensity == null){
+            avgIntensity = (double)this.getTotalIntensity()/(double)this.getPointCount();
+        }
+        return avgIntensity;
     }
-//    static DfpField field ;
     double[] v;  // center
     short[][] points;
     int[] intensities;
+    Long totalIntensity;
+    Double avgIntensity;
 }

@@ -33,7 +33,7 @@ public class BHCTreeDirectory {
             dir = dir.getParentFile();
         }
         File[] files = dir.listFiles();
-        Pattern p = Pattern.compile("(.+)(\\d{3})(.+xml)");
+        Pattern p = Pattern.compile("(\\D+)(\\d{1,4})(\\D+xml)");
         for (File file : files){
             if (file.getName().contains("BHCTree")){
                 Matcher m = p.matcher(file.getName());

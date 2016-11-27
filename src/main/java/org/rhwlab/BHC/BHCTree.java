@@ -192,16 +192,19 @@ public class BHCTree {
         TreeSet<Node> leaves =  new TreeSet<>();
         leaves.addAll(roots);
         this.cutToN(n,leaves);
+        TreeSet<BHCNucleusData> nucSet = new TreeSet<>();
+        
         Node[] nodeArray = leaves.toArray(new Node[0]);
-        BHCNucleusData[] nucData= new BHCNucleusData[leaves.size()];
         
         for (int i=0 ; i<nodeArray.length ; ++i){
             NodeBase nodeBase = (NodeBase)nodeArray[i];
             Element ele = nodeBase.formElementXML(i);
-            nucData[i] = new BHCNucleusData(time,ele);
+            if (ele != null){
+                nucSet.add(new BHCNucleusData(time,ele));
+            }
             int iusdfi=0;
         }
-        return new BHCNucleusSet(time,fileName,0.,nucData);
+        return new BHCNucleusSet(time,fileName,0.,nucSet);
     }
     public void cutToN(int n,TreeSet<Node> leaves){
         if (leaves.size() == n){

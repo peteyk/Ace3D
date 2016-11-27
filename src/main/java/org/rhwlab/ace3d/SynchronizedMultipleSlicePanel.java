@@ -183,8 +183,10 @@ public class SynchronizedMultipleSlicePanel extends JPanel implements ChangeList
     @Override
     public void changed(ObservableValue observable, Object oldValue, Object newValue) {
         Nucleus sel = embryo.selectedNucleus();
-        this.changePosition(sel.getCenter());
-        this.changeTime(sel.getTime());
+        if (sel != null){
+            this.changePosition(sel.getCenter());
+            this.changeTime(sel.getTime());
+        }
          for (SingleSlicePanel p : panels){
             p.stateChanged(null);
         }

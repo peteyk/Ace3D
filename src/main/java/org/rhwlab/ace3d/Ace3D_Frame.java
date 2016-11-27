@@ -92,7 +92,10 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
         });
         imagedEmbryo.getNucleusFile().addListener(navFrame);
         imagedEmbryo.getNucleusFile().addSelectionOberver(selectedNucFrame);
-        imagedEmbryo.getNucleusFile().addSelectionOberver(panel);        
+        imagedEmbryo.getNucleusFile().addSelectionOberver(panel); 
+        
+        viPlot = new VolumeIntensityPlot(imagedEmbryo);
+        viDialog = new PanelDisplay(viPlot);
     }
 
     public void close() throws Exception {
@@ -390,24 +393,15 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
         JMenu selectedTimePoint = new JMenu("Selected Time Point");
         segmenting.add(selectedTimePoint);
         
-        JMenuItem scatter = new JMenuItem("Scatter Plot");
+        JMenuItem scatter = new JMenuItem("Intensity/Volume Plot");
         scatter.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
-                int time = getCurrentTime();
-                BHCTreeDirectory bhcTree = imagedEmbryo.getNucleusFile().getTreeDirectory();
                 try {
-/*                    
-                    BHCNucleusFile bhcNucFile = bhc.getFileforTime(time);
-                    SegmentationScatterPlot plot = new SegmentationScatterPlot();
-                    plot.setNuceli(bhcNucFile);
-                    PanelDisplay dialog = new PanelDisplay(plot);
-                    dialog.setVisible(true);
-  */
+                    viDialog.setVisible(true);
                 } catch (Exception exc){
                     exc.printStackTrace();
                 }
-                
             }
         });
         selectedTimePoint.add(scatter);
@@ -477,6 +471,9 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
                     }
                     for (int t=getCurrentTime() ; t<=endTime ; ++t){
                         try {
+                            if (t == 21){
+                                int uisahdfuis=0;
+                            }
                             ((LinkedNucleusFile)imagedEmbryo.getNucleusFile()).autoLink(t);
 
  //                           ((Ace3DNucleusFile)nucFile).linkTimePointAdjustable(t,Ace3D_Frame.this.imagedEmbryo.getBHCTree(t+1));
@@ -666,6 +663,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
             String name = props.getAttributeValue("Name");
             DataSetProperties p = new DataSetProperties(props);
             dataSetProperties.put(name, p);
+            contrastDialog.setProperties(name, p);
         }
         this.sessionXML = xml;
         
@@ -914,6 +912,8 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
     LookUpTables lookUpTables = new LookUpTables();
     BHCTreeCutDialog treeCutDialog;
     BHCTreeDirectory bhc;
+    VolumeIntensityPlot viPlot;
+    PanelDisplay viDialog;
     
     static JCheckBoxMenuItem segmentedNuclei;
     static JCheckBoxMenuItem sisters;

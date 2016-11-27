@@ -33,6 +33,7 @@ public class BHCNucleusData extends NucleusData {
         count = Integer.valueOf(nucleusEle.getAttributeValue("count"));
         sourceNode = nucleusEle.getAttributeValue("sourceNode");
         intensity = Long.valueOf(nucleusEle.getAttributeValue("intensity"));
+        intensityRSD = Double.valueOf(nucleusEle.getAttributeValue("intensityRSD"));
         voxels = Integer.valueOf(nucleusEle.getAttributeValue("voxels"));
         init();        
         
@@ -44,6 +45,7 @@ public class BHCNucleusData extends NucleusData {
         count = Integer.valueOf(gmm.getAttributeValue("count"));
         sourceNode = gmm.getAttributeValue("sourceNode");
         intensity = Long.valueOf(gmm.getAttributeValue("intensity"));
+        intensityRSD = Double.valueOf(gmm.getAttributeValue("intensityRSD"));
         voxels = Integer.valueOf(gmm.getAttributeValue("voxels"));
         A = precisionFromString(gmm.getAttributeValue("precision"));
         eigenA = new EigenDecomposition(A);
@@ -68,6 +70,7 @@ public class BHCNucleusData extends NucleusData {
         ret.setAttribute("count",Integer.toString(this.count));
         ret.setAttribute("voxels",Integer.toString(this.voxels));
         ret.setAttribute("intensity", Long.toString(intensity));
+        ret.setAttribute("intensityRSD", Double.toString(intensityRSD));
         return ret;
     }
 
@@ -148,6 +151,9 @@ public class BHCNucleusData extends NucleusData {
     public double getAverageIntensity(){
         return ((double)intensity)/voxels;
     }
+    public double getIntensityRSD(){
+        return this.intensityRSD;
+    }
     public double distance(BHCNucleusData other){
         double v = this.volume/other.volume;
         if (v <1.0){
@@ -166,6 +172,7 @@ public class BHCNucleusData extends NucleusData {
     double volume;
     double density;
     long intensity;
+    double intensityRSD;
     int voxels;
 }
 

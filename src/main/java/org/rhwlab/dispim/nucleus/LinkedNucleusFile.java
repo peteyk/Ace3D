@@ -255,6 +255,10 @@ public class LinkedNucleusFile implements NucleusFile {
     // if the next time point is not curated, it will be segmented to the optimal level
     // if it is curated, then the segmentation of the next time is not changed
     public void autoLink(int time)throws Exception {
+
+        if (time == 59){
+            int asjifhs=0;
+        }
         TreeMap<String,Nucleus> src = this.byTime.get(time);
         if (src == null){
             return;  // no nuclei at the given time
@@ -271,19 +275,26 @@ public class LinkedNucleusFile implements NucleusFile {
         TreeMap<Integer,Double> probMap = new TreeMap<>();
         nextTree.allPosteriorProb(probMap);
         int nextN = n;
-        while (probMap.get(nextN) < threshold){
+        double prob = probMap.get(nextN);
+        while (prob < threshold){
             ++nextN;  // skipping cuts that have a probability less than the threshold
+            prob = probMap.get(nextN);
         }
         
         Linkage current = formLinkage(time,nextN,nextTree);
-        do {
-            ++nextN;
-            Linkage next = formLinkage(time,nextN,nextTree);
-            if (next.compareTo(current)>0){
-                break;
-            }
-            current = next;
-        } while (true);
+        double nextProb = probMap.get(nextN);
+    
+        if (nextProb < .5){
+            do {
+                ++nextN;
+                nextProb = probMap.get(nextN);
+                Linkage next = formLinkage(time,nextN,nextTree);
+                if (next.compareTo(current)>0 || next.getToNuclei().size() < nextN){
+                    break;  // the next linkage got worse - stop 
+                }
+                current = next;
+            } while (true && nextProb <.9 );
+        }
 
         // put the two new sets(from and to) of nuclei into this file
         TreeMap<String,Nucleus> newFrom = current.getFromNuclei();
@@ -302,6 +313,7 @@ public class LinkedNucleusFile implements NucleusFile {
         }
         byTime.put(time+1,current.getToNuclei());
         this.curatedMap.put(time+1, false);
+        this.autoLinkedMap.put(time, true);
         this.notifyListeners();
     }
     
@@ -342,20 +354,68 @@ public class LinkedNucleusFile implements NucleusFile {
     @Override
     public void setBHCTreeDirectory(BHCTreeDirectory bhc) {
         this.bhcTreeDir = bhc;
+    } 
+    // unlink a nucleus from its parent
+    public void unlinkNucleus(Nucleus nuc,boolean notify){
+        Nucleus parent = nuc.getParent();
+        if (parent == null){
+            return;
+        }
+        // the nucleus being unlinked must get a new cellname
+        nuc.renameContainingCell(nuc.getName());
+        
+        if (parent.getChild1()==nuc){
+            // move parents child2 into child1
+            parent.setDaughters(parent.getChild2(), null);
+        }else {
+            // unlinking parents child2
+            parent.setDaughters(parent.getChild1(), null);
+        }
+        if (parent.getChild1()!=null){
+            // child1 now part of parents cell
+            parent.getChild1().renameContainingCell(parent.getCellName());            
+        }
+        if (notify){
+            this.notifyListeners();
+        }
+    }
+
+    @Override
+    public void removeNucleus(Nucleus nuc) {
+        
+        if (selectedNucleus.getValue().equals(nuc)){
+            this.setSelected(null);
+        }
+        
+        // unlink any child fron the nuc being deleted
+        if (nuc.getChild1() != null){
+            unlinkNucleus(nuc.getChild1(),false);
+        }
+        if (nuc.getChild2() != null){
+            unlinkNucleus(nuc.getChild2(),false);
+        }
+        // unlink from parent
+        unlinkNucleus(nuc,false);  
+
+        TreeMap<String,Nucleus> map = byTime.get(nuc.getTime());
+        map.remove(nuc.getName());
+        
+        curatedMap.put(nuc.getTime(), true);  // this time is now curated
+        this.notifyListeners();
     }    
     
     File file;
-//    TreeMap<Integer,TreeSet<Nucleus>> byTime=new TreeMap<>();
     TreeMap<Integer,TreeMap<String,Nucleus>> byTime=new TreeMap<>();
     TreeMap<Integer,Boolean> curatedMap = new TreeMap<>();
- //   TreeMap<String,Nucleus> byName=new TreeMap<>();
+    TreeMap<Integer,Boolean> autoLinkedMap = new TreeMap<>();
     
     ArrayList<InvalidationListener> listeners = new ArrayList<>();
     SelectedNucleus selectedNucleus = new SelectedNucleus();
     BHCTreeDirectory bhcTreeDir;
     
     boolean opening = false;
-    static double threshold= 1.0E-14;
+    static double threshold= 1.0E-9;
+
 
 
 

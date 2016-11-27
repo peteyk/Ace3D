@@ -127,6 +127,9 @@ public class LogNode extends StdNode  {
             ret = Utils.elnMult(ret, Gamma.logGamma((nuP+1-i)/2.0));
             ret = Utils.elnMult(ret,-Gamma.logGamma((nu+1-i)/2.0));
         }
+        if (ThreadedAlgorithm.time < 175){
+            ret = ret + data.size()*logRSDLikelihood();
+        }
         return ret;
     }
     public double logDPMLikelihood(int n)throws ArithmeticException {       
@@ -141,7 +144,8 @@ public class LogNode extends StdNode  {
             Double lnagn = Utils.elnMult(lnAlpha, lngn);
             if (!Double.isFinite(lnagn))            {
                 System.exit(112);
-            }            
+            }  
+            double lndd = Utils.elnMult(stdLeft.lnd, stdRight.lnd);
             lnd = Utils.elnsum(lnagn, Utils.elnMult(stdLeft.lnd,stdRight.lnd));
             if (lnd == 0.0){
                 int aisohdfni=0;
@@ -153,6 +157,7 @@ public class LogNode extends StdNode  {
             lnPi = Utils.elnMult(lnagn,-lnd);
             if (lnPi == 0.0){
                 int isafduis=0;
+                lnd = Utils.elnsum(lnagn, Utils.elnMult(stdLeft.lnd,stdRight.lnd));
             }
             if (!Double.isFinite(lnPi))            {
                 System.exit(223);
@@ -166,11 +171,17 @@ public class LogNode extends StdNode  {
         }
         return lnLike;
     }
+    public double logRSDLikelihood(){
+        double rsd = this.getIntensityRSD();
+        return lnLambda - lambda*rsd;
+    }
     // calculate the posterior of a non terminal node
     public void  logPosterior()throws ArithmeticException {
         List<RealVector> data = new ArrayList<>();
         this.getDataAsRealVector(data); 
         this.lnLike = this.logMarginalLikelihood(data);
+        
+        
         
         lnDPM = this.logDPMLikelihood(data.size());
        
@@ -208,5 +219,8 @@ public class LogNode extends StdNode  {
     Double lnLike;
     Double lnDPM;
     Double lnR;
+    
+    static double lambda = 1.0;
+    static double lnLambda = Math.log(lambda);
     
 }

@@ -36,7 +36,7 @@ public class BHCNucleusDirectory {
         m.matches();
         String prefix = m.group(1);
         String suffix = m.group(3);
-        Pattern exactP = Pattern.compile(prefix+"(\\d{3})"+suffix);
+        Pattern exactP = Pattern.compile(prefix+"(\\d{1,4})"+suffix);
         
         fileMap = new HashMap<>();
         File[] files = directory.listFiles();
@@ -74,6 +74,6 @@ public class BHCNucleusDirectory {
     }
 
     File typicalFile;
-    static Pattern p = Pattern.compile("(.+)(\\d{3})(.+xml)");
+    static Pattern p = Pattern.compile("(\\D+)(\\d{1,4})(\\D+xml)");
     HashMap<Integer,BHCNucleusFile> fileMap;  // the BHCNucleusFile's indexed by time
 }

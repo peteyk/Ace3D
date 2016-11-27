@@ -12,6 +12,7 @@ import java.io.File;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -79,7 +80,7 @@ public class TifDirectoryImageSource implements ImageSource {
             Ace3D_Frame.setProperties(dataset,new DataSetProperties());
             Ace3D_Frame.getDataSetsDialog().addDataSet(dataset);
         }   
-        
+        List<String> props = Ace3D_Frame.datasetsSelected();
         iter = getDataSets().iterator();
         while (iter.hasNext()){
             String dataset = iter.next().getName();
@@ -88,7 +89,8 @@ public class TifDirectoryImageSource implements ImageSource {
             ps.max = 2;
             ps.min = 1;
             Ace3D_Frame.getDataSetsDialog().setProperties(dataset, ps);
-        }      
+        } 
+        props = Ace3D_Frame.datasetsSelected();
     return true;        
     }
 

@@ -15,6 +15,7 @@ import org.apache.commons.math3.dfp.Dfp;
 import org.apache.commons.math3.dfp.DfpField;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
+import org.apache.commons.math3.stat.StatUtils;
 import org.jdom2.Element;
 import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
@@ -104,15 +105,36 @@ abstract public class NodeBase implements Node {
         }
 
     }
+    // calculate the relative standard deviation of the intensities
+    public double getIntensityRSD(){
+        List<MicroCluster> micros = new ArrayList<>();
+        this.getDataAsMicroCluster(micros);
+        List<Double> intensities = new ArrayList<>();
+        for (MicroCluster micro : micros){
+            int[] rawIs = micro.getIntensities();
+            for (int inten : rawIs){
+                intensities.add((double)inten);
+            }            
+        }
+        double[] intensityValues = new double[intensities.size()];
+        int i=0;
+        for (Double v : intensities){
+            intensityValues[i] = v;
+            ++i;
+        }  
+        double iMean = StatUtils.mean(intensityValues);
+        return Math.sqrt(StatUtils.variance(intensityValues, iMean)) / iMean;        
+    }
     // form an XML Element from this node
     public Element formElementXML(int id){
         List<MicroCluster> micros = new ArrayList<>();
         this.getDataAsMicroCluster(micros);
         int voxels = 0;
         long intensity = 0;
+        
         for (MicroCluster micro : micros){
             voxels = voxels + micro.getPointCount();
-            intensity = intensity + micro.getIntensity();
+            intensity = intensity + micro.getTotalIntensity();
         }
         RealVector mu = MicroCluster.mean(micros);
         RealMatrix W = MicroCluster.precision(micros, mu);
@@ -123,8 +145,9 @@ abstract public class NodeBase implements Node {
             clusterEle.setAttribute("count", String.format("%d",micros.size()));
             clusterEle.setAttribute("voxels", String.format("%d",voxels));
             clusterEle.setAttribute("intensity", String.format("%d",intensity));
+
+            clusterEle.setAttribute("intensityRSD", Double.toString(getIntensityRSD()));
             clusterEle.setAttribute("sourceNode", String.format("%d", label));
-            
 
             clusterEle.setAttribute("posterior",Double.toString(realR));
             

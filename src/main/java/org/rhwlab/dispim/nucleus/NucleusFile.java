@@ -25,8 +25,6 @@ public interface NucleusFile extends javafx.beans.Observable{
     public Nucleus sister(Nucleus nuc);
     public void addNucleus(Nucleus nuc);
     public Set<Integer> getAllTimes();
-//    public Nucleus getNucleus(String name);
-//    public void setSelected(int time,String name);
     public void setSelected(Nucleus nuc);
     public Nucleus getSelected();
     public BHCTreeDirectory getTreeDirectory();
@@ -35,4 +33,6 @@ public interface NucleusFile extends javafx.beans.Observable{
     public void addSelectionOberver(javafx.beans.value.ChangeListener obs);
     public Element toXML();
     public void fromXML(Element ele);
+    public void removeNucleus(Nucleus nuc);
+    public void unlinkNucleus(Nucleus nuc,boolean notify);
 }

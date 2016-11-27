@@ -88,6 +88,10 @@ public class Nuclei_IdentificationCLI extends CommandLine {
     public void qsub(){
         this.qsub = true;
     }
+    public String memory(String s){
+        this.memory = s;
+        return null;
+    }
     public void study(){
         this.study = true;
     }
@@ -108,6 +112,9 @@ public class Nuclei_IdentificationCLI extends CommandLine {
     }
     public String getDirectory(){
         return this.directory;
+    }
+    public String getMemory(){
+        return memory;
     }
     public TreeMap<Integer,String[]> getTiffs(){
         TreeMap<Integer,String> segMap = getFiles(this.segTiff);
@@ -132,16 +139,17 @@ public class Nuclei_IdentificationCLI extends CommandLine {
         File dir = tiff.getParentFile();
         File[] files = dir.listFiles();
         
-        Pattern p = Pattern.compile("(.+)\\d{3}(.+)");
+ //       Pattern p = Pattern.compile("(.+)\\d{3}(.+)");
+        Pattern p = Pattern.compile("(\\D+)(\\d{1,4})(\\D+)");
         Matcher m = p.matcher(tiff.getName());
         if (!m.matches()){
             return null;
         }
         String prefix = m.group(1);
-        String suffix = m.group(2);
+        String suffix = m.group(3);
         
         
-        p = Pattern.compile(prefix+"(\\d{3})"+suffix);
+        p = Pattern.compile(prefix+"(\\d{1,4})"+suffix);
         for (File file : files){
             m = p.matcher(file.getName());
             if (m.matches()){
@@ -158,6 +166,7 @@ public class Nuclei_IdentificationCLI extends CommandLine {
        
         return ret;
     }
+    String memory;
     String directory;
     String lineTiff;
     String segTiff;

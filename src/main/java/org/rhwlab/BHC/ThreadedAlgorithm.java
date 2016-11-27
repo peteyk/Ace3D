@@ -103,12 +103,12 @@ public class ThreadedAlgorithm implements Runnable {
     public void run() {
         TimeProfile profile = new TimeProfile();
         while (clusters.size()>1){
-            if (clusters.size()==2724){
+            if (clusters.size()==2){
                 int asdhfuis=0;
             }
             System.out.printf("\n%d Clusters\n",clusters.size());
             profile.report(System.out, "Before maximumRCluster");
-            Node T = maximumRCluster();
+            T = maximumRCluster();
             profile.report(System.out, "After maximumRCluster");
             if (T == null ){
                 return;
@@ -210,6 +210,12 @@ public class ThreadedAlgorithm implements Runnable {
     public BHCTree resultAsBHCTree(){
         return new BHCTree(alpha, s, nu, mu, clusters);
     }
+    public Node getFinalCluster(){
+        return T;
+    }
+    public void setTime(int t){
+        this.time = t;
+    }
     static public void main(String[] args) throws Exception {
         System.out.println("GaussianGIWPrior");
 //        SegmentedTiffDataSource source = new SegmentedTiffDataSource("/nfs/waterston/pete/Segmentation/Cherryimg75.tif",
@@ -245,4 +251,6 @@ public class ThreadedAlgorithm implements Runnable {
     double[] mu;
     double beta = 0.0000001; 
     double alpha = 10000000;
+    Node T;
+    static public int time;
 }

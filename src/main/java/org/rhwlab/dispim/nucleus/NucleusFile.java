@@ -20,13 +20,16 @@ public interface NucleusFile extends javafx.beans.Observable{
     public File getFile();
     public void setFile(File f);
     public Set<Nucleus> getRoots(int time);
+    public Set<Nucleus> getLeaves(int time);
     public List<Nucleus> linkedForward(Nucleus nuc);
     public Nucleus linkedBack(Nucleus nuc);
     public Nucleus sister(Nucleus nuc);
     public void addNucleus(Nucleus nuc);
     public Set<Integer> getAllTimes();
     public void setSelected(Nucleus nuc);
+    public void setMarked(Nucleus nuc);
     public Nucleus getSelected();
+    public Nucleus getMarked();
     public BHCTreeDirectory getTreeDirectory();
     public void setBHCTreeDirectory(BHCTreeDirectory bhc);
     public void addNuclei(BHCNucleusSet bhcToAdd,boolean curated);

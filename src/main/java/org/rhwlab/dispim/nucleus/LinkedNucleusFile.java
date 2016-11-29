@@ -146,6 +146,20 @@ public class LinkedNucleusFile implements NucleusFile {
         }
         return ret;
     }
+    @Override
+    public Set<Nucleus> getLeaves(int time) {
+        TreeSet<Nucleus> ret = new TreeSet<>();
+        Set<Nucleus> all = this.getNuclei(time);
+        if (all != null){
+            for (Nucleus nuc : all){
+                if (nuc.isLeaf()){
+                    ret.add(nuc);
+                }
+            }
+        }
+        return ret;
+    }    
+    
 
     @Override
     public List<Nucleus> linkedForward(Nucleus nuc) {
@@ -204,7 +218,7 @@ public class LinkedNucleusFile implements NucleusFile {
 
     @Override
     public Nucleus getSelected() {
-        return (Nucleus)this.selectedNucleus.getValue();
+        return this.selectedNucleus.getSelected();
     }
 
 
@@ -383,7 +397,7 @@ public class LinkedNucleusFile implements NucleusFile {
     @Override
     public void removeNucleus(Nucleus nuc) {
         
-        if (selectedNucleus.getValue().equals(nuc)){
+        if (selectedNucleus.getSelected().equals(nuc)){
             this.setSelected(null);
         }
         
@@ -402,7 +416,15 @@ public class LinkedNucleusFile implements NucleusFile {
         
         curatedMap.put(nuc.getTime(), true);  // this time is now curated
         this.notifyListeners();
-    }    
+    }
+    
+    public Nucleus getMarked(){
+        return selectedNucleus.getMarked();
+    }
+    public void setMarked(Nucleus toMark){
+        selectedNucleus.setMarked(toMark);
+    }
+    
     
     File file;
     TreeMap<Integer,TreeMap<String,Nucleus>> byTime=new TreeMap<>();

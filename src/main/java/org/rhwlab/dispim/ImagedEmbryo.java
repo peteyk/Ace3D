@@ -39,6 +39,7 @@ import org.rhwlab.dispim.nucleus.NucleusFile;
  */
 public class ImagedEmbryo implements Observable {
     public ImagedEmbryo(){
+ 
         sources = new ArrayList<>();
         nucFile = new LinkedNucleusFile();
     }
@@ -144,9 +145,9 @@ public class ImagedEmbryo implements Observable {
         this.nucFile.setSelected(toSelect);
 
     }
-    public void setMarked(Nucleus toMark,boolean value){
-        toMark.setMarked(value);
-        notifyListeners();
+    public void setMarked(Nucleus toMark){
+        nucFile.setMarked(toMark);
+        panel.stateChanged(null);
     }
     public List<Nucleus> nextNuclei(Nucleus source){
         return nucFile.linkedForward(source);
@@ -368,6 +369,9 @@ public class ImagedEmbryo implements Observable {
             }
         }
         return ret;
+    }
+    public Nucleus getMarked(){
+        return nucFile.getMarked();
     }
     NucleusFile nucFile;
     List<ImageSource>  sources;

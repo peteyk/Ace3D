@@ -5,8 +5,10 @@
  */
 package org.rhwlab.dispim.nucleus;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import org.apache.commons.math3.linear.RealVector;
 
@@ -143,13 +145,34 @@ public class Division {
         return ret;
     }
     
+    // determine which nuclei could be a parent in a divison
+    static public List<Nucleus> possibleParents(List<Nucleus> nucs){
+        ArrayList<Nucleus> ret = new ArrayList<>();
+        for (Nucleus nuc : nucs){
+            if (possibleParent(nuc)){
+                ret.add(nuc);
+            }
+        }
+        return ret;
+    }
+    static public boolean possibleParent(Nucleus nuc){
+        double[] ecc = nuc.eccentricity();
+        if (nuc.getTime() < 25) {
+            return true;
+        }
+        return ecc[1]>eccThresh;
+    }
     // decide on best divisions
-    static public HashMap<Nucleus,Division> bestDivisions(Nucleus[] from,Nucleus[] to){
-        // determine all possible divisions from each 'from' nucleus
+    static public HashMap<Nucleus,Division> bestDivisions(List<Nucleus> fromList,List<Nucleus> toList){
+        
+        List<Nucleus> possibleParentList = possibleParents(fromList);
+        
+        // determine all possible divisions from each possible parent
         HashMap<Nucleus,Set<Division>> possibleFrom = new HashMap<>(); 
-        for (int i=0 ; i<from.length ; ++i){
-            if (from[i] != null){
-                possibleFrom.put(from[i], possibleDivisions(from[i],to));
+        for (Nucleus possibleParent : possibleParentList){
+            Set<Division> possibleDivs = possibleDivisions(possibleParent,toList.toArray(new Nucleus[0]));
+            if (!possibleDivs.isEmpty()){
+                possibleFrom.put(possibleParent, possibleDivs);
             }
         }
         
@@ -210,7 +233,7 @@ public class Division {
     double dist;
     
     static int timeThresh = 10;
-    static double eccThresh = 0.6;
+    static double eccThresh = 0.7;
     static double distThresh = 50.0;
     static double cosThresh = .8;
     static double volumeThresh = 3.0;

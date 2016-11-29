@@ -13,11 +13,33 @@ public class SelectedNucleus extends javafx.beans.value.ObservableValueBase {
 
     @Override
     public Object getValue() {
-        return selected;
+        Nucleus[] ret = new Nucleus[2];
+        ret[0] = selected;
+        ret[1] = marked;
+        return ret;
     }
     public void setSelectedNucleus(Nucleus nuc){
         this.selected = nuc;
+
         this.fireValueChangedEvent();
     }
+    public void setMarked(Nucleus mark){
+        if (mark.getChild2()!=null){
+            return;  // cannot mark a nucleus that has no available child slot
+        }
+        if (mark == selected){
+            selected = null;
+        }
+
+        this.marked = mark;
+        this.fireValueChangedEvent();
+    }
+    public Nucleus getMarked(){
+        return marked;
+    }
+    public Nucleus getSelected(){
+        return selected;
+    }
     Nucleus selected;
+    Nucleus marked;  // marked as potential parent for linking to the selected nucleus
 }

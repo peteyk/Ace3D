@@ -24,7 +24,7 @@ public class BHCNucleusData extends NucleusData {
         this.id = super.getName().substring(super.getName().indexOf('_')+1);
         this.count = jsonObj.getInt("Count");
         this.voxels = jsonObj.getInt("Voxels");
-        this.intensity = jsonObj.getJsonNumber("Intensity").longValue();
+        this.totalIntensity = jsonObj.getJsonNumber("Intensity").longValue();
         init();
     }
     public BHCNucleusData(Element nucleusEle){
@@ -32,7 +32,7 @@ public class BHCNucleusData extends NucleusData {
         this.id = super.getName().substring(super.getName().indexOf('_')+1);
         count = Integer.valueOf(nucleusEle.getAttributeValue("count"));
         sourceNode = nucleusEle.getAttributeValue("sourceNode");
-        intensity = Long.valueOf(nucleusEle.getAttributeValue("intensity"));
+        totalIntensity = Long.valueOf(nucleusEle.getAttributeValue("intensity"));
         intensityRSD = Double.valueOf(nucleusEle.getAttributeValue("intensityRSD"));
         voxels = Integer.valueOf(nucleusEle.getAttributeValue("voxels"));
         init();        
@@ -44,7 +44,7 @@ public class BHCNucleusData extends NucleusData {
         id = gmm.getAttributeValue("id");
         count = Integer.valueOf(gmm.getAttributeValue("count"));
         sourceNode = gmm.getAttributeValue("sourceNode");
-        intensity = Long.valueOf(gmm.getAttributeValue("intensity"));
+        totalIntensity = Long.valueOf(gmm.getAttributeValue("intensity"));
         intensityRSD = Double.valueOf(gmm.getAttributeValue("intensityRSD"));
         voxels = Integer.valueOf(gmm.getAttributeValue("voxels"));
         A = precisionFromString(gmm.getAttributeValue("precision"));
@@ -62,14 +62,15 @@ public class BHCNucleusData extends NucleusData {
         for (int i=0 ; i<3 ; ++i){
             volume = volume*this.getRadius(i);
         }
-        density = voxels/volume;        
+        voxelDensity = voxels/volume;    
+        intensityDensity = totalIntensity/volume;
     }
     public Element asXML(){
         Element ret = super.asXML();
         ret.setAttribute("sourceNode", this.sourceNode);
         ret.setAttribute("count",Integer.toString(this.count));
         ret.setAttribute("voxels",Integer.toString(this.voxels));
-        ret.setAttribute("intensity", Long.toString(intensity));
+        ret.setAttribute("intensity", Long.toString(totalIntensity));
         ret.setAttribute("intensityRSD", Double.toString(intensityRSD));
         return ret;
     }
@@ -79,7 +80,7 @@ public class BHCNucleusData extends NucleusData {
         ret.add("SourceNode", this.sourceNode);
         ret.add("Count",this.count);
         ret.add("Voxels",this.voxels);
-        ret.add("Intensity",this.intensity);
+        ret.add("Intensity",this.totalIntensity);
         return ret;
     }
     public void printMat(String label,RealMatrix m){
@@ -145,21 +146,25 @@ public class BHCNucleusData extends NucleusData {
     public double getVolume(){
         return volume;
     }
-    public double getDensity(){
-        return density;
+    public double getVoxelDensity(){
+        return voxelDensity;
     }
     public double getAverageIntensity(){
-        return ((double)intensity)/voxels;
+        return ((double)totalIntensity)/voxels;
     }
     public double getIntensityRSD(){
         return this.intensityRSD;
     }
+    public double getIntensityDensity(){
+        return this.intensityDensity;
+    }
+    // distance weighted by intensity and volume
     public double distance(BHCNucleusData other){
         double v = this.volume/other.volume;
         if (v <1.0){
             v = 1.0/v;
         }
-        double ir = this.intensity/other.intensity;
+        double ir = this.totalIntensity/other.totalIntensity;
         if (ir<1.0){
             ir = 1.0/ir;
         }
@@ -167,12 +172,13 @@ public class BHCNucleusData extends NucleusData {
     }
     static double vf = 4.0*Math.PI/3.0;
     String id;
-    int count;
-    String sourceNode;
-    double volume;
-    double density;
-    long intensity;
-    double intensityRSD;
-    int voxels;
+    int count;  // number of micro clusters in the nucleus
+    String sourceNode;  // the BHC tree node from which this nucleus is built
+    double volume;  // volume of nucleus
+    double voxelDensity;  // voxels per unit volume
+    long totalIntensity;        // sum of all voxel intensities
+    double intensityDensity;  // intensity per unit volume
+    double intensityRSD;  // intensity stadard deviation / mean
+    int voxels;  // number of voxels in the nucleus
 }
 

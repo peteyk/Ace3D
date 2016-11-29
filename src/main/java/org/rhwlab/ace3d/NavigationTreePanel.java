@@ -54,7 +54,7 @@ public class NavigationTreePanel extends JPanel implements ChangeListener{
                     }
                     offset = offset + buffered[i].getWidth();
                 }
-                
+                y = y -(int)(roots[index].getTime()*headPanel.getTimeScale());
                 CellLocation cellLoc = cellImage[index].cellAtLocation(x-offset, y);
                 if (cellLoc != null){
                     Nucleus firstNuc = cellLoc.firstNuc;
@@ -114,13 +114,14 @@ public class NavigationTreePanel extends JPanel implements ChangeListener{
 
         cellImage = new CellImage[treePaths.length];
         buffered = new BufferedImage[treePaths.length];
+        roots = new Nucleus[treePaths.length];
         int W = 0;
         int H = -1;
         for (int i=0 ; i<treePaths.length ; ++i){
             DefaultMutableTreeNode node = (DefaultMutableTreeNode)treePaths[i].getPathComponent(1);
-            Nucleus nuc = (Nucleus)node.getUserObject();
+            roots[i] = (Nucleus)node.getUserObject();
             cellImage[i] = new CellImage();
-            buffered[i] = cellImage[i].getImage(nuc,headPanel.getMaxTime(),lut,headPanel.labelNodes(),headPanel.labelLeaves(),
+            buffered[i] = cellImage[i].getImage(roots[i],headPanel.getMaxTime(),lut,headPanel.labelNodes(),headPanel.labelLeaves(),
                     headPanel.getTimeScale(),headPanel.getCellWidth());
             W = W + buffered[i].getWidth();
             int h = buffered[i].getHeight();
@@ -172,9 +173,9 @@ public class NavigationTreePanel extends JPanel implements ChangeListener{
 //        AffineTransform xForm = AffineTransform.getScaleInstance(scale, scale);
         AffineTransform xForm = new AffineTransform();
         int xPos =0;
-        for (BufferedImage bufImage : buffered){
-            g2.drawImage(bufImage,new AffineTransformOp(xForm,AffineTransformOp.TYPE_NEAREST_NEIGHBOR),xPos,0);    
-            xPos = xPos + bufImage.getWidth();
+        for (int i=0 ; i<buffered.length ; ++i){
+            g2.drawImage(buffered[i],new AffineTransformOp(xForm,AffineTransformOp.TYPE_NEAREST_NEIGHBOR),xPos,(int)(roots[i].getTime()*headPanel.getTimeScale()));    
+            xPos = xPos + buffered[i].getWidth();
         }
     }
     public void setHeadPanel(NavigationHeaderPanel headPanel){
@@ -186,5 +187,6 @@ public class NavigationTreePanel extends JPanel implements ChangeListener{
     ImagedEmbryo embryo;
     BufferedImage[] buffered;
     CellImage[] cellImage;
+    Nucleus[] roots;
     String nucName;
 }

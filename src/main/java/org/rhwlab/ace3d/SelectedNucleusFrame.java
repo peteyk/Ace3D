@@ -5,6 +5,7 @@
  */
 package org.rhwlab.ace3d;
 
+import ij.plugin.PlugIn;
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -14,16 +15,18 @@ import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import org.rhwlab.dispim.ImagedEmbryo;
+import org.rhwlab.dispim.nucleus.Nucleus;
 
 /**
  *
  * @author gevirl
  */
-public class SelectedNucleusFrame extends JFrame implements javafx.beans.value.ChangeListener   {
+public class SelectedNucleusFrame extends JFrame implements PlugIn,javafx.beans.value.ChangeListener   {
     public SelectedNucleusFrame(Ace3D_Frame owner,ImagedEmbryo emb){
         this.embryo = emb;
         this.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-        this.setLocationRelativeTo(owner);        
+//        this.setLocationRelativeTo(owner);  
+//        this.setLocationByPlatform(true);
         this.setTitle("Selected Nucleus");
         
         JPanel content = new JPanel();
@@ -39,11 +42,11 @@ public class SelectedNucleusFrame extends JFrame implements javafx.beans.value.C
         radiusControl.setEmbryo(embryo);
         embryo.addListener(radiusControl);
         panel.add(radiusControl);
-        
+/*        
         MarkedNucleiPanel nucPanel = new MarkedNucleiPanel();
         embryo.addListener(nucPanel);
         panel.add(nucPanel);       
-        
+ */       
         JPanel buttonPanel = new JPanel();
         buttonPanel.setLayout(new BoxLayout(buttonPanel,BoxLayout.X_AXIS));
         
@@ -75,7 +78,7 @@ public class SelectedNucleusFrame extends JFrame implements javafx.beans.value.C
         });
         buttonPanel.add(calcExp);
 */       
-        JButton unlink = new JButton("Unlink Selected");
+        unlink = new JButton("Unlink");
         unlink.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -86,7 +89,7 @@ public class SelectedNucleusFrame extends JFrame implements javafx.beans.value.C
         });
         buttonPanel.add(unlink);
         
-        JButton remove = new JButton("Remove Selected");
+        JButton remove = new JButton("Remove");
         buttonPanel.add(remove); 
         remove.addActionListener(new ActionListener(){
             @Override
@@ -96,31 +99,20 @@ public class SelectedNucleusFrame extends JFrame implements javafx.beans.value.C
                 }
             }
         });
-/*       
-        JButton link = new JButton("Link to Marked");
+       
+        link = new JButton("Link");
+        link.setEnabled(false);
         buttonPanel.add(link);
         link.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
-                String[] marked = nucPanel.getMarkedNuclei();
-                if (marked.length==1){
-                    Ace3DNucleusFile file = (Ace3DNucleusFile)embryo.getNucleusFile();
-                    Nucleus markedNuc = file.getNucleus(marked[0]);
-                    String childName = npPanel.getChild1();
-                    Nucleus childNuc = file.getNucleus(childName);
-                    if (childNuc == null) {
-                        file.linkInTime(embryo.selectedNucleus(), markedNuc);
-                    } 
-                    childName = npPanel.getChild2();
-                    childNuc = file.getNucleus(childName);  
-                    if (childNuc == null){
-                        
-//                        file.linkDivision(embryo.selectedNucleus(), markedNuc);
-                    }
-                }
+                Nucleus sel = embryo.selectedNucleus();
+                Nucleus mark = embryo.getMarked();
+                mark.linkTo(sel);
+                embryo.notifyListeners();
             }
         });
-  */      
+        
         content.add(panel,BorderLayout.CENTER);
         content.add(buttonPanel,BorderLayout.SOUTH);
         this.setContentPane(content);
@@ -129,11 +121,33 @@ public class SelectedNucleusFrame extends JFrame implements javafx.beans.value.C
 
     @Override
     public void changed(ObservableValue observable, Object oldValue, Object newValue) {
+        Nucleus sel = embryo.selectedNucleus();
+        if (sel != null){
+            if (sel.getParent()!= null){
+                unlink.setEnabled(true);
+            } else {
+                unlink.setEnabled(false);
+                if (embryo.getMarked() != null){
+                    link.setEnabled(true);
+                }else {
+                    link.setEnabled(false);
+                }
+            }
+        }
         npPanel.invalidated(embryo);
         radiusControl.invalidated(embryo);
     }
+    @Override
+    public void run(String arg) {
+  //      this.setSize(800,400);
+        this.setLocationByPlatform(true);
+        this.setVisible(true);
+    }    
 
     ImagedEmbryo embryo;  
     NucleusPropertiesPanel npPanel;
     RadiusControlPanel radiusControl;
+    
+    JButton unlink;
+    JButton link;
 }

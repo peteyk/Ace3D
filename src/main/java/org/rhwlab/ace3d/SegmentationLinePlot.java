@@ -34,8 +34,11 @@ public class SegmentationLinePlot extends JPanel {
                 break;
             }
         }
+        int t = tree.getTime();
+        int nu = tree.getNu();
+
         JFreeChart chart = ChartFactory.createXYLineChart
-                (String.format("Time=%d,nu=%d,s=%.2f,alpha=%e,nodes=%d",tree.getTime(),tree.getNu(),tree.getS(),tree.getAlpha(),tree.nodeCountAtThreshold(.5)),
+                (String.format("Time=%d,nu=%d,alpha=%e",tree.getTime(),tree.getNu(),tree.getAlpha()),
                         "Index","Probability", collect, PlotOrientation.VERTICAL,false,true,true);
         XYPlot plot = (XYPlot)chart.getPlot();
 

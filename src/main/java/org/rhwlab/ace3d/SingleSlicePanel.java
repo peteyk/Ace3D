@@ -69,6 +69,9 @@ public class SingleSlicePanel extends JPanel implements ChangeListener {
                 if (timePointImage != null){                    
  //                   Graphics2D g2 = (Graphics2D) g;
                     buffered = timePointImage.getBufferedImage(dim,slice);
+                    if (buffered == null){
+                        return;
+                    }
                     Graphics2D g2 = buffered.createGraphics();
                     if (buffered == null){
                         return ;
@@ -249,12 +252,8 @@ public class SingleSlicePanel extends JPanel implements ChangeListener {
                     }                    
                     int mask = MouseEvent.SHIFT_DOWN_MASK;
                     if (( e.getModifiersEx()&mask) == mask){   // right shift toggles the marked status of the nucleus
-                        boolean mark = closest.getMarked();
-                        if (mark){
-                            embryo.setMarked(closest, false);
-                        } else {
-                            embryo.setMarked(closest, true);
-                        }
+                        embryo.setMarked(closest);
+
                     }
                     else {  // right mouse button selects a nucleus
                         embryo.setSelectedNucleus(closest);
@@ -405,15 +404,13 @@ public class SingleSlicePanel extends JPanel implements ChangeListener {
     private void drawNuclei(Graphics2D g2){
        Set<Nucleus> nucs = embryo.getNuclei(timePointImage.getTime());
        for (Nucleus nuc : nucs){
-           if (nuc == this.embryo.selectedNucleus()){
-               int asdfyusgdf=0;
-           }
+
            Shape nucShape = nuc.getShape(slice, dim, bufW, bufH);   
            if (nucShape != null){
                 if (nuc == this.embryo.selectedNucleus()){
                     g2.setColor(Color.RED);
                 }
-                else if (nuc.getMarked()){
+                else if (nuc == this.embryo.getMarked()){
                     g2.setColor(Color.BLUE);
                 }
                 else {

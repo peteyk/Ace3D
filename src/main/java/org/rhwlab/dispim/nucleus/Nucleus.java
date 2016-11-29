@@ -374,7 +374,7 @@ public class Nucleus implements Comparable {
     }
     @Override
     public String toString(){
-        return this.getCellName();
+        return String.format("%s|%s",this.getName(),this.getCellName());
     }
 
     public void setDaughters(Nucleus c1,Nucleus c2){

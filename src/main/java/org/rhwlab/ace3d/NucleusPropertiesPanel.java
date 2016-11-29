@@ -24,7 +24,7 @@ import org.rhwlab.dispim.nucleus.Nucleus;
  */
 public class NucleusPropertiesPanel extends JPanel implements InvalidationListener  {
     public NucleusPropertiesPanel() {
-        this.setLayout(new GridLayout(16,2));
+        this.setLayout(new GridLayout(17,2));
         this.add(new JLabel("Selected Nucleus"));
         this.add(name);
 
@@ -44,14 +44,16 @@ public class NucleusPropertiesPanel extends JPanel implements InvalidationListen
         this.add(cRadius);
         this.add(new JLabel("Eccentricity"));
         this.add(frob);
-        this.add(new JLabel("Density"));
+        this.add(new JLabel("Voxel Density"));
         this.add(density);
         this.add(new JLabel("Volume"));
         this.add(volume);
-        this.add(new JLabel("Intensity"));
+        this.add(new JLabel("Avg Intensity"));
         this.add(intensity);
-        this.add(new JLabel("IntensityRSD"));
-        this.add(intensityRSD);        
+        this.add(new JLabel("Intensity RSD"));
+        this.add(intensityRSD); 
+        this.add(new JLabel("Intensity Density"));
+        this.add(intensityDensity);        
         this.add(new JLabel("In Cell"));
         this.add(cell);
         this.add(new JLabel("Root Cell"));
@@ -98,10 +100,11 @@ public class NucleusPropertiesPanel extends JPanel implements InvalidationListen
             double[] ecc = selected.eccentricity();
             frob.setText(String.format("%.3f,%.3f,%.3f",ecc[0],ecc[1],ecc[2]));
             BHCNucleusData bhcNuc = (BHCNucleusData)selected.getNucleusData();
-            density.setText(String.format("%f",bhcNuc.getDensity()));
+            density.setText(String.format("%f",bhcNuc.getVoxelDensity()));
             volume.setText(String.format("%f",bhcNuc.getVolume()));
             intensity.setText(String.format("%f", bhcNuc.getAverageIntensity()));
             intensityRSD.setText(String.format("%f", bhcNuc.getIntensityRSD()));
+            intensityDensity.setText(String.format("%f", bhcNuc.getIntensityDensity()));
             cell.setText(selected.getCellName());
 
             if (selected.getParent() != null){
@@ -146,4 +149,5 @@ public class NucleusPropertiesPanel extends JPanel implements InvalidationListen
     JLabel volume = new JLabel(initial);
     JLabel intensity = new JLabel(initial);
     JLabel intensityRSD = new JLabel(initial);
+    JLabel intensityDensity = new JLabel(initial);
 }

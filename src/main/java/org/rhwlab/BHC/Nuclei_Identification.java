@@ -119,6 +119,7 @@ public class Nuclei_Identification implements Runnable {
     }
     private void runBHC(File microClusterFile,File BHCTreeFile)throws Exception {
         double alpha = 1.0E3;
+        alpha = 1.0E6;
         MicroClusterDataSource microDataSource = new MicroClusterDataSource(microClusterFile.getPath());
         ThreadedAlgorithm alg;
 //        MicroCluster4DDataSource microDataSource = new MicroCluster4DDataSource(microClusterFile.getPath());
@@ -128,6 +129,7 @@ public class Nuclei_Identification implements Runnable {
             alg.setSource(microDataSource);
             double[] precision = new double[microDataSource.getD()];
             precision[0] = precision[1] = precision[2] = 20.0;
+            precision[0] = precision[1] = precision[2] = 40.0;
     //        precision[3] = 200.0;
             alg.setPrecision(precision);
             alg.setNu(10);

@@ -78,7 +78,10 @@ public class VolumeIntensityPlot extends JPanel implements ChangeListener {
     @Override
     public void changed(ObservableValue observable, Object oldValue, Object newValue) {
         SelectedNucleus selNuc = (SelectedNucleus)observable;
-        Nucleus nuc = (Nucleus)selNuc.getValue();
+        Nucleus nuc = selNuc.getSelected();
+        if (nuc == null){
+            return;
+        }
  //       if ((nuc.getTime() != time  && this.isVisible()) || time==-1){
             time = nuc.getTime();
             setNuclei(embryo.getNuclei(time));

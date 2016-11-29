@@ -49,12 +49,13 @@ import org.rhwlab.dispim.TimePointImage;
 import org.rhwlab.dispim.nucleus.BHCTreeDirectory;
 import org.rhwlab.dispim.nucleus.LinkedNucleusFile;
 import org.rhwlab.dispim.nucleus.Nucleus;
+import org.rhwlab.dispim.nucleus.NucleusFile;
 
 /**
  *
  * @author gevirl
  */
-public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
+public class Ace3D_Frame extends JFrame implements PlugIn,ChangeListener  {
     public  Ace3D_Frame()  {
         
         imagedEmbryo = new ImagedEmbryo();
@@ -65,15 +66,14 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
         
         panel = new SynchronizedMultipleSlicePanel(3);
         panel.setEmbryo(imagedEmbryo);
-        imagedEmbryo.addListener(panel);
+//        imagedEmbryo.addListener(panel);
         this.add(panel);
         
-        navFrame = new Navigation_Frame(imagedEmbryo,panel);
-        navFrame.run(null);
+        navFrame = new Navigation_Frame(imagedEmbryo,panel);       
         imagedEmbryo.addListener(navFrame);
         
         selectedNucFrame = new SelectedNucleusFrame(this,imagedEmbryo);
-        selectedNucFrame.setVisible(true);        
+//        selectedNucFrame.setVisible(true);        
         buildMenu();
         this.pack();
    
@@ -106,6 +106,8 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
     public void run(String string) {
         this.setSize(1800,600);
         this.setVisible(true);
+        navFrame.run(null);
+        this.selectedNucFrame.run(null);
     }
     
 
@@ -371,13 +373,23 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
         navigate.add(toTime);
         
         menuBar.add(navigate);
-
-        
-
-
         
         JMenu segmenting = new JMenu("Segmenting");
         menuBar.add(segmenting);
+        
+        JMenuItem cutItem = new JMenuItem("Identify Nuclei");
+        cutItem.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    cutTree();
+                } catch (Exception exc){
+                    exc.printStackTrace();
+                }
+            }
+        });       
+        segmenting.add(cutItem);        
+/*        
         JMenuItem allTimePnts = new JMenuItem("Submit All Time Points");
         allTimePnts.addActionListener(new ActionListener(){
             @Override
@@ -390,9 +402,10 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
             }
         });
         segmenting.add(allTimePnts);
+        
         JMenu selectedTimePoint = new JMenu("Selected Time Point");
         segmenting.add(selectedTimePoint);
-        
+ */       
         JMenuItem scatter = new JMenuItem("Intensity/Volume Plot");
         scatter.addActionListener(new ActionListener(){
             @Override
@@ -404,9 +417,9 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
                 }
             }
         });
-        selectedTimePoint.add(scatter);
+        segmenting.add(scatter);
 
-        JMenuItem lineplot = new JMenuItem("Line Plot");
+        JMenuItem lineplot = new JMenuItem("Nuclei Probability Plot");
         lineplot.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -424,8 +437,8 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
                 }
             }
         });        
-        selectedTimePoint.add(lineplot);
-        
+        segmenting.add(lineplot);
+/*        
         JMenuItem outlierItem = new JMenuItem("Resegment Outliers");
         outlierItem.addActionListener(new ActionListener(){
             @Override
@@ -438,23 +451,12 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
             }
         });        
         selectedTimePoint.add(outlierItem);
-        
-        JMenuItem cutItem = new JMenuItem("Cut Tree");
-        cutItem.addActionListener(new ActionListener(){
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                try {
-                    cutTree();
-                } catch (Exception exc){
-                    exc.printStackTrace();
-                }
-            }
-        });       
-        selectedTimePoint.add(cutItem);
+ */       
+
         
         JMenu linking = new JMenu("Linking");
         menuBar.add(linking);
-        JMenuItem linkItem = new JMenuItem("Create Links Starting at Current Time");
+        JMenuItem linkItem = new JMenuItem("Auto Link");
         linking.add(linkItem);
         linkItem.addActionListener(new ActionListener(){
             @Override
@@ -493,8 +495,11 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
             @Override
             public void actionPerformed(ActionEvent e) {
                 Set<Nucleus> nucs = imagedEmbryo.getNucleusFile().getNuclei(getCurrentTime());
+                NucleusFile nucFile = imagedEmbryo.getNucleusFile();
+                int count = 1;
                 for (Nucleus nuc : nucs){
-//                    ((Ace3DNucleusFile)nucFile).unlink(nuc,true);
+                    nucFile.unlinkNucleus(nuc, count == nucs.size());  // notify listeners at last nucleus
+                    ++count;
                 }
             }
         });        
@@ -837,7 +842,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn , ChangeListener {
     @Override
     public void stateChanged(ChangeEvent e) {
         panel.stateChanged(e);
-    }    
+    }   
 
     static public boolean labelNuclei(){
         return nucleiLabeled.getState();

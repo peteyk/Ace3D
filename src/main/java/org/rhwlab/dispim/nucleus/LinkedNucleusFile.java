@@ -270,9 +270,6 @@ public class LinkedNucleusFile implements NucleusFile {
     // if it is curated, then the segmentation of the next time is not changed
     public void autoLink(int time)throws Exception {
 
-        if (time == 59){
-            int asjifhs=0;
-        }
         TreeMap<String,Nucleus> src = this.byTime.get(time);
         if (src == null){
             return;  // no nuclei at the given time
@@ -281,6 +278,7 @@ public class LinkedNucleusFile implements NucleusFile {
         if (n == 0){
             return;  // no nuclei at the given time
         }        
+        int nextN = n;
         
         BHCTree nextTree = bhcTreeDir.getTree(time+1);
         if (nextTree == null){
@@ -288,7 +286,16 @@ public class LinkedNucleusFile implements NucleusFile {
         }
         TreeMap<Integer,Double> probMap = new TreeMap<>();
         nextTree.allPosteriorProb(probMap);
-        int nextN = n;
+        
+        // find a probability at which to cur the nextTree
+
+        for (Integer i : probMap.descendingKeySet()){
+            if (probMap.get(i) < .95){
+                nextN = Math.max(nextN,i-1);
+            }
+        }
+        Linkage current = formLinkage(time,nextN,nextTree);
+/*        
         double prob = probMap.get(nextN);
         while (prob < threshold){
             ++nextN;  // skipping cuts that have a probability less than the threshold
@@ -309,10 +316,11 @@ public class LinkedNucleusFile implements NucleusFile {
                 current = next;
             } while (true && nextProb <.9 );
         }
-
+*/
         // put the two new sets(from and to) of nuclei into this file
         TreeMap<String,Nucleus> newFrom = current.getFromNuclei();
         byTime.put(time, newFrom);
+        
         // fix the links from the parent of the from nuclei
         for (Nucleus nuc : newFrom.values()){
             Nucleus parent = nuc.getParent();
@@ -423,6 +431,67 @@ public class LinkedNucleusFile implements NucleusFile {
     }
     public void setMarked(Nucleus toMark){
         selectedNucleus.setMarked(toMark);
+    }
+    public void autoLinkBetweenCuratedTimes(int time)throws Exception {
+        // find the curated points containing the given time
+        Integer fromTime = curatedMap.floorKey(time);
+        if (fromTime == null) return;
+        Integer toTime = curatedMap.ceilingKey(time);
+        if (toTime == null) return;
+        
+        // autolink between the curated points
+        ArrayList<Linkage> linkages = new ArrayList<>();
+        Nucleus[] from = this.cloneTime(fromTime);
+        for (int t=fromTime ; t<toTime ; ++t){
+            Linkage link = Linkage.autoLinkage(from, bhcTreeDir);
+            linkages.add(link);
+            from = link.getTo();
+        }
+        // correct the linkage to match the curated points
+        //find nuclei that do not match the end point
+        Linkage last = linkages.get(linkages.size()-1);
+        TreeMap<String,Nucleus> curatedToNucs = byTime.get(toTime);
+        for (int i=0 ; i<last.getTo().length ; ++i){
+            boolean found = false;
+            String sourceNode = ((BHCNucleusData)last.getTo()[i].getNucleusData()).getSourceNode();
+            for (Nucleus curatedNuc : curatedToNucs.values()){
+                String curatedSourceNode = ((BHCNucleusData)curatedNuc.getNucleusData()).getSourceNode();
+                if (sourceNode.equals(curatedSourceNode)){
+                    found = true;
+                    break;
+                }
+            }
+            if (!found){
+                // trim out the nucleus from the linkage
+                int iusafui=0;
+            }
+        }
+        
+        // put the new linkages into this file
+        Linkage first = linkages.get(0);
+        for (Nucleus nuc : first.getFrom()){
+            this.addNucleus(nuc);
+        }
+        for (Linkage link : linkages){
+            for (Nucleus nuc : link.getTo()){
+                this.addNucleus(nuc);
+            }
+        }
+        // fix the links from the parent of the from nuclei
+ /*       
+        for (Nucleus nuc : first.getFrom()){
+            Nucleus parent = nuc.getParent();
+            if (parent != null){
+                if (parent.getChild1().getNucleusData() == nuc.getNucleusData()){
+                    parent.setDaughters(nuc, parent.getChild2());
+                } else {
+                    parent.setDaughters(parent.getChild1(),nuc);
+                }
+                
+            }
+        }
+*/
+        this.notifyListeners();
     }
     
     

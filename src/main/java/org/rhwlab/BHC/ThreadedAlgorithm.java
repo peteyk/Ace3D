@@ -58,8 +58,21 @@ public class ThreadedAlgorithm implements Runnable {
         for (int i=0 ; i<clusters.size()-1 ; ++i){
             Map map = Collections.synchronizedMap(new HashMap<>());
             MergeAction merge = new MergeAction(clusters,i,i+1,map);
-            ForkJoinPool pool = new ForkJoinPool();
-            pool.invoke(merge);
+            ForkJoinPool pool = new ForkJoinPool(Runtime.getRuntime().availableProcessors(),
+                    ForkJoinPool.defaultForkJoinWorkerThreadFactory,
+                    new Thread.UncaughtExceptionHandler() {
+                @Override
+                public void uncaughtException(Thread t, Throwable e) {
+                    e.printStackTrace();
+                    System.exit(0);
+                }
+            },false);
+            try {
+                pool.invoke(merge);
+            } catch (Exception exc){
+                exc.printStackTrace();
+                System.exit(0);
+            }
             for (Object obj : map.values()){
 //                Node node = (Node)obj;
                 posteriors.add((Node)obj);
@@ -171,8 +184,21 @@ public class ThreadedAlgorithm implements Runnable {
             // make new pairs with all the clusters
             Map map = Collections.synchronizedMap(new HashMap<>());
             MergeAction merge = new MergeAction(clusters,T,0,clusters.size()-1,map);
-            ForkJoinPool pool = new ForkJoinPool();
-            pool.invoke(merge);
+            ForkJoinPool pool = new ForkJoinPool(Runtime.getRuntime().availableProcessors(),
+                    ForkJoinPool.defaultForkJoinWorkerThreadFactory,
+                    new Thread.UncaughtExceptionHandler() {
+                @Override
+                public void uncaughtException(Thread t, Throwable e) {
+                    e.printStackTrace();
+                    System.exit(0);
+                }
+            },false);
+            try {
+                pool.invoke(merge);
+            } catch(Exception exc){
+                exc.printStackTrace();
+                System.exit(nu);
+            }
             profile.report(System.out,"MergeAction complete");
             pairs.put(T,map);
             for (Object obj : map.values()){

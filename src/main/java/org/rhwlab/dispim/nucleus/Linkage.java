@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import org.rhwlab.BHC.BHCTree;
 
 /**
  *
@@ -22,7 +23,36 @@ public class Linkage implements Comparable {
     public Linkage(Nucleus[] fromN,Nucleus[] toN){
         this.from = fromN;
         this.to = toN;
+        formLinkage();
+    }
+    // automatic segmentation and linkage to next time point
+    static Linkage autoLinkage(Nucleus[] from,BHCTreeDirectory bhcTreeDir)throws Exception {
+        if (from.length == 0)return null;
         
+        BHCTree nextTree = bhcTreeDir.getTree(from[0].getTime()+1);
+        if (nextTree == null){
+            return null; // no tree built for the to time
+        }
+        TreeMap<Integer,Double> probMap = new TreeMap<>();
+        nextTree.allPosteriorProb(probMap);    
+        
+        for (int n=from.length ; n<probMap.lastKey() ; ++n){
+            if (probMap.get(n) > .95){
+                // build the to nuclei from the tree with n nuclei
+                BHCNucleusSet nextNucSet = nextTree.cutToN(n);
+                Set<BHCNucleusData> nucData = nextNucSet.getNuclei();
+                Nucleus[] toNucs = new Nucleus[nucData.size()];
+                int i=0;
+                for (BHCNucleusData nuc : nucData){
+                    toNucs[i] = new Nucleus(nuc);
+                    ++i;
+                }
+                return new Linkage(from,toNucs);
+            }
+        }
+        return null;
+    }
+    public void formLinkage(){
         // link the polar bodies first
         this.linkPolarBodies();
         
@@ -67,7 +97,7 @@ public class Linkage implements Comparable {
                 String cellname = fromNucs[i].getCellName();
                 toNucs[linkage[i]].setCellName(cellname,fromNucs[i].isUsernamed());
             }
-        }
+        }        
     }
     // make a list of nuclei that have no children
     static public  List<Nucleus> noChildren(Nucleus[] nucs){
@@ -177,6 +207,12 @@ public class Linkage implements Comparable {
                 to[linkage[i]].setCellName(cellname,polarFromList.get(i).isUsernamed());
             }
         }
+    }
+    public Nucleus[] getFrom(){
+        return from;
+    }
+    public Nucleus[] getTo(){
+        return to;
     }
     Nucleus[] from;
     Nucleus[] to;    

@@ -157,7 +157,7 @@ public class Division {
     }
     static public boolean possibleParent(Nucleus nuc){
         double[] ecc = nuc.eccentricity();
-        if (nuc.getTime() < 25) {
+        if (nuc.getTime() < 50) {
             return true;
         }
         return ecc[1]>eccThresh;

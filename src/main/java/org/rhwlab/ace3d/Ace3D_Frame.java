@@ -388,7 +388,9 @@ public class Ace3D_Frame extends JFrame implements PlugIn,ChangeListener  {
                 }
             }
         });       
-        segmenting.add(cutItem);        
+        segmenting.add(cutItem); 
+
+        segmenting.addSeparator();
 /*        
         JMenuItem allTimePnts = new JMenuItem("Submit All Time Points");
         allTimePnts.addActionListener(new ActionListener(){
@@ -438,6 +440,12 @@ public class Ace3D_Frame extends JFrame implements PlugIn,ChangeListener  {
             }
         });        
         segmenting.add(lineplot);
+        segmenting.addSeparator();
+        
+        JMenuItem remove = new JMenuItem("Remove Nuclei - Current Time");
+        segmenting.add(remove);
+        JMenuItem removeAll = new JMenuItem("Remove All Nuclei");
+        segmenting.add(removeAll);        
 /*        
         JMenuItem outlierItem = new JMenuItem("Resegment Outliers");
         outlierItem.addActionListener(new ActionListener(){
@@ -461,6 +469,12 @@ public class Ace3D_Frame extends JFrame implements PlugIn,ChangeListener  {
         linkItem.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
+                try {
+                    ((LinkedNucleusFile)imagedEmbryo.getNucleusFile()).autoLinkBetweenCuratedTimes(getCurrentTime());
+                } catch (Exception exc){
+                    exc.printStackTrace();
+                }
+/*                
                 String timeStr = JOptionPane.showInputDialog("Enter the last time to link:");
                 if (timeStr != null){
                     Integer endTime;
@@ -471,6 +485,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn,ChangeListener  {
                         JOptionPane.showMessageDialog(Ace3D_Frame.this, "Invalid entry");
                         return;
                     }
+                    
                     for (int t=getCurrentTime() ; t<=endTime ; ++t){
                         try {
                             if (t == 21){
@@ -486,7 +501,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn,ChangeListener  {
                     }
                     
                 }
-                
+*/                
             }
         });
         JMenuItem unlink = new JMenuItem("Unlink Current Time");

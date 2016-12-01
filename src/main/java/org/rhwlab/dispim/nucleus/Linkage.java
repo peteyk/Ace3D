@@ -14,45 +14,90 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import org.rhwlab.BHC.BHCTree;
+import static org.rhwlab.dispim.nucleus.LinkedNucleusFile.threshold;
 
 /**
  *
  * @author gevirl
  */
 public class Linkage implements Comparable {
+    
     public Linkage(Nucleus[] fromN,Nucleus[] toN){
         this.from = fromN;
         this.to = toN;
-        formLinkage();
     }
+
     // automatic segmentation and linkage to next time point
-    static Linkage autoLinkage(Nucleus[] from,BHCTreeDirectory bhcTreeDir)throws Exception {
-        if (from.length == 0)return null;
+    static Nucleus[] autoLinkage(Nucleus[] nucsToLink,int fromTime,BHCTreeDirectory bhcTreeDir)throws Exception {
         
-        BHCTree nextTree = bhcTreeDir.getTree(from[0].getTime()+1);
+        Nucleus[] currentFrom = cloneNuclei(nucsToLink);
+        if (currentFrom.length == 0)return null;
+        
+        BHCTree nextTree = bhcTreeDir.getTree(fromTime+1);
         if (nextTree == null){
             return null; // no tree built for the to time
         }
         TreeMap<Integer,Double> probMap = new TreeMap<>();
         nextTree.allPosteriorProb(probMap);    
+        int nextN = currentFrom.length;
         
-        for (int n=from.length ; n<probMap.lastKey() ; ++n){
-            if (probMap.get(n) > .95){
-                // build the to nuclei from the tree with n nuclei
-                BHCNucleusSet nextNucSet = nextTree.cutToN(n);
-                Set<BHCNucleusData> nucData = nextNucSet.getNuclei();
-                Nucleus[] toNucs = new Nucleus[nucData.size()];
-                int i=0;
-                for (BHCNucleusData nuc : nucData){
-                    toNucs[i] = new Nucleus(nuc);
-                    ++i;
+        // find a probability at which to cur the nextTree
+        double prob = probMap.get(nextN);
+        while (prob < threshold){
+            ++nextN;  // skipping cuts that have a probability less than the threshold
+            prob = probMap.get(nextN);
+        }  
+        
+        Nucleus[] currentTo = cutTreeToNuclei(nextTree,nextN);
+        double nextProb = probMap.get(nextN);        
+        Linkage current = new Linkage(currentFrom,currentTo);
+        current.formLinkage();
+        
+        if (nextProb < .95){
+            do {
+                ++nextN;
+                nextProb = probMap.get(nextN);
+                Nucleus[] nextFrom = cloneNuclei(nucsToLink);
+                Nucleus[] nextTo = cutTreeToNuclei(nextTree,nextN);
+                Linkage next = new Linkage(nextFrom,nextTo);
+                next.formLinkage();
+                
+                if (next.compareTo(current)>0 || next.getToNuclei().size() < nextN){
+                    break;  // the next linkage got worse - stop 
                 }
-                return new Linkage(from,toNucs);
-            }
+                current = next;
+            } while (true && nextProb <.95 );
         }
-        return null;
+        
+        // fix the child links in the original from nuclei to point to the final to nuclei
+        for (int i=0 ; i<nucsToLink.length ; ++i){
+            nucsToLink[i].setDaughters(current.from[i].getChild1(),current.from[i].getChild2());
+        }
+        for (int i=0 ; i<current.to.length ; ++i){
+            
+        }
+        
+        return current.getTo();
     }
-    public void formLinkage(){
+    static Nucleus[] cloneNuclei(Nucleus[] nucs){
+        Nucleus[] ret = new Nucleus[nucs.length];
+        for (int i=0 ; i<nucs.length ; ++i){
+            ret[i] = nucs[i].clone();
+        }
+        return ret;
+    }
+    static private Nucleus[] cutTreeToNuclei(BHCTree nextTree,int n){
+        BHCNucleusSet nextNucSet = nextTree.cutToN(n);
+        Set<BHCNucleusData> nucData = nextNucSet.getNuclei();
+        Nucleus[] toNucs = new Nucleus[nucData.size()];
+        int i=0;
+        for (BHCNucleusData nuc : nucData){
+            toNucs[i] = new Nucleus(nuc);
+            ++i;
+        }    
+        return toNucs;
+    }
+     public void formLinkage(){
         // link the polar bodies first
         this.linkPolarBodies();
         
@@ -91,11 +136,14 @@ public class Linkage implements Comparable {
         // link the nuclei
         for (int i=0 ; i<linkage.length ; ++i){
             if (linkage[i]!=-1){
-                fromNucs[i].linkTo(toNucs[linkage[i]]);
-                
-                // if the from nuc is in a named cell , put child nuc in same cell
-                String cellname = fromNucs[i].getCellName();
-                toNucs[linkage[i]].setCellName(cellname,fromNucs[i].isUsernamed());
+                double d = fromNucs[i].distance(toNucs[linkage[i]]);
+                if (d < distThresh){
+                    fromNucs[i].linkTo(toNucs[linkage[i]]);
+
+                    // if the from nuc is in a named cell , put child nuc in same cell
+                    String cellname = fromNucs[i].getCellName();
+                    toNucs[linkage[i]].setCellName(cellname,fromNucs[i].isUsernamed());
+                }
             }
         }        
     }
@@ -215,5 +263,7 @@ public class Linkage implements Comparable {
         return to;
     }
     Nucleus[] from;
-    Nucleus[] to;    
+    Nucleus[] to;   
+    
+    static double distThresh = 75;
 }

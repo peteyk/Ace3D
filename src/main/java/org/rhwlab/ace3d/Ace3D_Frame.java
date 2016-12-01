@@ -443,8 +443,31 @@ public class Ace3D_Frame extends JFrame implements PlugIn,ChangeListener  {
         segmenting.addSeparator();
         
         JMenuItem remove = new JMenuItem("Remove Nuclei - Current Time");
+        remove.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+               Set<Nucleus> nucs = imagedEmbryo.getNuclei(getCurrentTime());
+               for (Nucleus nuc : nucs){
+                   imagedEmbryo.getNucleusFile().removeNucleus(nuc,false);
+               }
+               imagedEmbryo.notifyListeners();
+            }
+        });
         segmenting.add(remove);
         JMenuItem removeAll = new JMenuItem("Remove All Nuclei");
+        removeAll.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                for (Integer t : imagedEmbryo.getNucleusFile().getAllTimes()){
+                   Set<Nucleus> nucs = imagedEmbryo.getNuclei(t);
+                   for (Nucleus nuc : nucs){
+                       imagedEmbryo.getNucleusFile().removeNucleus(nuc,false);
+                   }                    
+                }
+                imagedEmbryo.notifyListeners();
+            }
+            
+        });
         segmenting.add(removeAll);        
 /*        
         JMenuItem outlierItem = new JMenuItem("Resegment Outliers");

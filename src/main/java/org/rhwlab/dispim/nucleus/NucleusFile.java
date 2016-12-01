@@ -36,6 +36,6 @@ public interface NucleusFile extends javafx.beans.Observable{
     public void addSelectionOberver(javafx.beans.value.ChangeListener obs);
     public Element toXML();
     public void fromXML(Element ele);
-    public void removeNucleus(Nucleus nuc);
+    public void removeNucleus(Nucleus nuc,boolean notify);
     public void unlinkNucleus(Nucleus nuc,boolean notify);
 }

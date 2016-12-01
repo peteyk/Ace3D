@@ -95,7 +95,7 @@ public class SelectedNucleusFrame extends JFrame implements PlugIn,javafx.beans.
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (embryo.selectedNucleus() != null){
-                    embryo.getNucleusFile().removeNucleus(embryo.selectedNucleus());
+                    embryo.getNucleusFile().removeNucleus(embryo.selectedNucleus(),true);
                 }
             }
         });

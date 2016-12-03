@@ -196,13 +196,30 @@ public class Ace3D_Frame extends JFrame implements PlugIn,ChangeListener  {
             }
         });
         
+        JMenuItem saveAsSession = new JMenuItem("Save As Current Session");
+        fileMenu.add(saveAsSession);
+        saveAsSession.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    saveAsSession();
+                } catch (Exception exc){
+                    exc.printStackTrace();
+                }
+            }
+        });  
+        
         JMenuItem saveSession = new JMenuItem("Save Current Session");
         fileMenu.add(saveSession);
         saveSession.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
-                    saveSession();
+                    if (sessionXML != null){
+                        saveSession(sessionXML);
+                    }else {
+                        saveAsSession();
+                    }
 
                 } catch (Exception exc){
                     exc.printStackTrace();
@@ -711,21 +728,26 @@ public class Ace3D_Frame extends JFrame implements PlugIn,ChangeListener  {
         this.sessionXML = xml;
         
     }
-    private void saveSession()throws Exception {
-        
+    private void saveAsSession()throws Exception {
+        JFileChooser sessionChooser=null;        
         if (sessionXML == null){
-            JFileChooser sessionChooser;
-            if (this.bhc == null){
+
+            if (bhc == null){
                 sessionChooser = new JFileChooser();
             } else {
                 sessionChooser = new JFileChooser(bhc.getDirectory());
             }
-            if (sessionChooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION){
-                sessionXML = sessionChooser.getSelectedFile();
-            } else {
-                return;
-            }
+
+        }else {
+            sessionChooser = new JFileChooser(sessionXML);
         }
+        if (sessionChooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION){
+            saveSession(sessionChooser.getSelectedFile());
+        } else {
+            return;
+        }                    
+    }
+    private void saveSession(File xml)throws Exception {
         
         Element root = new Element("Ace3DSession");
         if (bhc != null){
@@ -743,14 +765,12 @@ public class Ace3D_Frame extends JFrame implements PlugIn,ChangeListener  {
         }
         root.addContent(dsProps);
         
-        OutputStream stream = new FileOutputStream(sessionXML);       
+        OutputStream stream = new FileOutputStream(xml);       
         XMLOutputter out = new XMLOutputter(Format.getPrettyFormat());
         out.output(root, stream);
         stream.close();
-        props.setProperty("Session",sessionXML.getPath());
-        
-        // save the nuclei and cells
-//        imagedEmbryo.getNucleusFile().save();
+        props.setProperty("Session",xml.getPath());
+        sessionXML = xml;
 
     }
     

@@ -224,7 +224,8 @@ public class Linkage implements Comparable {
 
         // find the same number of nuclei in the to list that are polar
         // sort the to nuclei by intensity density
-        Arrays.sort(to, new Comparator(){
+        Nucleus[] copyTo = Arrays.copyOf(to, to.length);
+        Arrays.sort(copyTo, new Comparator(){
             @Override
             public int compare(Object o1, Object o2) {
                 BHCNucleusData d1 = (BHCNucleusData)((Nucleus)o1).getNucleusData();
@@ -237,7 +238,7 @@ public class Linkage implements Comparable {
         for (int i=0 ; i<polarFromList.size() ; ++i){
             d[i] = new double[polarFromList.size()];
             for (int j=0 ; j<polarFromList.size() ; ++j){
-                d[i][j] = polarFromList.get(i).distance(to[j]);
+                d[i][j] = polarFromList.get(i).distance(copyTo[j]);
             }
         }
         
@@ -248,11 +249,11 @@ public class Linkage implements Comparable {
         // link the nuclei
         for (int i=0 ; i<linkage.length ; ++i){
             if (linkage[i]!=-1){
-                polarFromList.get(i).linkTo(to[linkage[i]]);
+                polarFromList.get(i).linkTo(copyTo[linkage[i]]);
                 
                 // if the from nuc is in a named cell , put child nuc in same cell
                 String cellname = polarFromList.get(i).getCellName();
-                to[linkage[i]].setCellName(cellname,polarFromList.get(i).isUsernamed());
+                copyTo[linkage[i]].setCellName(cellname,polarFromList.get(i).isUsernamed());
             }
         }
     }

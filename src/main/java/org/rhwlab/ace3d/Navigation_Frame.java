@@ -100,12 +100,11 @@ public class Navigation_Frame extends JFrame implements PlugIn,InvalidationListe
                 }                
             }
         });
-        JScrollPane deathsScroll = new JScrollPane(deathsTree);
+        JScrollPane deathsScroll = new JScrollPane(deathsTree);       
+        JSplitPane leftPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT,deathsScroll,rootsScroll);
         
-        JSplitPane leftPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT,rootsScroll,deathsScroll);
-        
-        JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,leftPane,treeScroll);
-        JSplitPane split2 = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,split,nucsScroll);
+        JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,nucsScroll,leftPane);
+        JSplitPane split2 = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,split,treeScroll);
         this.add(split2,BorderLayout.CENTER);
 
         pack();

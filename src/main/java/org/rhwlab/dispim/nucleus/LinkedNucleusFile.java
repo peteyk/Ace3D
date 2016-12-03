@@ -416,6 +416,11 @@ public class LinkedNucleusFile implements NucleusFile {
         map.remove(nuc.getName());
         
         curatedMap.put(nuc.getTime(), true);  // this time is now curated
+        
+        if (map.isEmpty()){
+            byTime.remove(nuc.getTime());
+            curatedMap.remove(nuc.getTime());
+        }
         if (notify){
             this.notifyListeners();
         }
@@ -446,7 +451,7 @@ public class LinkedNucleusFile implements NucleusFile {
             from = to;
         }
         
-        // save the curated nuclei and remove them from the file
+        // make a copy of the curated nuclei and remove them from the file
         TreeMap<String,Nucleus> curatedToNucs = byTime.get(toTime);
         TreeMap<String,Nucleus> clone = (TreeMap<String,Nucleus>)curatedToNucs.clone();
         for (Nucleus nuc : clone.values()){
@@ -459,11 +464,12 @@ public class LinkedNucleusFile implements NucleusFile {
                 this.addNucleus(nuc);
             }
         }        
+
         
         //find new linked nuclei in last time point that do not match the curated nuclei and remove them and their ancestors
         Nucleus[] last = linkages.get(linkages.size()-1);    
         TreeSet<String> sourceNodesSet = new TreeSet<String>();
-        for (Nucleus nuc : curatedToNucs.values()){
+        for (Nucleus nuc : clone.values()){
             sourceNodesSet.add(((BHCNucleusData)nuc.getNucleusData()).getSourceNode());
         }
         for (int i=0 ; i<last.length ; ++i){
@@ -482,7 +488,7 @@ public class LinkedNucleusFile implements NucleusFile {
         for (Nucleus toNuc : toNucs){
             linkedNodeSet.add(((BHCNucleusData)toNuc.getNucleusData()).getSourceNode());
         }
-        for (Nucleus curatedNuc : curatedToNucs.values()){
+        for (Nucleus curatedNuc : clone.values()){
             String curatedNode = ((BHCNucleusData)curatedNuc.getNucleusData()).getSourceNode();
             if (!linkedNodeSet.contains(curatedNode)){
                 this.addNucleus(curatedNuc);
@@ -507,7 +513,7 @@ public class LinkedNucleusFile implements NucleusFile {
     File file;
     TreeMap<Integer,TreeMap<String,Nucleus>> byTime=new TreeMap<>();
     TreeMap<Integer,Boolean> curatedMap = new TreeMap<>();
-    TreeMap<Integer,Boolean> autoLinkedMap = new TreeMap<>();
+//    TreeMap<Integer,Boolean> autoLinkedMap = new TreeMap<>();
     
     ArrayList<InvalidationListener> listeners = new ArrayList<>();
     SelectedNucleus selectedNucleus = new SelectedNucleus();

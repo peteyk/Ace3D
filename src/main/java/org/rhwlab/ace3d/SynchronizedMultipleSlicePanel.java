@@ -96,6 +96,8 @@ public class SynchronizedMultipleSlicePanel extends JPanel implements ChangeList
                     embryo.setSelectedNucleus(prev);
                     this.changePosition(prev.getCenter());
                     this.changeTime(prev.getTime());
+                } else {
+                    slider.setValue(time-1);
                 }
             }  else {          
                 slider.setValue(time-1);

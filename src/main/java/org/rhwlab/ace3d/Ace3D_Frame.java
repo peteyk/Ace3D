@@ -475,8 +475,9 @@ public class Ace3D_Frame extends JFrame implements PlugIn,ChangeListener  {
         removeAll.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
-                for (Integer t : imagedEmbryo.getNucleusFile().getAllTimes()){
-                   Set<Nucleus> nucs = imagedEmbryo.getNuclei(t);
+                Integer[] times = imagedEmbryo.getNucleusFile().getAllTimes().toArray(new Integer[0]);
+                for (int i=0 ; i<times.length ; ++i){
+                   Set<Nucleus> nucs = imagedEmbryo.getNuclei(times[i]);
                    for (Nucleus nuc : nucs){
                        imagedEmbryo.getNucleusFile().removeNucleus(nuc,false);
                    }                    

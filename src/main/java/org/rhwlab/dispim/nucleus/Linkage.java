@@ -230,7 +230,8 @@ public class Linkage implements Comparable {
             public int compare(Object o1, Object o2) {
                 BHCNucleusData d1 = (BHCNucleusData)((Nucleus)o1).getNucleusData();
                 BHCNucleusData d2 = (BHCNucleusData)((Nucleus)o2).getNucleusData();
-                return -Double.compare(d1.intensityDensity,d2.intensityDensity);
+                
+                return -Double.compare(d1.getAverageIntensity(),d2.getAverageIntensity());
             }
         });
         // compute distance array for polar bodies
@@ -266,5 +267,5 @@ public class Linkage implements Comparable {
     Nucleus[] from;
     Nucleus[] to;   
     
-    static double distThresh = 75;
+    static double distThresh = 90;
 }

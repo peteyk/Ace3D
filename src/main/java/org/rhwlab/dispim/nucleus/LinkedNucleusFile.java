@@ -433,6 +433,7 @@ public class LinkedNucleusFile implements NucleusFile {
         selectedNucleus.setMarked(toMark);
     }
     public void autoLinkBetweenCuratedTimes(int time)throws Exception {
+
         // find the curated points containing the given time
         Integer fromTime = curatedMap.floorKey(time);
         if (fromTime == null) return;
@@ -443,9 +444,13 @@ public class LinkedNucleusFile implements NucleusFile {
         
         // autolink between the curated points
         ArrayList<Nucleus[]> linkages = new ArrayList<>();
-        Nucleus[] from = this.cloneTime(fromTime);
-        linkages.add(from);
+        Nucleus[] from = this.getNuclei(fromTime).toArray(new Nucleus[0]);
+ //       Nucleus[] from = this.cloneTime(fromTime);
+ //       linkages.add(from);
         for (int t=fromTime ; t<toTime ; ++t){
+        if (t == 57){
+            int sajhdfuisd=0;
+        }            
             Nucleus[] to = Linkage.autoLinkage(from,t, bhcTreeDir);
             linkages.add(to);
             from = to;
@@ -463,8 +468,8 @@ public class LinkedNucleusFile implements NucleusFile {
             for (Nucleus nuc : link){
                 this.addNucleus(nuc);
             }
-        }        
-
+        } 
+        curatedMap.put(toTime, true);
         
         //find new linked nuclei in last time point that do not match the curated nuclei and remove them and their ancestors
         Nucleus[] last = linkages.get(linkages.size()-1);    
@@ -480,7 +485,6 @@ public class LinkedNucleusFile implements NucleusFile {
                 removeAncestorsInCell(nuc);
             }
         }
-
         
         // put back any curated nuclei that did not correspond to new linked nuclei
         TreeSet<String> linkedNodeSet = new TreeSet<>();
@@ -520,7 +524,7 @@ public class LinkedNucleusFile implements NucleusFile {
     BHCTreeDirectory bhcTreeDir;
     
     boolean opening = false;
-    static double threshold= 1.0E-9;
+    static double threshold= 1.0E-11;
 
 
 

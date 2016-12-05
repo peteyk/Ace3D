@@ -33,9 +33,15 @@ public class Division {
         }
         
         if (dist > distThresh){
-            System.out.println("Distance");
+            System.out.printf("Distance: %f\n",dist);
             return false;  // daughters are to far from parent
         }   
+        
+        double childDist = child1.distance(child2);
+        if (childDist> distThresh){
+            System.out.printf("Child distnce: %f\n",childDist);
+            return false;
+        }
         
         double ratio = ((BHCNucleusData)child1.getNucleusData()).getVolume()/((BHCNucleusData)child2.getNucleusData()).getVolume();
         if (ratio < 1.0) {
@@ -98,7 +104,8 @@ public class Division {
                 (related(parentAxes[2],child1Axes[2])&&related(parentAxes[2],child2Axes[2])) )){
             return false;
         }
- */     System.out.println("Accepted");
+ */     
+        System.out.printf("Accepted: distance=%f\n",dist);
         return true;
     }
     private boolean related(RealVector axis1,RealVector axis2){
@@ -233,7 +240,7 @@ public class Division {
     double dist;
     
     static int timeThresh = 10;
-    static double eccThresh = 0.7;
+    static double eccThresh = 0.65;
     static double distThresh = 50.0;
     static double cosThresh = .8;
     static double volumeThresh = 3.0;

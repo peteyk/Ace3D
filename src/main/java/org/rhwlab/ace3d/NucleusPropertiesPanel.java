@@ -24,7 +24,7 @@ import org.rhwlab.dispim.nucleus.Nucleus;
  */
 public class NucleusPropertiesPanel extends JPanel implements InvalidationListener  {
     public NucleusPropertiesPanel() {
-        this.setLayout(new GridLayout(17,2));
+        this.setLayout(new GridLayout(18,2));
         this.add(new JLabel("Selected Nucleus"));
         this.add(name);
 
@@ -58,7 +58,8 @@ public class NucleusPropertiesPanel extends JPanel implements InvalidationListen
         this.add(cell);
         this.add(new JLabel("Root Cell"));
         this.add(root);        
-
+        this.add(new JLabel("BHC Node"));
+        this.add(sourceNode);
         cell.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -67,8 +68,6 @@ public class NucleusPropertiesPanel extends JPanel implements InvalidationListen
         });
         this.add(new JLabel("Expression"));
         this.add(express);
-
-        
     }
 
     public void renameCell(){
@@ -122,7 +121,8 @@ public class NucleusPropertiesPanel extends JPanel implements InvalidationListen
                 child2.setText("Not linked");
             } else {
                 child2.setText(children[1].getName());
-            }                
+            } 
+            sourceNode.setText(bhcNuc.getSourceNode());
         }
     }
     public String getChild1(){
@@ -150,4 +150,5 @@ public class NucleusPropertiesPanel extends JPanel implements InvalidationListen
     JLabel intensity = new JLabel(initial);
     JLabel intensityRSD = new JLabel(initial);
     JLabel intensityDensity = new JLabel(initial);
+    JLabel sourceNode = new JLabel(initial);
 }

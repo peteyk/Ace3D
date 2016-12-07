@@ -59,6 +59,15 @@ public class Linkage implements Comparable {
                 nextProb = probMap.get(nextN);
                 Nucleus[] nextFrom = cloneNuclei(nucsToLink);
                 Nucleus[] nextTo = cutTreeToNuclei(nextTree,nextN);
+                
+                // find the minimum nucleus
+                for (Nucleus nuc : nextTo){
+                    BHCNucleusData nucData = (BHCNucleusData)nuc.getNucleusData();
+                    double vol = nucData.getVolume();
+                    if (vol < minVolume(nuc.getTime())){
+                        break;  // oversegmentating
+                    }
+                }
                 Linkage next = new Linkage(nextFrom,nextTo);
                 next.formLinkage();
                 
@@ -264,6 +273,10 @@ public class Linkage implements Comparable {
     public Nucleus[] getTo(){
         return to;
     }
+
+    static public double minVolume(int time){
+        return 2500;
+    }    
     Nucleus[] from;
     Nucleus[] to;   
     

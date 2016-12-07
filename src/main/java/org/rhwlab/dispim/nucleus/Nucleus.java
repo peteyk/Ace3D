@@ -79,6 +79,9 @@ public class Nucleus implements Comparable {
     public String getName(){
         return nucData.getName();
     }
+    public String getFullName(){
+        return String.format("%s|%s",getName(),cellName);
+    }
 
     public void setMarked(boolean s){
         nucData.setMarked(s);

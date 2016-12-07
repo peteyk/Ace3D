@@ -25,6 +25,7 @@ import org.rhwlab.ace3d.Ace3D_Frame;
 import org.rhwlab.dispim.ImagedEmbryo;
 import org.rhwlab.dispim.nucleus.BHCNucleusData;
 import org.rhwlab.dispim.nucleus.BHCNucleusSet;
+import org.rhwlab.dispim.nucleus.LinkedNucleusFile;
 import org.rhwlab.dispim.nucleus.NucleusFile;
 
 /**
@@ -80,6 +81,8 @@ public class BHCTreeCutDialog extends JDialog {
         
         if (sel != null){
             int t = tree.getTime();
+            LinkedNucleusFile f = (LinkedNucleusFile)this.nucleusFile;
+            f.clearInterCuratedRegion(t, false);
             BHCNucleusSet bhc = tree.cutToN(((Posterior)sel).n);
             nucleusFile.addNuclei(bhc,true);
 /*            

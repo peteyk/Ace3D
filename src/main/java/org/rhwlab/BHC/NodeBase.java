@@ -224,6 +224,7 @@ abstract public class NodeBase implements Node {
         int ret = ((NodeBase)right).labelNode(this.label + 1);
         return ret;
     }
+    // find a node with a given label in the subtree of this node
     public Node findNodeWithlabel(int labelToFind){
         if (this.label == labelToFind){
             return this;

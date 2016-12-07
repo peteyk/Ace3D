@@ -269,6 +269,7 @@ public class BHCTree {
         return null;
     }
 */
+    // find the node with a given label
     public Node findNode(int label){
         for (Node root : roots){
             NodeBase nodeBase = (NodeBase)root;
@@ -278,6 +279,12 @@ public class BHCTree {
             }
         }
         return null;
+    }
+    // determine if there is a parent child relationship between two nodes given their labels
+    public boolean areRelated(int parent,int child){
+        NodeBase parentNode = (NodeBase)this.findNode(parent);
+        Node childNode = parentNode.findNodeWithlabel(child);
+        return childNode != null;
     }
     public Element[] cutTreeWithLinearFunction(){
         Double[] posteriors = this.allPosteriors().toArray(new Double[0]);

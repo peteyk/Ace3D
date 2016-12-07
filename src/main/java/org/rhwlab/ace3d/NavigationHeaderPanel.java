@@ -21,6 +21,9 @@ import org.rhwlab.dispim.nucleus.Nucleus;
 public class NavigationHeaderPanel extends JPanel {
     public NavigationHeaderPanel(){
         
+        nucleus = new JLabel("Nucleus:                  ");
+        this.add(nucleus);
+        
         this.add(new JLabel("Max Time:"));
         maxTime = new JTextField();
         maxTime.setText("100");
@@ -92,6 +95,9 @@ public class NavigationHeaderPanel extends JPanel {
     public double getCellWidth(){
         return Double.valueOf(cellWidth.getText().trim());
     }
+    public void setNucleus(String name){
+        nucleus.setText("Nucleus: "+name);
+    }
 
     NavigationTreePanel treePanel;
     JTextField maxTime;
@@ -99,4 +105,5 @@ public class NavigationHeaderPanel extends JPanel {
     JCheckBox labelLeaves;
     JTextField timeScale;
     JTextField cellWidth;
+    JLabel nucleus;
 }

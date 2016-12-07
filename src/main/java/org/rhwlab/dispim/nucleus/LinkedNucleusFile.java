@@ -9,6 +9,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -43,7 +44,10 @@ public class LinkedNucleusFile implements NucleusFile {
         for (int t : timeEleMap.descendingKeySet()){
             TreeMap<String,Nucleus> nucMap = new TreeMap<>();
             Element timeEle = timeEleMap.get(t);
-            this.curatedMap.put(t,Boolean.valueOf(timeEle.getAttributeValue("curated")));
+            if (Boolean.valueOf(timeEle.getAttributeValue("curated"))){
+                this.curatedSet.add(t);
+            }
+
             for (Element nucEle : timeEle.getChildren("Nucleus")){
                 BHCNucleusData bhcNuc = new BHCNucleusData(nucEle);             
                 Nucleus nuc = new Nucleus(bhcNuc);
@@ -78,7 +82,12 @@ public class LinkedNucleusFile implements NucleusFile {
     public Element timeAsXML(int time){
         Element ret = new Element("Time");
         ret.setAttribute("time", Integer.toString(time));
-        ret.setAttribute("curated", Boolean.toString(this.curatedMap.get(time)));
+        if (curatedSet.contains(time)){
+            ret.setAttribute("curated", Boolean.toString(true));
+        }else {
+            ret.setAttribute("curated", Boolean.toString(false));
+        }
+        
         for (Nucleus nuc : byTime.get(time).values()){
             ret.addContent(nuc.asXML());
         }
@@ -95,7 +104,7 @@ public class LinkedNucleusFile implements NucleusFile {
         for (Integer time : byTime.navigableKeySet()){
             Set<Nucleus> roots = this.getRoots(time);
             if (roots.size()>0){
-                builder.add(timeAsJson(time,this.curatedMap.get(time)));
+                builder.add(timeAsJson(time,this.curatedSet.contains(time)));
             }
         } 
         return builder;
@@ -235,7 +244,8 @@ public class LinkedNucleusFile implements NucleusFile {
     
     @Override
     public void addNuclei(BHCNucleusSet bhcToAdd,boolean curated){
-        curatedMap.put(bhcToAdd.getTime(), curated);
+        if (curated) curatedSet.add(bhcToAdd.getTime());
+        
         TreeMap<String,Nucleus> nucsAtTime = new TreeMap<>();
         for (NucleusData nuc : bhcToAdd.getNuclei()){
             Nucleus linkedNuc = new Nucleus(nuc);
@@ -370,6 +380,16 @@ public class LinkedNucleusFile implements NucleusFile {
     public void setBHCTreeDirectory(BHCTreeDirectory bhc) {
         this.bhcTreeDir = bhc;
     } 
+    // unlink all the nuclei at a time point from parents
+    public void unlinkTime(int time,boolean notify){
+        Set<Nucleus> nucs = this.getNuclei(time);
+        for (Nucleus nuc : nucs){
+            this.unlinkNucleus(nuc, false);
+        }
+        if (notify){
+            this.notifyListeners();
+        }
+    }
     // unlink a nucleus from its parent
     public void unlinkNucleus(Nucleus nuc,boolean notify){
         Nucleus parent = nuc.getParent();
@@ -390,11 +410,20 @@ public class LinkedNucleusFile implements NucleusFile {
             // child1 now part of parents cell
             parent.getChild1().renameContainingCell(parent.getCellName());            
         }
+        nuc.setParent(null);
+        
         if (notify){
             this.notifyListeners();
         }
     }
 
+    // remove all the nclei at a time point
+    public void removeNuclei(int time,boolean notify){
+        Nucleus[] nucs = this.getNuclei(time).toArray(new Nucleus[0]);
+        for (int i=0 ; i<nucs.length ; ++i){
+            this.removeNucleus(nucs[i], notify);
+        }
+    }
     @Override
     public void removeNucleus(Nucleus nuc,boolean notify) {
         
@@ -415,11 +444,9 @@ public class LinkedNucleusFile implements NucleusFile {
         TreeMap<String,Nucleus> map = byTime.get(nuc.getTime());
         map.remove(nuc.getName());
         
-        curatedMap.put(nuc.getTime(), true);  // this time is now curated
-        
         if (map.isEmpty()){
             byTime.remove(nuc.getTime());
-            curatedMap.remove(nuc.getTime());
+            curatedSet.remove(nuc.getTime());
         }
         if (notify){
             this.notifyListeners();
@@ -432,15 +459,50 @@ public class LinkedNucleusFile implements NucleusFile {
     public void setMarked(Nucleus toMark){
         selectedNucleus.setMarked(toMark);
     }
+    // remove all the nuclei between curated time points
+    public void clearInterCuratedRegion(int time,boolean notify){
+        Integer[] range = curatedTimes(time);
+        if (range[0] == null || range[1] == null || (range[0].intValue()==range[1].intValue())) return;  // not a clearable region
+        this.unlinkTime(range[1], false);
+        for (int t=range[1]-1 ; t>range[0] ; --t){
+            this.removeNuclei(t, false);
+        }
+        if (notify){
+            this.notifyListeners();
+        }
+    }
+    // determine the range of times for an inter curated region
+    public Integer[] curatedTimes(int time){
+        Integer[] ret = new Integer[2];
+        if (this.curatedSet.contains(time)){
+            Integer floor = curatedSet.floor(time-1);
+            if (floor != null){
+                ret[0] = floor;
+                ret[1] = time;
+            }else {
+                Integer ceil = curatedSet.ceiling(time+1);
+                if (ceil != null){
+                    ret[0] = time;
+                    ret[1] = ceil;
+                }else {
+                    ret[0] = ret[1] = time;
+                } 
+            }
+            
+        } else {
+            ret[0] = curatedSet.floor(time);
+            ret[1] = curatedSet.ceiling(time);
+        }
+        return ret;
+    }
     public void autoLinkBetweenCuratedTimes(int time)throws Exception {
-
-        // find the curated points containing the given time
-        Integer fromTime = curatedMap.floorKey(time);
-        if (fromTime == null) return;
+        Integer[] curatedTimes = curatedTimes(time);
+        if (curatedTimes[0] == null || curatedTimes[1] == null) return;
+        if (curatedTimes[0].intValue() == curatedTimes[1].intValue()) return;
         
-        if (fromTime == time) ++time;
-        Integer toTime = curatedMap.ceilingKey(time);
-        if (toTime == null) return;
+        // find the curated points containing the given time
+        Integer fromTime = curatedTimes[0];
+        Integer toTime = curatedTimes[1];
         
         // autolink between the curated points
         ArrayList<Nucleus[]> linkages = new ArrayList<>();
@@ -469,7 +531,7 @@ public class LinkedNucleusFile implements NucleusFile {
                 this.addNucleus(nuc);
             }
         } 
-        curatedMap.put(toTime, true);
+        curatedSet.add(toTime);
         
         //find new linked nuclei in last time point that do not match the curated nuclei and remove them and their ancestors
         Nucleus[] last = linkages.get(linkages.size()-1);    
@@ -500,6 +562,7 @@ public class LinkedNucleusFile implements NucleusFile {
         }
         
         this.notifyListeners();
+        int uihsadfui=0;
     }
 
         // remove all the ancestor nuclei in the cell containing this nucleus
@@ -516,7 +579,8 @@ public class LinkedNucleusFile implements NucleusFile {
     
     File file;
     TreeMap<Integer,TreeMap<String,Nucleus>> byTime=new TreeMap<>();
-    TreeMap<Integer,Boolean> curatedMap = new TreeMap<>();
+    TreeSet<Integer> curatedSet = new TreeSet<>();
+//    TreeMap<Integer,Boolean> curatedMap = new TreeMap<>();
 //    TreeMap<Integer,Boolean> autoLinkedMap = new TreeMap<>();
     
     ArrayList<InvalidationListener> listeners = new ArrayList<>();

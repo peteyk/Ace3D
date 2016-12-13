@@ -14,7 +14,9 @@ import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+import org.apache.commons.math3.linear.RealMatrix;
 import org.rhwlab.dispim.ImagedEmbryo;
+import org.rhwlab.dispim.nucleus.NamedNucleusFile;
 import org.rhwlab.dispim.nucleus.Nucleus;
 
 /**
@@ -88,17 +90,6 @@ public class SelectedNucleusFrame extends JFrame implements PlugIn,javafx.beans.
             }
         });
         buttonPanel.add(unlink);
-        
-        JButton remove = new JButton("Remove");
-        buttonPanel.add(remove); 
-        remove.addActionListener(new ActionListener(){
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (embryo.selectedNucleus() != null){
-                    embryo.getNucleusFile().removeNucleus(embryo.selectedNucleus(),true);
-                }
-            }
-        });
        
         link = new JButton("Link");
         link.setEnabled(false);
@@ -110,6 +101,53 @@ public class SelectedNucleusFrame extends JFrame implements PlugIn,javafx.beans.
                 Nucleus mark = embryo.getMarked();
                 mark.linkTo(sel);
                 embryo.notifyListeners();
+            }
+        });
+        
+        JButton remove = new JButton("Remove Nucleus");
+        buttonPanel.add(remove); 
+        remove.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (embryo.selectedNucleus() != null){
+                    embryo.getNucleusFile().removeNucleus(embryo.selectedNucleus(),true);
+                }
+            }
+        });    
+        
+        JButton removeCell = new JButton("Remove Cell");
+        buttonPanel.add(removeCell);
+        removeCell.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (embryo.selectedNucleus() != null){
+                    embryo.getNucleusFile().removeCell(embryo.selectedNucleus(),true);
+                }
+            }
+        });
+        
+        JButton nameChildren = new JButton("Toggle Cell Name");
+        buttonPanel.add(nameChildren);
+        nameChildren.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (embryo.selectedNucleus() != null){
+                    ((NamedNucleusFile)embryo.getNucleusFile()).toggleCellName(embryo.selectedNucleus(), true);
+                }
+            }
+        });
+        
+        JButton confirm = new JButton("Orient Embryo");
+        buttonPanel.add(confirm);
+        confirm.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (embryo.selectedNucleus() != null){
+                    RealMatrix r =((NamedNucleusFile)embryo.getNucleusFile()).orientEmbryo(embryo.selectedNucleus().getTime());
+                    NamedNucleusFile.setOrientation(r);
+                    embryo.nameAllRoots();
+                    embryo.notifyListeners();
+                }
             }
         });
         

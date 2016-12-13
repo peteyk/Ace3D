@@ -106,6 +106,7 @@ public class GaussianMixtureEM implements Runnable {
         }
     }
     public SegmentedTiffDataSource asSegmentedTiff(){
+        /*
         SegmentedTiffDataSource ret = new SegmentedTiffDataSource(source);
         for (int n=0 ; n<source.getN() ; ++n){
             double p = r[n][0];
@@ -118,7 +119,8 @@ public class GaussianMixtureEM implements Runnable {
             }
             ret.addVoxelToSegment(n, seg);
         }
-        return ret;
+*/
+        return null;
     }
     public static void main(String[] args) throws Exception {
         TiffDataSource source = new TiffDataSource("/net/waterston/vol2/home/gevirl/rnt-1/lineaging/img_TL016.tif");

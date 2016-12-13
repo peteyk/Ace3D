@@ -29,10 +29,6 @@ public class LinkedNucleusFile implements NucleusFile {
     public LinkedNucleusFile(){
         
     }
-    public LinkedNucleusFile(File xml){
-        this();
-        this.file = xml;
-    }
 
     @Override
     public void fromXML(Element nucleiEle) {
@@ -509,15 +505,23 @@ public class LinkedNucleusFile implements NucleusFile {
         Nucleus[] from = this.getNuclei(fromTime).toArray(new Nucleus[0]);
  //       Nucleus[] from = this.cloneTime(fromTime);
  //       linkages.add(from);
-        for (int t=fromTime ; t<toTime ; ++t){
-        if (t == 57){
-            int sajhdfuisd=0;
-        }            
+        for (int t=fromTime ; t<toTime-1 ; ++t){
             Nucleus[] to = Linkage.autoLinkage(from,t, bhcTreeDir);
             linkages.add(to);
             from = to;
         }
         
+        // put all the new linkages into this file 
+        for (Nucleus[] link : linkages){
+            for (Nucleus nuc : link){
+                this.addNucleus(nuc);
+            }
+        } 
+        
+        // link to the final curated point
+        Linkage lastLinkage = new Linkage(from,byTime.get(toTime).values().toArray(new Nucleus[0]));
+        lastLinkage.formLinkage();
+ /*       
         // make a copy of the curated nuclei and remove them from the file
         TreeMap<String,Nucleus> curatedToNucs = byTime.get(toTime);
         TreeMap<String,Nucleus> clone = (TreeMap<String,Nucleus>)curatedToNucs.clone();
@@ -525,20 +529,38 @@ public class LinkedNucleusFile implements NucleusFile {
             this.removeNucleus(nuc, false);
         }
          
-        // put all the new linkages into this file 
-        for (Nucleus[] link : linkages){
-            for (Nucleus nuc : link){
-                this.addNucleus(nuc);
-            }
-        } 
+
         curatedSet.add(toTime);
         
-        //find new linked nuclei in last time point that do not match the curated nuclei and remove them and their ancestors
-        Nucleus[] last = linkages.get(linkages.size()-1);    
-        TreeSet<String> sourceNodesSet = new TreeSet<String>();
+        // remove any auto generated nuclei that are BHCTree children of the curated nuclei
+        BHCTree tree = bhcTreeDir.getTree(toTime);
+        TreeMap<Integer,Nucleus> curatedNodeMap = new TreeMap<>();
         for (Nucleus nuc : clone.values()){
-            sourceNodesSet.add(((BHCNucleusData)nuc.getNucleusData()).getSourceNode());
+            curatedNodeMap.put(Integer.valueOf(((BHCNucleusData)nuc.getNucleusData()).getSourceNode()),nuc);
         }
+        TreeSet<Nucleus> curatedToAddBack = new TreeSet<>();
+        Nucleus[] last = linkages.get(linkages.size()-1); 
+        if (last.length > curatedNodeMap.size()){  // is the auto oversegmented?
+            for (int i=0 ; i<last.length ; ++i){
+                Nucleus autoNuc = last[i];
+                int autoNode = Integer.valueOf(((BHCNucleusData)autoNuc.getNucleusData()).getSourceNode());
+                for (Integer curatedNode : curatedNodeMap.keySet()){
+                    if ( (curatedNode!=autoNode) && tree.areRelated(curatedNode,autoNode)){
+                        // trim out the auto nucleus from the linkage
+                        removeAncestorsInCell(autoNuc);
+                        curatedToAddBack.add(curatedNodeMap.get(curatedNode));
+                        break;
+                    }
+                }
+            } 
+            // add back the missing curated nuclei
+            for (Nucleus nuc : curatedToAddBack){
+                this.addNucleus(nuc);
+            }
+            // try to find a good place to link in the unlinked curated nuclei
+        }
+           
+
         for (int i=0 ; i<last.length ; ++i){
             Nucleus nuc = last[i];
             String sourceNode = ((BHCNucleusData)nuc.getNucleusData()).getSourceNode();
@@ -560,12 +582,20 @@ public class LinkedNucleusFile implements NucleusFile {
                 this.addNucleus(curatedNuc);
             }
         }
-        
+ */       
         this.notifyListeners();
         int uihsadfui=0;
     }
+    // remove all the nuclei in the cell containing the given nucleus
+    public void removeCell(Nucleus nuc,boolean notify){
+        Nucleus last = lastNucleusInCell(nuc);
+        removeAncestorsInCell(last);
+        if (notify){
+            this.notifyListeners();
+        }
+    }
 
-        // remove all the ancestor nuclei in the cell containing this nucleus
+    // remove all the ancestor nuclei in the cell containing this nucleus
     public void removeAncestorsInCell(Nucleus nuc){
         Nucleus par = nuc.getParent();
         if (par != null){
@@ -575,7 +605,18 @@ public class LinkedNucleusFile implements NucleusFile {
         }
         removeNucleus(nuc,false);
     }
-
+    // return the last nucleus in the cell containing the given nucleus
+    static public Nucleus lastNucleusInCell(Nucleus nuc){
+        if (nuc.isDividing() || nuc.isLeaf()){
+            return nuc;
+        } else {
+            return lastNucleusInCell(nuc.getChild1());
+        }
+    }
+    @Override
+    public boolean isCurated(int time) {
+        return curatedSet.contains(time);
+    }
     
     File file;
     TreeMap<Integer,TreeMap<String,Nucleus>> byTime=new TreeMap<>();
@@ -589,6 +630,8 @@ public class LinkedNucleusFile implements NucleusFile {
     
     boolean opening = false;
     static double threshold= 1.0E-11;
+
+
 
 
 

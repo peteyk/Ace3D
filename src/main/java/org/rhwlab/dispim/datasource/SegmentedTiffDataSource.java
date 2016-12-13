@@ -5,17 +5,8 @@
  */
 package org.rhwlab.dispim.datasource;
 
-import java.io.FileOutputStream;
-import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.ml.clustering.KMeansPlusPlusClusterer;
-import org.jdom2.Element;
-import org.jdom2.output.Format;
-import org.jdom2.output.XMLOutputter;
-import org.rhwlab.BHC.BalancedKMeansClusterer;
 
 
 /**
@@ -23,64 +14,11 @@ import org.rhwlab.BHC.BalancedKMeansClusterer;
  * @author gevirl
  */
 public class SegmentedTiffDataSource extends TiffDataSource implements SegmentedDataSource{
-    public SegmentedTiffDataSource(TiffDataSource s){
-        super(s);
-        init();
+    public SegmentedTiffDataSource(String tiff,Segmentation segmentation){
+        super(tiff);
+        this.segmentation = segmentation;
     }
-    public SegmentedTiffDataSource(String segmentedTiff,int bck){
-        super(segmentedTiff);
-        init();
-
-        for (long i=0 ; i<this.getN() ; ++i){  // process each voxel in the segmented tiff
-            Voxel segVox = this.get(i);
-            int seg = segVox.getIntensity();  // intensity identifies the segment
-            if (seg != bck){  // do not build a segment for the background
-                addVoxelToSegment(i,seg);
-
-            }
-        }
-    }    
-    private final void init(){
-        segmentIndex = new HashMap<>();
-        mins = new double[dims.length];
-        maxs = new double[dims.length];    
-        for (int d=0 ; d<dims.length ; ++d ){
-            mins[d] = Double.MAX_VALUE;
-            maxs[d] = 0.0;
-        }        
-    }
-    public void addVoxelToSegment(long i,int seg){
-        Voxel segVox = this.get(i);
-        // record mins and max of coordinates
-        for (int d=0 ; d<mins.length ; ++d){
-            RealVector v = segVox.coords;
-            double e = v.getEntry(d);
-            if (e < mins[d]){
-                mins[d] = e;
-            }
-            if (e > maxs[d]) {
-                maxs[d] = e;
-            }
-        }                  
-        // group the voxels by segment - intensity determines the segment
-        List<Long> positions = segmentIndex.get(seg);
-
-        if (positions == null){
-            positions = new ArrayList<>();
-            segmentIndex.put(seg, positions);
-        }
-        positions.add(i);        
-    }
-
-    @Override
-    public void saveAsTiff(String file){
-        for (Integer seg : segmentIndex.keySet()){
-            for (Long i : segmentIndex.get(seg)){
-                this.setIntensity(i, seg);
-            }
-        }
-        super.saveAsTiff(file);
-    }
+/*
     public void saveAsXML(String file)throws Exception {
         OutputStream stream = new FileOutputStream(file);
         Element root = new Element("Segmented");
@@ -111,8 +49,11 @@ public class SegmentedTiffDataSource extends TiffDataSource implements Segmented
         stream.close();
         
     }
+*/
     @Override
     public ClusteredDataSource kMeansCluster(int segment, int nClusters, int nPartitions) throws Exception {
+        double[] maxs = segmentation.getMaxs();
+        double[] mins = segmentation.getMins();
         
         double[] dels = new double[dims.length];
         for (int d=0 ; d<dims.length ; ++d){
@@ -157,7 +98,7 @@ public class SegmentedTiffDataSource extends TiffDataSource implements Segmented
     // determine which region to put a given voxel
     protected int region(double[] p,int nPart,double[] dels){
 
-
+        double[] mins = segmentation.getMins();
         int index = 0;
         int base = 1;
         for (int d=0 ; d<dims.length ; ++d){
@@ -173,18 +114,17 @@ public class SegmentedTiffDataSource extends TiffDataSource implements Segmented
     // return the number of voxels in the segment
     @Override
     public int getN(int segment){
-        return segmentIndex.get(segment).size();
+        return segmentation.getN(segment);
     }
     // return the ith voxel in the given segment
     @Override
     public Voxel get(int i,int segment){
         // get the voxel from this tiff data source
-        Voxel ret = super.get(segmentIndex.get(segment).get(i));
+        long voxIndex = segmentation.getVoxelIndex(segment, i);
+        Voxel ret = super.get(voxIndex);
         return ret;
     } 
-    double[] mins;  // min coordinates of non-background voxels
-    double[] maxs;  // max coordinates of non-background voxels  
-    HashMap<Integer,List<Long>> segmentIndex;  // list of voxels in each segment
+    Segmentation segmentation;
 
     
 }

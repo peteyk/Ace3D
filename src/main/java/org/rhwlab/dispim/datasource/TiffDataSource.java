@@ -19,7 +19,7 @@ import org.apache.commons.math3.linear.RealVector;
  *
  * @author gevirl
  */
-public class TiffDataSource implements VoxelDataSource{
+public class TiffDataSource extends DataSourceBase implements VoxelDataSource{
     public TiffDataSource(String file){
         imagePlus = new Opener().openImage( file);
         image = ImagePlusAdapter.wrap( imagePlus);
@@ -39,19 +39,11 @@ public class TiffDataSource implements VoxelDataSource{
         this.imagePlus = s.imagePlus;
     }
 
-    @Override
-    public int getN() {
-        return (int)N;
-    }
 
-    @Override
-    public int getD() {
-        return dims.length;
-    }
 
     @Override
     public Voxel get(long i) {
-        long[] pos = this.getCoords(i);
+        long[] pos = getCoords(i);
         sampler.setPosition(pos);
         AbstractIntegerType obj = (AbstractIntegerType)sampler.get();
         int intensity = obj.getInteger();
@@ -59,23 +51,12 @@ public class TiffDataSource implements VoxelDataSource{
     }
 
     public void setIntensity(long i,int intensity){
-        long[] pos = this.getCoords(i);
+        long[] pos = getCoords(i);
         sampler.setPosition(pos);
         AbstractIntegerType obj = (AbstractIntegerType)sampler.get();
         obj.setInteger(intensity);
     }
-    // return coordinates of a voxel given a linear index 
-    private long[] getCoords(long i){
-        long[] coord = new long[dims.length];
-        long index = i;
-        for (int d =0 ; d<dims.length-1 ; ++d){
-            coord[d] = index % dims[d];
-            index = index - coord[d];
-            index = index/dims[d];
-        }
-        coord[dims.length-1] = index;        
-        return coord;    
-    }
+
     public RealVector getMidpoint(){
         double[] d = new double[dims.length];
         for (int i=0 ; i< dims.length ; ++i){
@@ -91,8 +72,8 @@ public class TiffDataSource implements VoxelDataSource{
     ImagePlus imagePlus;
     final Img image;
     RandomAccess sampler;
-    long N;
-    long[] dims;
+
+    
     
     static public void main(String[] args) throws Exception {
         

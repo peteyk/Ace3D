@@ -140,7 +140,7 @@ public class Nuclei_IdentificationCLI extends CommandLine {
         File[] files = dir.listFiles();
         
  //       Pattern p = Pattern.compile("(.+)\\d{3}(.+)");
-        Pattern p = Pattern.compile("(\\D+)(\\d{1,4})(\\D+)");
+        Pattern p = Pattern.compile("(TP)(\\d{1,4})(_.+)");
         Matcher m = p.matcher(tiff.getName());
         if (!m.matches()){
             return null;

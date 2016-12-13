@@ -14,36 +14,41 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.jdom2.Element;
+import org.rhwlab.dispim.datasource.ByteHDF5DataSource;
 import org.rhwlab.dispim.datasource.MicroCluster4DDataSource;
 import org.rhwlab.dispim.datasource.MicroClusterDataSource;
+import org.rhwlab.dispim.datasource.Segmentation;
 import org.rhwlab.dispim.datasource.SegmentedTiffDataSource;
-import org.rhwlab.dispim.datasource.SegmentedTiffIntensityDataSource;
+import org.rhwlab.dispim.datasource.TiffDataSource;
 
 /**
  *
  * @author gevirl
  */
 public class Nuclei_Identification implements Runnable {
-    public Nuclei_Identification(String dir,String lineageTiff,String segmentedTiff,boolean force,boolean study){
-        this.segmentedTiff = segmentedTiff;
+    public Nuclei_Identification(String dir,String lineageTiff,String segSource,boolean force,boolean study){
+        System.out.println(lineageTiff);
+        System.out.println(segSource);
+        this.segmentedSource = segSource;
+        segSource = segSource.replace(',', '_');
+        segSource = segSource.replace(' ', '_');
         this.lineageTff = lineageTiff;
-        File file = new File(segmentedTiff);
         this.directory = new File(dir);
-        String name = file.getName();
-        this.baseName = baseName(name);
+        File segFile = new File(segSource);
+        this.baseName = baseName(segFile.getName());
         this.force = force;
         this.study = study;
         
         // parse the time from the filename
-        this.time = getTime(name);
+        this.time = getTime(segFile.getName());
         
     }
     static public String baseName(String fileName){
-        return fileName.substring(0, fileName.toLowerCase().indexOf(".tif"));
+        return fileName.substring(0, fileName.indexOf("."));
     }
     static public int getTime(String fileName){
         int time = -1;
-        Pattern p = Pattern.compile("TL(\\d{3})");
+        Pattern p = Pattern.compile("TP(\\d{1,4})_");
         Matcher m = p.matcher(fileName);
         boolean matched = m.find();
         if (matched){
@@ -79,7 +84,13 @@ public class Nuclei_Identification implements Runnable {
         }
         if (!microClusterFile.exists()  || force){
             try {
-                SegmentedTiffIntensityDataSource segSource = new SegmentedTiffIntensityDataSource(lineageTff,segmentedTiff,backgroundSegment); 
+                SegmentedTiffDataSource segSource;
+                if (segmentedSource.endsWith("h5")){
+                    segSource = new SegmentedTiffDataSource(lineageTff,new Segmentation(new ByteHDF5DataSource(new File(segmentedSource),"exported_data"),backgroundSegment));
+                } else {
+                    segSource = new SegmentedTiffDataSource(lineageTff,new Segmentation(new TiffDataSource(segmentedSource),backgroundSegment));
+                }
+                
 //                SegmentedTiffDataSource segSource = new SegmentedTiffDataSource(segmentedTiff,backgroundSegment); 
                 this.runMicroCluster(segSource,microClusterFile);
                 this.runBHC(microClusterFile,BHCTreeFile);
@@ -118,7 +129,7 @@ public class Nuclei_Identification implements Runnable {
         segSource.kMeansCluster(nucleiSegment, nClusters, nPartitions).saveAsXML(microClusterFile.getPath());
     }
     private void runBHC(File microClusterFile,File BHCTreeFile)throws Exception {
-        double alpha = 1000;
+        double alpha = 1000;//1000
 
         MicroClusterDataSource microDataSource = new MicroClusterDataSource(microClusterFile.getPath());
         ThreadedAlgorithm alg;
@@ -128,11 +139,11 @@ public class Nuclei_Identification implements Runnable {
             alg.setTime(time);
             alg.setSource(microDataSource);
             double[] precision = new double[microDataSource.getD()];
-            precision[0] = precision[1] = precision[2] = 20.0;
+            precision[0] = precision[1] = precision[2] = 20.0; //20
 
     //        precision[3] = 200.0;
             alg.setPrecision(precision);
-            alg.setNu(10);
+            alg.setNu(20); //10
       //      double alpha = Math.pow(2.0*nClusters,2.0);
 
             alg.init(alpha);
@@ -231,7 +242,7 @@ public class Nuclei_Identification implements Runnable {
             qsubStream.println("JAVA_HOME=/nfs/waterston/jdk1.8.0_102");
             qsubStream.println("M2_HOME=/nfs/waterston/apache-maven-3.3.9");
             qsubStream.print("/nfs/waterston/apache-maven-3.3.9/bin/mvn \"-Dexec.args=-Xms36000m -Xmx36000m -classpath %classpath org.rhwlab.BHC.Nuclei_Identification ");
-            qsubStream.printf("-study -first %d -last %d -segTiff %s  -lineageTiff %s -dir %s  ",time,time,names[1],names[0],directory.getPath());
+            qsubStream.printf("-study -first %d -last %d -segTiff \"%s\"  -lineageTiff \"%s\" -dir %s  ",time,time,names[1],names[0],directory.getPath());
 
             qsubStream.print("\" -Dexec.executable=/nfs/waterston/jdk1.8.0_102/bin/java -Dexec.classpathScope=runtime org.codehaus.mojo:exec-maven-plugin:1.2.1:exec");
             qsubStream.println();
@@ -261,7 +272,7 @@ public class Nuclei_Identification implements Runnable {
                 continue;
             }
            
-            scriptStream.printf("qsub -e %s -o %s %s.qsub\n",directory.getPath(),directory.getPath(),baseName);
+            scriptStream.printf("qsub -e %s -o %s \"%s.qsub\"\n",directory.getPath(),directory.getPath(),baseName);
             
             // write the qsub file
             PrintStream qsubStream = new PrintStream(new File(directory,baseName+".qsub"));
@@ -276,7 +287,7 @@ public class Nuclei_Identification implements Runnable {
             qsubStream.println("M2_HOME=/nfs/waterston/apache-maven-3.3.9");
             qsubStream.printf("/nfs/waterston/apache-maven-3.3.9/bin/mvn \"-Dexec.args=-Xms%s -Xmx%s  ",memory,memory);
             qsubStream.print(" -classpath %classpath org.rhwlab.BHC.Nuclei_Identification ");
-            qsubStream.printf(" -first %d -last %d -segTiff %s  -lineageTiff %s -dir %s  ",time,time,names[1],names[0],directory.getPath());
+            qsubStream.printf(" -first %d -last %d -segTiff \'%s\'  -lineageTiff \'%s\' -dir %s  ",time,time,names[1],names[0],directory.getPath());
             if (force){
                 qsubStream.print(" -force ");
             }
@@ -324,7 +335,7 @@ public class Nuclei_Identification implements Runnable {
     String lineageTff;
     File directory;
     String baseName;
-    String segmentedTiff;
+    String segmentedSource;
     int time=-1;
     boolean force;
     boolean study;

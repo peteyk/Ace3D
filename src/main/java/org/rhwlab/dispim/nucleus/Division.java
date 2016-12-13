@@ -6,6 +6,7 @@
 package org.rhwlab.dispim.nucleus;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -17,33 +18,56 @@ import org.apache.commons.math3.linear.RealVector;
  * @author gevirl
  */
 public class Division {
+    public Division(Nucleus parent,Nucleus child1,double d1,Nucleus child2,double d2){
+        this.parent = parent;
+        this.child1 = child1;
+        this.child2 = child2;
+        this.dist1 = d1;
+        this.dist2 = d2;
+        dist =  dist1 + dist2;
+    } 
+    /*
     public Division(Nucleus parent,Nucleus child1,Nucleus child2){
         this.parent = parent;
         this.child1 = child1;
         this.child2 = child2;
-        dist = this.parent.distance(this.child1) + this.parent.distance(this.child2);
+        this.dist1 = this.parent.distance(this.child1);
+        this.dist2 = this.parent.distance(this.child2);
+        dist =  dist1 + dist2;
+    }
+    */
+    public boolean isDistancePossible(){
+        if (dist > divDistanceThresh){
+            System.out.printf("Distance: %f\n",dist);
+            return false;  // daughters are to far from parent
+        }  
+        return true        ;
     }
     // determine if this is a possible division
     public boolean isPossible(){
-        System.out.printf("P:%s  C1:%s   C2:%s  ",parent.getName(),child1.getName(),child2.getName());
+        
         
         if (parent.getCellName().contains("Polar")){
             System.out.println("Polar");
             return false;  // polar bodies do not divide
         }
-        
-        if (dist > distThresh){
-            System.out.printf("Distance: %f\n",dist);
-            return false;  // daughters are to far from parent
-        }   
+        double ratio = dist1/dist2;
+        if (ratio < 1.0){
+            ratio = 1.0/ratio;
+        }
+        if (ratio >legRatio){
+            System.out.printf("Leg Ratio: %f\n", ratio);
+            return false;
+        }
+ 
         
         double childDist = child1.distance(child2);
-        if (childDist> distThresh){
+        if (childDist> divDistanceThresh){
             System.out.printf("Child distnce: %f\n",childDist);
             return false;
         }
         
-        double ratio = ((BHCNucleusData)child1.getNucleusData()).getVolume()/((BHCNucleusData)child2.getNucleusData()).getVolume();
+        ratio = ((BHCNucleusData)child1.getNucleusData()).getVolume()/((BHCNucleusData)child2.getNucleusData()).getVolume();
         if (ratio < 1.0) {
             ratio = 1.0/ratio;
         }
@@ -136,16 +160,30 @@ public class Division {
     }
     // make all possible divisions from a given nuclues
     static public Set<Division> possibleDivisions(Nucleus from,Nucleus[] to){
+ 
+        ArrayList<NucleusPair> pairList = new ArrayList<>();
+        for (Nucleus nuc : to){
+            if (nuc != null){
+                pairList.add(new NucleusPair(from,nuc));
+            }
+        }
+        Collections.sort(pairList);
+        
         HashSet<Division> ret = new HashSet<>();
-        for (int i=0 ; i<to.length-1 ; ++i){
-            if (to[i] != null){
-                for (int j=i+1 ; j<to.length ; ++j){
-                    if (to[j] != null){
-                        Division div = new Division(from,to[i],to[j]);
-                        if (div.isPossible()){
-                            ret.add(div);
-                        }
+        for (int i=0 ; i<pairList.size()-1 ; ++i){
+            NucleusPair pair1 = pairList.get(i);
+            Nucleus toNuc1 = pair1.nuc2;
+            for (int j=i+1 ; j<pairList.size() ; ++j){
+                NucleusPair pair2 = pairList.get(j);
+                Nucleus toNuc2 = pair2.nuc2;
+                Division div = new Division(from,toNuc1,pair1.shapeDistance,toNuc2,pair2.shapeDistance);
+                System.out.printf("P:%s  C1:%s   C2:%s  ",from.getName(),toNuc1.getName(),toNuc2.getName());
+                if (div.isDistancePossible()){
+                    if (div.isPossible()){
+                        ret.add(div);
                     }
+                } else {
+                    break;
                 }
             }
         }
@@ -238,11 +276,14 @@ public class Division {
     Nucleus child1;
     Nucleus child2;
     double dist;
+    double dist1;
+    double dist2;
     
     static int timeThresh = 10;
-    static double eccThresh = 0.65;
-    static double distThresh = 50.0;
+    static double eccThresh = 0.6;
+    static double divDistanceThresh = 70.0;
     static double cosThresh = .8;
     static double volumeThresh = 3.0;
+    static double legRatio = 6.0;
     static double intensityThresh = 5.0;  // ratio of average intensity 
 }

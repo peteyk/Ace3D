@@ -18,11 +18,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeMap;
-import javax.swing.ButtonGroup;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -40,7 +38,6 @@ import org.jdom2.output.XMLOutputter;
 import org.rhwlab.BHC.BHCTree;
 import org.rhwlab.ace3d.dialogs.BHCTreeCutDialog;
 import org.rhwlab.ace3d.dialogs.PanelDisplay;
-import org.rhwlab.dispim.DataSetDesc;
 import org.rhwlab.dispim.ImageJHyperstackSource;
 import org.rhwlab.dispim.ImageSource;
 import org.rhwlab.dispim.ImagedEmbryo;
@@ -394,7 +391,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn,ChangeListener  {
         JMenu segmenting = new JMenu("Segmenting");
         menuBar.add(segmenting);
         
-        JMenuItem cutItem = new JMenuItem("Identify Nuclei");
+        JMenuItem cutItem = new JMenuItem("Current Time Point");
         cutItem.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -406,6 +403,19 @@ public class Ace3D_Frame extends JFrame implements PlugIn,ChangeListener  {
             }
         });       
         segmenting.add(cutItem); 
+        
+        JMenuItem autoSeg = new JMenuItem("Auto - Between Curations");
+        segmenting.add(autoSeg);
+        autoSeg.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                try {
+ //                   ((LinkedNucleusFile)imagedEmbryo.getNucleusFile()).autoSegmentBetweenCuratedTimes(getCurrentTime());
+                } catch (Exception exc){
+                    exc.printStackTrace();
+                }
+            }
+        });
 
         segmenting.addSeparator();
 /*        

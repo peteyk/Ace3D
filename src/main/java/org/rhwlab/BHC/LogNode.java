@@ -128,7 +128,7 @@ public class LogNode extends StdNode  {
             ret = Utils.elnMult(ret,-Gamma.logGamma((nu+1-i)/2.0));
         }
         if (ThreadedAlgorithm.time < 175){
-            ret = ret + data.size()*logRSDLikelihood();
+//            ret = ret + data.size()*logRSDLikelihood();
         }
         return ret;
     }
@@ -199,12 +199,12 @@ public class LogNode extends StdNode  {
         List<RealVector> data = new ArrayList<>();
         this.getDataAsRealVector(data);
         stream.printf("Size=%d\n", data.size());
-/*        
+        
         for (RealVector vec : data){
             stream.print(vectorAsString(vec));
         }
         stream.println();
-        */
+        
         stream.printf("lnd=%s\n", Double.toString(lnd));
         stream.printf("lnLike=%s\n", Double.toString(lnLike));
         stream.printf("lnDPM=%s\n", Double.toString(lnDPM));

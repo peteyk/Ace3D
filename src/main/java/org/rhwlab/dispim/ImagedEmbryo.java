@@ -30,6 +30,7 @@ import org.jdom2.Element;
 import org.rhwlab.ace3d.Ace3D_Frame;
 import org.rhwlab.ace3d.SynchronizedMultipleSlicePanel;
 import org.rhwlab.dispim.nucleus.LinkedNucleusFile;
+import org.rhwlab.dispim.nucleus.NamedNucleusFile;
 import org.rhwlab.dispim.nucleus.NucleusFile;
 
 /**
@@ -41,7 +42,7 @@ public class ImagedEmbryo implements Observable {
     public ImagedEmbryo(){
  
         sources = new ArrayList<>();
-        nucFile = new LinkedNucleusFile();
+        nucFile = new NamedNucleusFile();
     }
     public void fromXML(Element root){
         
@@ -358,6 +359,15 @@ public class ImagedEmbryo implements Observable {
         return sources;
     }
 
+    // name all the children of the roots 
+    public void nameAllRoots(){
+        TreeMap<Integer,Set<Nucleus>> allRoots = getRootNuclei();
+        for (Integer t : allRoots.keySet()){
+            for (Nucleus nuc : allRoots.get(t)){
+                NamedNucleusFile.nameChildren(nuc);
+            }
+        }
+    }
 
 
     public TreeMap<Integer,Set<Nucleus>> getRootNuclei(){

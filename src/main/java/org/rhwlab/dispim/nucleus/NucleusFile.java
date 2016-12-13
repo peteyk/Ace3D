@@ -38,4 +38,6 @@ public interface NucleusFile extends javafx.beans.Observable{
     public void fromXML(Element ele);
     public void removeNucleus(Nucleus nuc,boolean notify);
     public void unlinkNucleus(Nucleus nuc,boolean notify);
+    public boolean isCurated(int time);
+    public void removeCell(Nucleus nuc,boolean notify);
 }

@@ -7,6 +7,7 @@ package org.rhwlab.ace3d;
 
 import ij.plugin.PlugIn;
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.util.Set;
 import java.util.TreeMap;
 import javafx.beans.InvalidationListener;
@@ -83,6 +84,9 @@ public class Navigation_Frame extends JFrame implements PlugIn,InvalidationListe
             }
         });
         JScrollPane nucsScroll = new JScrollPane(nucsTree);
+        Dimension prefdim = nucsScroll.getPreferredSize();
+        prefdim.setSize(2*prefdim.width, prefdim.height);
+        nucsScroll.setPreferredSize(prefdim);
         
         deathsRoot = new DefaultMutableTreeNode("Terminal Nuclei",true);  
         deathsTree = new JTree(deathsRoot);
@@ -102,6 +106,9 @@ public class Navigation_Frame extends JFrame implements PlugIn,InvalidationListe
         });
         JScrollPane deathsScroll = new JScrollPane(deathsTree);       
         JSplitPane leftPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT,deathsScroll,rootsScroll);
+        prefdim = leftPane.getPreferredSize();
+        prefdim.setSize(2*prefdim.width, prefdim.height);
+        leftPane.setPreferredSize(prefdim);
         
         JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,nucsScroll,leftPane);
         JSplitPane split2 = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,split,treeScroll);
@@ -133,7 +140,12 @@ public class Navigation_Frame extends JFrame implements PlugIn,InvalidationListe
         Set<Integer> times = nucFile.getAllTimes();
         for (Integer time : times){
             Set<Nucleus> nucs = nucFile.getNuclei(time);
-            DefaultMutableTreeNode timeNode = new DefaultMutableTreeNode(String.format("Time:%d (%d)",time,nucs.size()));
+            DefaultMutableTreeNode timeNode = null;
+            if (nucFile.isCurated(time)){
+                timeNode = new DefaultMutableTreeNode(String.format("Curated:%d (%d)",time,nucs.size()));
+            }else {
+                timeNode = new DefaultMutableTreeNode(String.format("Auto:%d (%d)",time,nucs.size()));
+            }
             nucsRoot.add(timeNode);
             for (Nucleus nuc : nucs){
                 DefaultMutableTreeNode nucNode = new DefaultMutableTreeNode(nuc);

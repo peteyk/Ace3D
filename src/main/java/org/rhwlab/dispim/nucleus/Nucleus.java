@@ -129,8 +129,25 @@ public class Nucleus implements Comparable {
         }         
         return builder;
     }
-    // rename the cell containing this nucleus
-    // will rename all the nuclei in the cell
+    // names all the nuclei in the cell that contains this nucleus
+    public void nameAllNucleiInCell(String cellname,boolean user){
+        Nucleus first = this.firstNucleusInCell();
+        nameCellRecursive(first,cellname,user);
+    }
+    
+    // name all the descendent nuclei in the cell
+    static public void nameCellRecursive(Nucleus nuc,String cellname,boolean user){
+        if (cellname == null){
+            cellname = nuc.getName();
+        }
+        nuc.setCellName(cellname, user);   
+        if (nuc.isDividing() || nuc.isLeaf()){
+            return;
+        }
+        nameCellRecursive(nuc.getChild1(),cellname,user);
+    }
+    
+    // assign the cell name to this nucleus
     public void setCellName(String name,boolean user){
         this.cellName = name;
         this.userNamed = user;
@@ -365,14 +382,16 @@ public class Nucleus implements Comparable {
         }
         if (child1 != null){
             // now a division 
-            child2 = daughter;  
-            child1.cellName = child1.getName();  // child1 now forms a new cell, was previously in parents cell
+            child2 = daughter;
+//            String newName = child1.getName();
+//            child1.renameContainingCell(newName);
             
         } else {
             this.child1 = daughter;  // linking in time
-            daughter.cellName = this.cellName;  // daughter and parent are in the same cell now
+            daughter.renameContainingCell(this.getCellName());  // daughter and parent are in the same cell now
         }
         daughter.parent = this;
+        NamedNucleusFile.nameChildren(this);
         return true;
     }
     @Override
@@ -409,7 +428,7 @@ public class Nucleus implements Comparable {
         }
         return parent.firstNucleusInCell();
     }
-    // rename this cell and all its time descendents
+    // rename this nucleus and all its time descendents
     public void renameContainingCell(String name){
         this.cellName = name;
         if (child1 == null){

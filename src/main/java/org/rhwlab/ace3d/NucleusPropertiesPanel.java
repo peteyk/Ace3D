@@ -16,6 +16,7 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import org.rhwlab.dispim.ImagedEmbryo;
 import org.rhwlab.dispim.nucleus.BHCNucleusData;
+import org.rhwlab.dispim.nucleus.NamedNucleusFile;
 import org.rhwlab.dispim.nucleus.Nucleus;
 
 /**
@@ -78,6 +79,7 @@ public class NucleusPropertiesPanel extends JPanel implements InvalidationListen
         for (Nucleus d : desc.values()){
             d.setCellName(this.cell.getText().trim(),true);
         }
+        ((NamedNucleusFile)embryo.getNucleusFile()).nameChildren(selected);
         embryo.notifyListeners();
     }
     @Override
@@ -115,12 +117,14 @@ public class NucleusPropertiesPanel extends JPanel implements InvalidationListen
             if (children.length<1 ){
                 child1.setText("Not linked");
             } else {
-                child1.setText(children[0].getName());
+                double dd = selected.distance(children[0]);
+                child1.setText(String.format("%s(%f)",children[0].getName(),dd));
             }
             if (children.length <2){
                 child2.setText("Not linked");
             } else {
-                child2.setText(children[1].getName());
+                double dd = selected.distance(children[1]);
+                child2.setText(String.format("%s(%f)",children[1].getName(),dd));
             } 
             sourceNode.setText(bhcNuc.getSourceNode());
         }

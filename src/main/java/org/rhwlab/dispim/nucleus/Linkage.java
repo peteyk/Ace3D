@@ -29,7 +29,9 @@ public class Linkage implements Comparable {
 
     // automatic segmentation and linkage to next time point
     static Nucleus[] autoLinkage(Nucleus[] nucsToLink,int fromTime,BHCTreeDirectory bhcTreeDir)throws Exception {
-        
+        if (fromTime == 71){
+            int asuiofhduis=0;
+        }
         Nucleus[] currentFrom = cloneNuclei(nucsToLink);
         if (currentFrom.length == 0)return null;
         
@@ -39,15 +41,16 @@ public class Linkage implements Comparable {
         }
         TreeMap<Integer,Double> probMap = new TreeMap<>();
         nextTree.allPosteriorProb(probMap);    
-        int nextN = currentFrom.length;
+        int nextN = currentFrom.length;  // start with the same number of nuclei as prior time
         
-        // find a probability at which to cur the nextTree
+        // find a probability at which to cut the nextTree
         double prob = probMap.get(nextN);
         while (prob < threshold){
             ++nextN;  // skipping cuts that have a probability less than the threshold
             prob = probMap.get(nextN);
         }  
         
+        // form a first  potential linkage
         Nucleus[] currentTo = cutTreeToNuclei(nextTree,nextN);
         double nextProb = probMap.get(nextN);        
         Linkage current = new Linkage(currentFrom,currentTo);
@@ -61,12 +64,17 @@ public class Linkage implements Comparable {
                 Nucleus[] nextTo = cutTreeToNuclei(nextTree,nextN);
                 
                 // find the minimum nucleus
+                boolean tooSmall=false;
                 for (Nucleus nuc : nextTo){
                     BHCNucleusData nucData = (BHCNucleusData)nuc.getNucleusData();
                     double vol = nucData.getVolume();
                     if (vol < minVolume(nuc.getTime())){
+                        tooSmall = true;
                         break;  // oversegmentating
                     }
+                }
+                if (tooSmall){
+                    break;
                 }
                 Linkage next = new Linkage(nextFrom,nextTo);
                 next.formLinkage();
@@ -146,7 +154,7 @@ public class Linkage implements Comparable {
         for (int i=0 ; i<linkage.length ; ++i){
             if (linkage[i]!=-1){
                 double d = fromNucs[i].distance(toNucs[linkage[i]]);
-                if (d < distThresh){
+                if (d < timeLinkDistThresh){
                     fromNucs[i].linkTo(toNucs[linkage[i]]);
 
                     // if the from nuc is in a named cell , put child nuc in same cell
@@ -275,10 +283,11 @@ public class Linkage implements Comparable {
     }
 
     static public double minVolume(int time){
-        return 2500;
+        return minVolume;
     }    
     Nucleus[] from;
     Nucleus[] to;   
     
-    static double distThresh = 90;
+    static double timeLinkDistThresh = 50;
+    static double minVolume = 2500.;
 }

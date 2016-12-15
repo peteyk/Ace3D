@@ -155,6 +155,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn,ChangeListener  {
                 }             
             }
         });
+        fileMenu.addSeparator();
         
         JMenuItem virtStack = new JMenuItem("Open Lineaging TIFF Virtual Stack");
         virtStack.addActionListener(new ActionListener(){
@@ -322,80 +323,8 @@ public class Ace3D_Frame extends JFrame implements PlugIn,ChangeListener  {
         });
         fileMenu.add(open);
         
-        JMenuItem openTif = new JMenuItem("Open Images from TIF Directory");
-        openTif.addActionListener(new ActionListener(){
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                source = new TifDirectoryImageSource("/net/waterston/vol2/home/gevirl/rnt-1/segmented");
-                source.open();
-                initToSource();
-            }
-        });
-        fileMenu.add(openTif);        
-        fileMenu.addSeparator();
-     
-        JMenuItem nucOpen = new JMenuItem("Open Nuclei File");
-        nucOpen.addActionListener(new ActionListener(){
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                try {
-                    openNucFile();
-                    
-                }catch (Exception exc){
-                    exc.printStackTrace();
-                }
-            }
-        });
-        fileMenu.add(nucOpen);
-*/        
-       
- /*       
-        JMenuItem snOpen = new JMenuItem("Open Starry Nite Nuclei File");
-        snOpen.addActionListener(new ActionListener(){
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                try {
-                    openStarryNiteNucFile();
-                    
-                }catch (Exception exc){
-                    exc.printStackTrace();
-                }
-            }
-        });
-        fileMenu.add(snOpen); 
-*/        
-        
-/*
-        JMenuItem nucSave = new JMenuItem("Save Nuclei File");
-        nucSave.addActionListener(new ActionListener(){
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                try {
-                    if (nucFile.getFile() != null ){
-                        nucFile.save();
-                    }else {
-                        saveAsNucFile();
-                    }
-                }catch (Exception exc){
-                    exc.printStackTrace();
-                }                
-            }
-        });
-        fileMenu.add(nucSave);
 
-        JMenuItem nucSaveAs = new JMenuItem("Save Nuclei File As");
-        nucSaveAs.addActionListener(new ActionListener(){
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                try {
-                    saveAsNucFile();
-                } catch (Exception exc){
-                    exc.printStackTrace();
-                }
-            }
-        });
-        fileMenu.add(nucSaveAs); 
- */       
+*/        
         JMenuItem calcExp = new JMenuItem("Calculate Expression");
         calcExp.addActionListener(new ActionListener(){
             @Override
@@ -461,23 +390,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn,ChangeListener  {
         });
 
         segmenting.addSeparator();
-/*        
-        JMenuItem allTimePnts = new JMenuItem("Submit All Time Points");
-        allTimePnts.addActionListener(new ActionListener(){
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                try {
-                    submitAllTimePoints();
-                } catch (Exception exc){
-                    exc.printStackTrace();
-                }
-            }
-        });
-        segmenting.add(allTimePnts);
-        
-        JMenu selectedTimePoint = new JMenu("Selected Time Point");
-        segmenting.add(selectedTimePoint);
- */       
+     
         JMenuItem scatter = new JMenuItem("Intensity/Volume Plot");
         scatter.addActionListener(new ActionListener(){
             @Override
@@ -828,27 +741,6 @@ public class Ace3D_Frame extends JFrame implements PlugIn,ChangeListener  {
 
     }
     
-    /*
-    private void openStarryNiteNucFile()throws Exception {
-        
-//        nucFile = new StarryNiteNucleusFile("/nfs/waterston/pete/Segmentation/dispim_sample_data/matlab_output/CroppedReslicedBGSubtract488/Decon_emb1.zip");
-        String starry = props.getProperty("StarryNite");
-        if (starry != null){
-            nucChooser.setSelectedFile(new File(starry));
-        }
-        if (nucChooser.showOpenDialog(panel) == JFileChooser.APPROVE_OPTION){
-            nucFile = new StarryNiteNucleusFile(nucChooser.getSelectedFile(),panel,selectedNucFrame);
-            nucFile.addListener(navFrame);
-            nucFile.open();
-            props.setProperty("StarryNite",nucFile.getFile().getPath());
-            if (imagedEmbryo != null){
-                long[] coords = TimePointImage.getMinCoordinate();
-                ((StarryNiteNucleusFile)nucFile).adjustCoordinates((int)coords[0],(int)coords[1],(int)coords[2]);
-                imagedEmbryo.setNucleusFile(nucFile);
-            }
-        }        
-    }
-*/
     private void submitAllTimePoints()throws Exception {
         JFileChooser fileChooser = new JFileChooser();
         String segTiff = props.getProperty("SegmentedTIFF");
@@ -1015,16 +907,12 @@ public class Ace3D_Frame extends JFrame implements PlugIn,ChangeListener  {
     JMenu lutMenu;
     JMenu colorMenu;
     
-//    ImageSource source;
-//    NucleusFile nucFile;
     ImagedEmbryo imagedEmbryo;
-    
     
     SynchronizedMultipleSlicePanel panel;
     SelectedNucleusFrame selectedNucFrame;
     JFileChooser fileChooser = new JFileChooser();
     JFileChooser dirChooser = new JFileChooser();
-//    JFileChooser sourceChooser = new JFileChooser();
     static DataSetsDialog contrastDialog;
     Navigation_Frame navFrame;
     LookUpTables lookUpTables = new LookUpTables();
@@ -1043,7 +931,6 @@ public class Ace3D_Frame extends JFrame implements PlugIn,ChangeListener  {
     static TreeMap<String,LUT> dataSetLuts = new TreeMap<>();
     
     static TreeMap<String,DataSetProperties> dataSetProperties = new TreeMap<>();
-//    static public double R=15.0;
     
     static public void main(String[] args) {
         EventQueue.invokeLater(new Runnable(){

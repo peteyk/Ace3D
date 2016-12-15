@@ -47,7 +47,7 @@ public class BHCTreeCutDialog extends JDialog {
             @Override
             public void valueChanged(ListSelectionEvent e) {
                 if (!e.getValueIsAdjusting()){
-                        countClusters();
+                        ok();
                 }
             }
         });
@@ -55,6 +55,7 @@ public class BHCTreeCutDialog extends JDialog {
         this.getContentPane().add(scroll, BorderLayout.CENTER);
         
         JPanel button = new JPanel();
+/*        
         JButton ok = new JButton("Ok");
         ok.addActionListener(new ActionListener(){
             @Override
@@ -65,7 +66,8 @@ public class BHCTreeCutDialog extends JDialog {
             }
         });        
         button.add(ok);
-        JButton cancel = new JButton("Cancel");
+*/        
+        JButton cancel = new JButton("Done");
         cancel.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {

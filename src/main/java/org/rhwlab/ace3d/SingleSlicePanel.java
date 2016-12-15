@@ -192,7 +192,7 @@ public class SingleSlicePanel extends JPanel implements ChangeListener {
                         break;
                     case 'q':
                         try {
-                        embryo.joinSelectedNucleus();
+                            embryo.joinSelectedNucleus();
                         } catch (Exception exc){
                             exc.printStackTrace();
                         }

@@ -40,7 +40,7 @@ public class TifDirectoryImageSource implements ImageSource {
         this(new File(typicalFile).getName(),id,new File(typicalFile).getParent(),emb,sel);
     }
     public TifDirectoryImageSource(Element e,ImagedEmbryo emb){
-        this(e.getAttributeValue("typicalFile"),e.getAttributeValue("dataset"),e.getAttributeValue("directory"),emb,true);
+        this(e.getAttributeValue("typicalFile"),e.getAttributeValue("dataset"),e.getAttributeValue("directory"),emb,Boolean.valueOf(e.getAttributeValue("selected")));
     }
     @Override
     public boolean open(){
@@ -152,6 +152,7 @@ public class TifDirectoryImageSource implements ImageSource {
         ret.setAttribute("directory", directory);
         ret.setAttribute("typicalFile", typical);
         ret.setAttribute("dataset", datasetname);
+        ret.setAttribute("selected",Boolean.toString(select));
         return ret;
     }    
 

@@ -54,6 +54,8 @@ public class ImagedEmbryo implements Observable {
             }
             else if (name.equals("TifDirectorySource")){
                 new TifDirectoryImageSource(src,this);
+            } else if (name.equals("HDF5DirectorySource")){
+                new HDF5DirectoryImageSource(src,this);
             }
         }   
         Element nucFileEle = root.getChild("Nuclei");

@@ -30,6 +30,9 @@ public class HDF5DirectoryImageSource implements ImageSource{
         this.select = sel;
         open();
     }
+    public HDF5DirectoryImageSource(Element e,ImagedEmbryo emb){
+        this(new File(e.getAttributeValue("directory")),"exported_data",e.getAttributeValue("dataset"),emb,Boolean.valueOf(e.getAttributeValue("selected")));
+    }    
     @Override
     public boolean open() {
         if (!directory.isDirectory()){
@@ -129,6 +132,7 @@ public class HDF5DirectoryImageSource implements ImageSource{
         ret.setAttribute("directory", directory.getPath());
         ret.setAttribute("typicalFile",fileNames.firstEntry().getValue());
         ret.setAttribute("dataset",aceDataset);
+        ret.setAttribute("selected",Boolean.toString(select));
         return ret;
     }
     public int getChannel(){

@@ -618,6 +618,16 @@ public class LinkedNucleusFile implements NucleusFile {
         return curatedSet.contains(time);
     }
     
+    public void clear(boolean notify){
+        byTime = new TreeMap<>();
+        curatedSet = new TreeSet<>();
+        selectedNucleus.setSelectedNucleus(null);
+        selectedNucleus.setMarked(null);
+        if (notify){
+            this.notifyListeners();
+        }
+    }
+    
     File file;
     TreeMap<Integer,TreeMap<String,Nucleus>> byTime=new TreeMap<>();
     TreeSet<Integer> curatedSet = new TreeSet<>();

@@ -28,38 +28,42 @@ import org.rhwlab.ace3d.DataSetProperties;
  * @author gevirl
  */
 public class TifDirectoryImageSource implements ImageSource {
-    public TifDirectoryImageSource(String typical,String dataset,String dir,ImagedEmbryo emb){
+    public TifDirectoryImageSource(String typical,String dataset,String dir,ImagedEmbryo emb,boolean sel){
         emb.addSource(this);
         this.datasetname = dataset;
         this.typical = typical;
         this.directory = dir;
+        this.select = sel;
         open();        
     }
-    public TifDirectoryImageSource(String typicalFile,String id,ImagedEmbryo emb){
-        this(new File(typicalFile).getName(),id,new File(typicalFile).getParent(),emb);
+    public TifDirectoryImageSource(String typicalFile,String id,ImagedEmbryo emb,boolean sel){
+        this(new File(typicalFile).getName(),id,new File(typicalFile).getParent(),emb,sel);
     }
     public TifDirectoryImageSource(Element e,ImagedEmbryo emb){
-        this(e.getAttributeValue("typicalFile"),e.getAttributeValue("dataset"),e.getAttributeValue("directory"),emb);
+        this(e.getAttributeValue("typicalFile"),e.getAttributeValue("dataset"),e.getAttributeValue("directory"),emb,true);
     }
     @Override
     public boolean open(){
- //       Pattern pattern = Pattern.compile("(\\D+)(\\d+).tif");
-        Pattern p = Pattern.compile("(\\D+)(\\d{1,4})(\\D+)");
-        Matcher matcher = p.matcher(typical);
-        matcher.find();
+        Pattern p1 = Pattern.compile("(TP)(\\d{1,4})(_.+tif)");
+        Pattern p2 = Pattern.compile("(\\D+)(\\d{1,4})(\\D+)");
+        Matcher matcher = p1.matcher(typical);
+        if (!matcher.find()){
+            matcher = p2.matcher(typical);
+            matcher.find();
+        }
         String prefix = matcher.group(1);
-        String suffix = matcher.group(3);   
-        
+        String suffix = matcher.group(3);         
         File dir = new File(this.directory);     
         File[] files = dir.listFiles();
         minTime = Integer.MAX_VALUE;
         maxTime = Integer.MIN_VALUE;
+        Pattern p = Pattern.compile(prefix+"(\\d{1,4})"+suffix);
         for (File file : files){
             String fileName = file.getName();
             matcher = p.matcher(fileName);
 
-            if (matcher.find() && matcher.group(1).equals(prefix) && matcher.group(3).equals(suffix)){
-                String timeStr = matcher.group(2);
+            if (matcher.matches()){
+                String timeStr = matcher.group(1);
                 Integer time = new Integer(timeStr);
 
                 if (time < minTime){
@@ -86,8 +90,9 @@ public class TifDirectoryImageSource implements ImageSource {
             String dataset = iter.next().getName();
             TimePointImage tpi = TimePointImage.getSingleImage(dataset,getMinTime());
             DataSetProperties ps = Ace3D_Frame.getProperties(dataset);
-            ps.max = 2;
-            ps.min = 1;
+            ps.max = 2000;
+            ps.min = 0;
+            ps.selected = select;
             Ace3D_Frame.getDataSetsDialog().setProperties(dataset, ps);
         } 
         props = Ace3D_Frame.datasetsSelected();
@@ -167,12 +172,13 @@ public class TifDirectoryImageSource implements ImageSource {
     public void setFirstTime(int minTime) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
+    boolean select;
     String typical;
  //   ImgOpener opener;
     String directory;
     String datasetname;
     TreeMap<Integer,String> fileNames = new TreeMap<Integer,String>();
-    static Pattern p = Pattern.compile("(\\D+)(\\d+)(\\D+)");
+
 
 
 }

@@ -22,17 +22,7 @@ public abstract class DataSourceBase implements DataSource {
         coord[dims.length-1] = index;        
         return coord;    
     }
-    public int[] getIntegerCoords(long i){
-        int[] coord = new int[dims.length];
-        long index = i;
-        for (int d =0 ; d<dims.length-1 ; ++d){
-            coord[d] = (int)(index % dims[d]);
-            index = index - coord[d];
-            index = index/dims[d];
-        }
-        coord[dims.length-1] = (int)index;        
-        return coord;    
-    } 
+
 
     @Override
     public int getN() {

@@ -29,13 +29,12 @@ public class Segmentation {
             Voxel segVox = source.get(i);
             int seg = segVox.getIntensity();  // intensity identifies the segment
             if (seg != bck){  // do not build a segment for the background
-                addVoxelToSegment(source,i,seg);
+                addVoxelToSegment(segVox,i,seg);
             }
         }        
     }
 
-    public void addVoxelToSegment(VoxelDataSource source,long i,int seg){
-        Voxel segVox = source.get(i);
+    public void addVoxelToSegment(Voxel segVox,long i,int seg){
         // record mins and max of coordinates
         for (int d=0 ; d<mins.length ; ++d){
             RealVector v = segVox.coords;

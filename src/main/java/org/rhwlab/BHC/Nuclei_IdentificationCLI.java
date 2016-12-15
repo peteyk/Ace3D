@@ -117,6 +117,8 @@ public class Nuclei_IdentificationCLI extends CommandLine {
         return memory;
     }
     public TreeMap<Integer,String[]> getTiffs(){
+
+ 
         TreeMap<Integer,String> segMap = getFiles(this.segTiff);
         TreeMap<Integer,String> lineMap = getFiles(this.lineTiff);
         TreeMap<Integer,String[]> timeMap = new TreeMap<>();
@@ -139,11 +141,11 @@ public class Nuclei_IdentificationCLI extends CommandLine {
         File dir = tiff.getParentFile();
         File[] files = dir.listFiles();
         
- //       Pattern p = Pattern.compile("(.+)\\d{3}(.+)");
-        Pattern p = Pattern.compile("(TP)(\\d{1,4})(_.+)");
+        Pattern p = p = Pattern.compile("(TP)(\\d{1,4})(_.+)");      
         Matcher m = p.matcher(tiff.getName());
         if (!m.matches()){
-            return null;
+            p = Pattern.compile("(.+)(\\d{3})(.+)");
+            m = p.matcher(tiff.getName());
         }
         String prefix = m.group(1);
         String suffix = m.group(3);

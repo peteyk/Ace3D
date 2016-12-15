@@ -33,13 +33,20 @@ public class BHCTreeDirectory {
             dir = dir.getParentFile();
         }
         File[] files = dir.listFiles();
-        Pattern p = Pattern.compile("(\\D+)(\\d{1,4})(\\D+xml)");
+        Pattern p2 = Pattern.compile("(\\D+)(\\d{1,4})(\\D+xml)");
+        Pattern p1 = Pattern.compile("(TP)(\\d{1,4})(_.+xml)");
         for (File file : files){
             if (file.getName().contains("BHCTree")){
-                Matcher m = p.matcher(file.getName());
+                Matcher m = p1.matcher(file.getName());
                 if (m.matches()){
                     int time = Integer.valueOf(m.group(2));
                     treeFiles.put(time, file);
+                } else {
+                    m = p2.matcher(file.getName());
+                    if (m.matches()){
+                        int time = Integer.valueOf(m.group(2));
+                        treeFiles.put(time, file);                        
+                    }
                 }
             }
         }        
@@ -49,7 +56,7 @@ public class BHCTreeDirectory {
         if (ret == null){
             File file = this.treeFiles.get(time);
             if (file != null){
-                ret = new BHCTree(file.getPath());
+                ret = new BHCTree(file.getPath(),time);
             }
         }
         return ret;

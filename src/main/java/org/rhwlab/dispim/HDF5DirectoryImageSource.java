@@ -8,27 +8,34 @@ package org.rhwlab.dispim;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.jdom2.Element;
+import org.rhwlab.ace3d.Ace3D_Frame;
+import org.rhwlab.ace3d.DataSetProperties;
 
 /**
  *
  * @author gevirl
  */
 public class HDF5DirectoryImageSource implements ImageSource{
-    public HDF5DirectoryImageSource(File dir,String hddataset,String aceDataSet){
+    public HDF5DirectoryImageSource(File dir,String hddataset,String aceDataSet,ImagedEmbryo emb,boolean sel){
+        emb.addSource(this);
         this.directory = dir;
         this.HDF5dataset = hddataset;
         this.aceDataset = aceDataSet;
+        this.select = sel;
+        open();
     }
     @Override
     public boolean open() {
         if (!directory.isDirectory()){
             return false;
         }
-        Pattern p = Pattern.compile("(\\D+)(\\d{1,4})(\\D+)");
+        Pattern p = Pattern.compile("TP(\\d{1,4})_Ch(\\d)_");
         minTime = Integer.MAX_VALUE;
         maxTime = Integer.MIN_VALUE;
         File[] files = directory.listFiles();
@@ -36,7 +43,8 @@ public class HDF5DirectoryImageSource implements ImageSource{
             if (file.getName().endsWith("h5")){
                 Matcher matcher = p.matcher(file.getName());
                 if (matcher.find() ){
-                    int time = Integer.valueOf(matcher.group(2));
+                    int time = Integer.valueOf(matcher.group(1));
+                    channel = Integer.valueOf(matcher.group(2));
                     this.fileNames.put(time,file.getPath());
                     if (time < minTime){
                         minTime = time;
@@ -47,6 +55,25 @@ public class HDF5DirectoryImageSource implements ImageSource{
                 }
             }
         }
+        Iterator<DataSetDesc> iter = getDataSets().iterator();
+        while (iter.hasNext()){
+            String dataset = iter.next().getName();
+            Ace3D_Frame.setProperties(dataset,new DataSetProperties());
+            Ace3D_Frame.getDataSetsDialog().addDataSet(dataset);
+        }   
+        List<String> props = Ace3D_Frame.datasetsSelected();
+        iter = getDataSets().iterator();
+        while (iter.hasNext()){
+            String dataset = iter.next().getName();
+            
+            DataSetProperties ps = Ace3D_Frame.getProperties(dataset);
+            ps.max = 2;
+            ps.min = 1;
+            ps.selected = select;
+            Ace3D_Frame.getDataSetsDialog().setProperties(dataset, ps);
+            TimePointImage tpi = TimePointImage.getSingleImage(dataset,getMinTime());
+        } 
+        props = Ace3D_Frame.datasetsSelected();        
         return true;
     }
 
@@ -85,7 +112,9 @@ public class HDF5DirectoryImageSource implements ImageSource{
     @Override
     public Collection<DataSetDesc> getDataSets() {
         ArrayList<DataSetDesc> ret = new ArrayList<>();
-        
+        DataSetDescImpl ds = new DataSetDescImpl();
+        ds.name = aceDataset;
+        ret.add(ds);
         return ret;
     }
 
@@ -102,6 +131,11 @@ public class HDF5DirectoryImageSource implements ImageSource{
         ret.setAttribute("dataset",aceDataset);
         return ret;
     }
+    public int getChannel(){
+        return this.channel;
+    }
+    boolean select;
+    int channel;
     int minTime;
     int maxTime;
     File directory;

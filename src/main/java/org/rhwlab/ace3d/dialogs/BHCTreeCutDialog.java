@@ -119,6 +119,9 @@ public class BHCTreeCutDialog extends JDialog {
         this.tree = tree;
         DefaultListModel model = new DefaultListModel();
         TreeMap<Integer,Double> postMap = new TreeMap<>(); 
+        if (tree == null) {
+            return;
+        }
         this.tree.allPosteriorProb(postMap);
 //        Set<Double> posts = tree.allPosteriors();
         for (Integer m : postMap.keySet()){

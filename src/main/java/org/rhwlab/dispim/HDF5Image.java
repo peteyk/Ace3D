@@ -12,7 +12,10 @@ import ch.systemsx.cisd.hdf5.HDF5LinkInformation;
 import ch.systemsx.cisd.hdf5.HDF5ObjectType;
 import ch.systemsx.cisd.hdf5.IHDF5ObjectReadOnlyInfoProviderHandler;
 import ch.systemsx.cisd.hdf5.IHDF5Reader;
+import ij.IJ;
 import ij.ImageJ;
+import ij.ImagePlus;
+import ij.io.FileSaver;
 import java.io.File;
 import java.util.List;
 import net.imglib2.Cursor;
@@ -48,13 +51,13 @@ public class HDF5Image {
                     MDByteArray mdArray = reader.uint8().readMDArray(path);
                     int[] dims = mdArray.dimensions();
                     ImgFactory<UnsignedShortType> imgFactory = new ArrayImgFactory<>();
-                    img = imgFactory.create(new int[]{dims[0],dims[1],dims[2]}, new UnsignedShortType());
+                    img = imgFactory.create(new int[]{dims[2],dims[1],dims[0]}, new UnsignedShortType());
                     Cursor cursor = img.localizingCursor();
                     
                     while (cursor.hasNext()){
                         cursor.fwd();
                         UnsignedShortType obj = (UnsignedShortType)cursor.get();
-                        int v = mdArray.get(cursor.getIntPosition(0),cursor.getIntPosition(1),cursor.getIntPosition(2));
+                        int v = mdArray.get(cursor.getIntPosition(2),cursor.getIntPosition(1),cursor.getIntPosition(0));
                         if (v < minMax[0]){
                             minMax[0] = v;
                         }
@@ -77,9 +80,13 @@ public class HDF5Image {
     float[] minMax = new float[2];
     
     static public void main(String[] args){
-        File file = new File("/net/waterston/vol9/diSPIM/20161207_tbx-9_OP636/MVR_STACKS","TP16_Ch2_Ill0_Ang0,90_Simple Segmentation.h5");
+        File file = new File("/net/waterston/vol9/diSPIM/20161207_tbx-9_OP636/MVR_STACKS","TP160_Ch2_Ill0_Ang0,90_Simple Segmentation.h5");
         HDF5Image image = new HDF5Image(file,"exported_data");
         new ImageJ();
         ImageJFunctions.showUnsignedShort(image.getImage());
+        Img img = image.getImage();
+        ImagePlus ip = ImageJFunctions.wrap(img,"");
+        IJ.saveAsTiff(ip, "/net/waterston/vol9/diSPIM/20161207_tbx-9_OP636/MVR_STACKS/TP160_Ch2_Ill0_Ang0,90_Simple Segmentation.tiff");
+        
     }
 }

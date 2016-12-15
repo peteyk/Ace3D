@@ -30,11 +30,13 @@ public class ByteHDF5DataSource extends DataSourceBase implements VoxelDataSourc
         HDF5DataSetInformation dsInfo = reader.object().getDataSetInformation("/"+hdDataSet); 
         long[] hdDims  = dsInfo.getDimensions();
         dims = new long[3];
-        dims[0] = hdDims[0];
+        dims[0] = hdDims[2];
         dims[1] = hdDims[1];
-        dims[2] = hdDims[2];
+        dims[2] = hdDims[0];
         
-        this.N = dsInfo.getNumberOfElements();
+        N = dims[0];
+        N = N * dims[1];
+        N = N * dims[2];
         
  //       HDF5DataTypeInformation dtInfo = dsInfo.getTypeInformation();
  //       int elSize = dtInfo.getElementSize();        
@@ -45,7 +47,7 @@ public class ByteHDF5DataSource extends DataSourceBase implements VoxelDataSourc
     @Override
     public Voxel get(long i) {
         long[] coords = this.getCoords(i);
-        int v = (int)mdArray.get((int)coords[0],(int)coords[1],(int)coords[2]);
+        int v = (int)mdArray.get((int)coords[2],(int)coords[1],(int)coords[0],0);
         return new Voxel(coords,v,0.0);
     }
 

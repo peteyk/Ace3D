@@ -30,8 +30,7 @@ public class Nuclei_Identification implements Runnable {
         System.out.println(lineageTiff);
         System.out.println(segSource);
         this.segmentedSource = segSource;
-        segSource = segSource.replace(',', '_');
-        segSource = segSource.replace(' ', '_');
+        segSource = cleanName(segSource);
         this.lineageTff = lineageTiff;
         this.directory = new File(dir);
         File segFile = new File(segSource);
@@ -56,14 +55,20 @@ public class Nuclei_Identification implements Runnable {
         } 
         return time;
     }
+    static String cleanName(String name){
+        String ret  = name.replace(',', '_');
+        return ret.replace(' ', '_');        
+    }
 
     static File[] xmlFiles(File directory,String baseName){
-        File[] ret = new File[3];
-        String microClusterFileName = baseName + "Clusters.xml";
+        File[] ret = new File[2];
+        String microClusterFileName = cleanName(baseName + "Clusters.xml");
+        
         ret[0] = new File(directory,microClusterFileName);
-        String BHCTreeFileName = baseName+"BHCTree.xml";
+        String BHCTreeFileName = cleanName(baseName+"BHCTree.xml");
         ret[1] = new File(directory,BHCTreeFileName);
-        ret[2] = new File(directory,baseName+".xml");        
+        
+        
         return ret;
     }
     @Override
@@ -73,7 +78,6 @@ public class Nuclei_Identification implements Runnable {
         File[] xmls = xmlFiles(directory,baseName);
         File microClusterFile = xmls[0];
         File BHCTreeFile = xmls[1];
-        File gmmFile = xmls[2];
         if (study){
             try {
 //                runBHCStudy(microClusterFile);
@@ -94,7 +98,7 @@ public class Nuclei_Identification implements Runnable {
 //                SegmentedTiffDataSource segSource = new SegmentedTiffDataSource(segmentedTiff,backgroundSegment); 
                 this.runMicroCluster(segSource,microClusterFile);
                 this.runBHC(microClusterFile,BHCTreeFile);
-                this.runTreeCut(BHCTreeFile,gmmFile);
+//                this.runTreeCut(BHCTreeFile,gmmFile);
                 return;
             } catch (Exception exc){
                 exc.printStackTrace();
@@ -105,13 +109,14 @@ public class Nuclei_Identification implements Runnable {
         if (!BHCTreeFile.exists() || force){
             try {
                 this.runBHC(microClusterFile,BHCTreeFile);
-                this.runTreeCut(BHCTreeFile,gmmFile);
+//                this.runTreeCut(BHCTreeFile,gmmFile);
                 return;                
             } catch (Exception exc){
                 exc.printStackTrace();
                 System.exit(2);
             }
         }
+ /*       
         if (!gmmFile.exists() || force){
             try {
                 this.runTreeCut(BHCTreeFile, gmmFile);
@@ -121,6 +126,7 @@ public class Nuclei_Identification implements Runnable {
                 System.exit(3);
             }
         }
+        */
     }
     private void runMicroCluster(SegmentedTiffDataSource segSource,File microClusterFile)throws Exception {
         int nVoxels = segSource.getN(nucleiSegment);
@@ -143,7 +149,7 @@ public class Nuclei_Identification implements Runnable {
 
     //        precision[3] = 200.0;
             alg.setPrecision(precision);
-            alg.setNu(20); //10
+            alg.setNu(10); //10
       //      double alpha = Math.pow(2.0*nClusters,2.0);
 
             alg.init(alpha);
@@ -154,8 +160,8 @@ public class Nuclei_Identification implements Runnable {
         alg.saveResultAsXML(BHCTreeFile.getPath());
     }
     private void runTreeCut(File BHCTreeFile,File gmmFile) throws Exception {
-        BHCTree tree = new BHCTree(BHCTreeFile.getPath());
-        tree.saveCutAtThresholdAsXML(gmmFile.getPath(),.5);
+ //       BHCTree tree = new BHCTree(BHCTreeFile.getPath());
+ //       tree.saveCutAtThresholdAsXML(gmmFile.getPath(),.5);
 /*        
         Double[] post = tree.allPosteriors().toArray(new Double[0]);
         for (int i=0 ; i<post.length ; ++i){
@@ -268,7 +274,7 @@ public class Nuclei_Identification implements Runnable {
             String fileName = new File(names[1]).getName();
             String baseName = baseName(fileName);
             File[] xmls = xmlFiles(directory,baseName);
-            if (xmls[0].exists() && xmls[1].exists() && xmls[2].exists()){
+            if (xmls[0].exists() && xmls[1].exists()){
                 continue;
             }
            

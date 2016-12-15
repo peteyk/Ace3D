@@ -31,10 +31,11 @@ import org.rhwlab.dispim.nucleus.BHCNucleusSet;
  * @author gevirl
  */
 public class BHCTree {
-    public BHCTree(String file)throws Exception {
+    public BHCTree(String file,int t)throws Exception {
         this.fileName = file;
         readTreeXML(file);
-        time = BHCNucleusDirectory.getTime(new File(file));
+//        time = BHCNucleusDirectory.getTime(new File(file));
+        time = t;
     }
     
     public BHCTree(double alpha,double[] s,int nu, double[] mu,List<Node> roots){
@@ -388,8 +389,8 @@ public class BHCTree {
     }
     static public void main(String[] args) throws Exception {
         String f = "/net/waterston/vol2/home/gevirl/rnt-1/xml/img_TL017_Simple_SegmentationBHCTree.xml";
-        BHCTree tree = new BHCTree(f);
-        tree.cutTreeWithLinearFunction();
+//        BHCTree tree = new BHCTree(f);
+ //       tree.cutTreeWithLinearFunction();
 
     }     
     String fileName ;

@@ -38,6 +38,7 @@ import org.jdom2.output.XMLOutputter;
 import org.rhwlab.BHC.BHCTree;
 import org.rhwlab.ace3d.dialogs.BHCTreeCutDialog;
 import org.rhwlab.ace3d.dialogs.PanelDisplay;
+import org.rhwlab.dispim.HDF5DirectoryImageSource;
 import org.rhwlab.dispim.ImageJHyperstackSource;
 import org.rhwlab.dispim.ImageSource;
 import org.rhwlab.dispim.ImagedEmbryo;
@@ -54,7 +55,7 @@ import org.rhwlab.dispim.nucleus.NucleusFile;
  */
 public class Ace3D_Frame extends JFrame implements PlugIn,ChangeListener  {
     public  Ace3D_Frame()  {
-        
+        dirChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
         imagedEmbryo = new ImagedEmbryo();
         TimePointImage.setEmbryo(imagedEmbryo);
         
@@ -113,16 +114,58 @@ public class Ace3D_Frame extends JFrame implements PlugIn,ChangeListener  {
         JMenu fileMenu = new JMenu("File");
         menuBar.add(fileMenu);
         
+        JMenuItem mvr = new JMenuItem("Open Series Directory");
+        fileMenu.add(mvr);
+        mvr.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String vsProp = props.getProperty("MVRDir");
+                if (vsProp != null){
+                    dirChooser.setSelectedFile(new File(vsProp));
+                } 
+                if (dirChooser.showOpenDialog(panel) == JFileChooser.APPROVE_OPTION){   
+                    File sel = dirChooser.getSelectedFile();
+                    File mvrDir = new File(sel,"MVR_STACKS");
+                    
+                    HDF5DirectoryImageSource source = new HDF5DirectoryImageSource(mvrDir,"exported_data","Segmented",imagedEmbryo,false);
+                    panel.setTimeRange(Math.max(source.getMinTime(),panel.getMinTime())
+                        ,Math.min(source.getMaxTime(),panel.getMaxTime()) ); 
+                    
+                    int lineChannel = source.getChannel();
+                    int expChannel = 1;
+                    if (lineChannel == 1){
+                        expChannel = 2;
+                    }
+                    
+                    File typical = new File(mvrDir,String.format("TP1_Ch%d_Ill0_Ang0,90.tif",lineChannel));
+                    TifDirectoryImageSource lineSource = new TifDirectoryImageSource(typical.getPath(),"Lineaging",imagedEmbryo,true);             
+                    panel.setTimeRange(Math.max(lineSource.getMinTime(),panel.getMinTime())
+                        ,Math.min(lineSource.getMaxTime(),panel.getMaxTime()) ); 
+                    
+                    typical = new File(mvrDir,String.format("TP1_Ch%d_Ill0_Ang0,90.tif",expChannel));
+                    TifDirectoryImageSource expSource = new TifDirectoryImageSource(typical.getPath(),"Expressing",imagedEmbryo,false);             
+                    panel.setTimeRange(Math.max(expSource.getMinTime(),panel.getMinTime())
+                        ,Math.min(expSource.getMaxTime(),panel.getMaxTime()) );    
+                    
+                    bhc  = new BHCTreeDirectory(new File(sel,"BHC"));
+                    imagedEmbryo.getNucleusFile().setBHCTreeDirectory(bhc);                    
+                    
+                    imagedEmbryo.notifyListeners();                    
+                    props.setProperty("MVRDir",sel.getPath());
+                }             
+            }
+        });
+        
         JMenuItem virtStack = new JMenuItem("Open Lineaging TIFF Virtual Stack");
         virtStack.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
                 String vsProp = props.getProperty("VirtualStack");
                 if (vsProp != null){
-                    nucChooser.setSelectedFile(new File(vsProp));
+                    fileChooser.setSelectedFile(new File(vsProp));
                 } 
-                if (nucChooser.showOpenDialog(panel) == JFileChooser.APPROVE_OPTION){    
-                    File sel = nucChooser.getSelectedFile();
+                if (fileChooser.showOpenDialog(panel) == JFileChooser.APPROVE_OPTION){    
+                    File sel = fileChooser.getSelectedFile();
                     String timeStr = setMinTime();
                     if (timeStr != null){
                         ImageJHyperstackSource source = new ImageJHyperstackSource(sel,Integer.valueOf(timeStr),"Lineaging",imagedEmbryo); 
@@ -142,11 +185,11 @@ public class Ace3D_Frame extends JFrame implements PlugIn,ChangeListener  {
             public void actionPerformed(ActionEvent e) {
                 String stProp = props.getProperty("SegTiffs");
                 if (stProp != null){
-                    nucChooser.setSelectedFile(new File(stProp));
+                    fileChooser.setSelectedFile(new File(stProp));
                 } 
-                if (nucChooser.showOpenDialog(panel) == JFileChooser.APPROVE_OPTION){    
-                    File sel = nucChooser.getSelectedFile();
-                    TifDirectoryImageSource source = new TifDirectoryImageSource(sel.getPath(),"Segmented",imagedEmbryo);
+                if (fileChooser.showOpenDialog(panel) == JFileChooser.APPROVE_OPTION){    
+                    File sel = fileChooser.getSelectedFile();
+                    TifDirectoryImageSource source = new TifDirectoryImageSource(sel.getPath(),"Segmented",imagedEmbryo,true);
                         panel.setTimeRange(Math.max(source.getMinTime(),panel.getMinTime())
                             ,Math.min(source.getMaxTime(),panel.getMaxTime()) );
                     imagedEmbryo.notifyListeners();
@@ -179,10 +222,10 @@ public class Ace3D_Frame extends JFrame implements PlugIn,ChangeListener  {
             public void actionPerformed(ActionEvent e) {
                 String prop = props.getProperty("Session");
                 if (prop != null){
-                    nucChooser.setSelectedFile(new File(prop));
+                    fileChooser.setSelectedFile(new File(prop));
                 }
-                if (nucChooser.showOpenDialog(panel) == JFileChooser.APPROVE_OPTION){    
-                    File sel = nucChooser.getSelectedFile();
+                if (fileChooser.showOpenDialog(panel) == JFileChooser.APPROVE_OPTION){    
+                    File sel = fileChooser.getSelectedFile();
                     try {
                         openSession(sel);
                     } catch (Exception exc){
@@ -696,10 +739,10 @@ public class Ace3D_Frame extends JFrame implements PlugIn,ChangeListener  {
         if (sel == null){
             String bhcProp = props.getProperty("BHC");
             if (bhcProp != null){
-                nucChooser.setSelectedFile(new File(bhcProp));
+                fileChooser.setSelectedFile(new File(bhcProp));
             } 
-            if (nucChooser.showOpenDialog(panel) == JFileChooser.APPROVE_OPTION){
-                sel = nucChooser.getSelectedFile();
+            if (fileChooser.showOpenDialog(panel) == JFileChooser.APPROVE_OPTION){
+                sel = fileChooser.getSelectedFile();
 
             }            
         }
@@ -979,7 +1022,8 @@ public class Ace3D_Frame extends JFrame implements PlugIn,ChangeListener  {
     
     SynchronizedMultipleSlicePanel panel;
     SelectedNucleusFrame selectedNucFrame;
-    JFileChooser nucChooser = new JFileChooser();
+    JFileChooser fileChooser = new JFileChooser();
+    JFileChooser dirChooser = new JFileChooser();
 //    JFileChooser sourceChooser = new JFileChooser();
     static DataSetsDialog contrastDialog;
     Navigation_Frame navFrame;

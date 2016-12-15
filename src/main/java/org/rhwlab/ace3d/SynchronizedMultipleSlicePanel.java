@@ -38,8 +38,8 @@ public class SynchronizedMultipleSlicePanel extends JPanel implements ChangeList
         }
         this.setLayout(new BorderLayout());
         this.add(slicePanel,BorderLayout.CENTER);
-        titledBorder = BorderFactory.createTitledBorder(positionString());
-        this.setBorder(titledBorder);  
+//        titledBorder = BorderFactory.createTitledBorder(positionString());
+ //       this.setBorder(titledBorder);  
         
         slider = new JSlider();
         slider.addChangeListener(new ChangeListener(){
@@ -50,6 +50,8 @@ public class SynchronizedMultipleSlicePanel extends JPanel implements ChangeList
             }
         });
         this.add(slider,BorderLayout.SOUTH);
+        navBar = new NavigationBar(this);
+        this.add(navBar,BorderLayout.NORTH);
     }
     public void showCurrentImage(){
         timePointImage = embryo.getImage(time); 
@@ -150,8 +152,10 @@ public class SynchronizedMultipleSlicePanel extends JPanel implements ChangeList
         updateBorder();
     }
     private void updateBorder(){
-        titledBorder = BorderFactory.createTitledBorder(positionString());
-        this.setBorder(titledBorder);        
+//        titledBorder = BorderFactory.createTitledBorder(positionString());
+//        this.setBorder(titledBorder);  
+        
+        navBar.update(this.time,this.position,this.embryo.selectedNucleus());
     }
     private String positionString(){
         String l = "";
@@ -237,10 +241,10 @@ public class SynchronizedMultipleSlicePanel extends JPanel implements ChangeList
     int time;
     ImagedEmbryo embryo;
     CompositeTimePointImage timePointImage;
-    TitledBorder titledBorder;
+//    TitledBorder titledBorder;
     SingleSlicePanel[] panels;
     long[] position;
-
+    NavigationBar navBar;
 
 
 

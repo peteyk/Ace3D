@@ -28,7 +28,7 @@ public class SegmentationLinePlot extends JPanel {
         TreeMap<Integer,Double> postMap = new TreeMap<>();
         tree.allPosteriorProb(postMap);
         for (Integer i : postMap.keySet()){
-            Double p = postMap.get(i);
+            Double p = Math.exp(postMap.get(i));
             series.add(i,p);
             if (i >1000){
                 break;

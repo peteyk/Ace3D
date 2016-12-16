@@ -22,8 +22,8 @@ import java.util.List;
  *
  * @author gevirl
  */
-public class ByteHDF5DataSource extends DataSourceBase implements VoxelDataSource {
-    public ByteHDF5DataSource(File hdFile,String hdDataSet){
+public class FloatHDF5DataSource extends DataSourceBase implements VoxelDataSource {
+    public FloatHDF5DataSource(File hdFile,String hdDataSet){
         this.hd = hdFile;
         this.hdDataSet = hdDataSet;       
         IHDF5Reader reader = HDF5Factory.openForReading(hd);
@@ -43,14 +43,15 @@ public class ByteHDF5DataSource extends DataSourceBase implements VoxelDataSourc
  //       HDF5DataTypeInformation dtInfo = dsInfo.getTypeInformation();
  //       int elSize = dtInfo.getElementSize();        
  //       HDF5DataClass dc = dtInfo.getDataClass();
-        mdArray = reader.uint8().readMDArray("/"+hdDataSet);
+        mdArray = reader.float32().readMDArray("/"+hdDataSet);
 
     }
 
     @Override
     public Voxel get(long i) {
         long[] coords = this.getCoords(i);
-        int v = (int)mdArray.get((int)coords[2],(int)coords[1],(int)coords[0],0);
+        
+        int v = (int)(100*mdArray.get((int)coords[2],(int)coords[1],(int)coords[0],0));
         return new Voxel(coords,v,0.0);
     }
 
@@ -62,5 +63,5 @@ public class ByteHDF5DataSource extends DataSourceBase implements VoxelDataSourc
     }
     File hd;
     String hdDataSet;
-    MDByteArray mdArray;
+    MDFloatArray mdArray;
 }

@@ -25,19 +25,22 @@ import org.rhwlab.dispim.datasource.MicroCluster;
  *
  * @author gevirl
  */
-public class LogNode extends StdNode  {
-    public LogNode(MicroCluster micro){
+public class LogNode extends NodeBase implements Node  {
+    public LogNode(MicroCluster micro){  // node composed of a single microcluster
         super(micro);
         lnd = lnAlpha;
-
+        lnPi = 0.0;
+        lnR = 0.0;
+        logPosterior();
     }
     public LogNode(LogNode l,LogNode r){
         super(l,r);
+        logPosterior();
     }
     public LogNode(Element ele,Node par){
         this.parent = par;
         this.label = Integer.valueOf(ele.getAttributeValue("label"));
-        this.realR = Double.valueOf(ele.getAttributeValue("posterior"));
+        this.lnR = Double.valueOf(ele.getAttributeValue("posterior"));
         String centerStr = ele.getAttributeValue("center");
         if (centerStr == null){
             List<Element> children = ele.getChildren("Node");
@@ -48,12 +51,8 @@ public class LogNode extends StdNode  {
         }
     }    
     @Override
-    public void  posterior() {
-        if (lnPi == null){
-            lnPi = 0.0;
-        }
-        logPosterior();
-        
+    public double  getLogPosterior() {
+        return lnR;
     }    
     @Override
     public Node mergeWith(Node other) {
@@ -127,9 +126,9 @@ public class LogNode extends StdNode  {
             ret = Utils.elnMult(ret, Gamma.logGamma((nuP+1-i)/2.0));
             ret = Utils.elnMult(ret,-Gamma.logGamma((nu+1-i)/2.0));
         }
-        if (ThreadedAlgorithm.time < 175){
-//            ret = ret + data.size()*logRSDLikelihood();
-        }
+ //       if (ThreadedAlgorithm.time < 175){
+            ret = ret + data.size()*logRSDLikelihood();
+ //       }
         return ret;
     }
     public double logDPMLikelihood(int n)throws ArithmeticException {       
@@ -165,7 +164,8 @@ public class LogNode extends StdNode  {
             lnonePi = Utils.eln(1.0 - Math.exp(lnPi));
             
             Double lnFirst = Utils.elnMult(lnPi,lnLike);
-            Double lnSecond = Utils.elnMult(lnonePi,Utils.elnMult(stdLeft.lnDPM, stdRight.lnDPM));
+            Double prod = Utils.elnMult(stdLeft.lnDPM, stdRight.lnDPM);
+            Double lnSecond = Utils.elnMult(lnonePi,prod);
 
             return Utils.elnsum(lnFirst, lnSecond);
         }
@@ -176,21 +176,18 @@ public class LogNode extends StdNode  {
         return lnLambda - lambda*rsd;
     }
     // calculate the posterior of a non terminal node
-    public void  logPosterior()throws ArithmeticException {
+    public void  logPosterior() throws ArithmeticException {
         List<RealVector> data = new ArrayList<>();
         this.getDataAsRealVector(data); 
         this.lnLike = this.logMarginalLikelihood(data);
-        
-        
         
         lnDPM = this.logDPMLikelihood(data.size());
        
         lnR = Utils.elnMult(lnPi, lnLike);
         lnR = Utils.elnMult(lnR, -lnDPM);
-        realR = Math.exp(lnR);
-        if (realR == 1.0){
-            int sahdfuis=0;
-        }
+        
+
+        
 //        dfpR = field.newDfp(realR);
         
     }   
@@ -210,15 +207,30 @@ public class LogNode extends StdNode  {
         stream.printf("lnDPM=%s\n", Double.toString(lnDPM));
         stream.printf("lnPi=%s\n", Double.toString(lnPi));
         stream.printf("lnR=%s\n", Double.toString(lnR));
-        stream.printf("R=%s\n", Double.toString(realR));
+        stream.printf("R=%s\n", Double.toString(Math.exp(lnR)));
     }  
     
+    public String vectorAsString(RealVector v){
+        boolean first = true;
+        StringBuilder builder = new StringBuilder();
+        builder.append("(");
+        for (int i=0 ; i<v.getDimension() ; ++i){
+            
+            if (!first){
+                builder.append(",");
+            }
+            builder.append(String.format("%.2f",v.getEntry(i)));
+            first = false;
+        }
+        builder.append(")");
+        return builder.toString();
+    }    
     Double lnd;
     Double lnPi;
     Double lnonePi;
     Double lnLike;
     Double lnDPM;
-    Double lnR;
+//    Double lnR;                   
     
     static double lambda = 1.0;
     static double lnLambda = Math.log(lambda);

@@ -19,7 +19,7 @@ import org.rhwlab.dispim.datasource.MicroCluster;
  */
 public interface Node extends Comparable {
 //    public Dfp getPosteriorDfp();
-    public double getPosterior();
+    public double getLogPosterior();
     public Node mergeWith(Node cl);
 //    public  void getDataAsFieldVector(List<FieldVector> list);
     public void getDataAsRealVector(List<RealVector> list);

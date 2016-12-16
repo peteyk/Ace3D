@@ -1,3 +1,4 @@
+
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -266,15 +267,7 @@ abstract public class StdNode extends  NodeBase {
         right.getDataAsFieldVector(list);
     }
 */
-    @Override
-    public void getDataAsRealVector(List<RealVector> list) {
-        if (micro != null){
-            list.add(micro.asRealVector());
-            return;
-        }
-        left.getDataAsRealVector(list);
-        right.getDataAsRealVector(list);
-    }
+
    
     static void setParameters(int n,double beta,double[] mu,double[] s){
         StdNode.nu = n;

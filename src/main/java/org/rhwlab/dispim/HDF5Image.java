@@ -6,6 +6,8 @@
 package org.rhwlab.dispim;
 
 import ch.systemsx.cisd.base.mdarray.MDByteArray;
+import ch.systemsx.cisd.base.mdarray.MDFloatArray;
+import ch.systemsx.cisd.hdf5.HDF5DataClass;
 import ch.systemsx.cisd.hdf5.HDF5DataTypeInformation;
 import ch.systemsx.cisd.hdf5.HDF5Factory;
 import ch.systemsx.cisd.hdf5.HDF5LinkInformation;
@@ -47,7 +49,27 @@ public class HDF5Image {
             if (type == HDF5ObjectType.DATASET && name.equals(dataSet)){
                 IHDF5ObjectReadOnlyInfoProviderHandler hand = reader.object();
                 HDF5DataTypeInformation dtInfo = hand.getDataSetInformation(path).getTypeInformation();
-                if (dtInfo.getElementSize()==1 && !dtInfo.isSigned()){
+                if (dtInfo.getDataClass() == HDF5DataClass.FLOAT){
+                    MDFloatArray mdArray = reader.float32().readMDArray(path);
+                    int[] dims = mdArray.dimensions();
+                    ImgFactory<UnsignedShortType> imgFactory = new ArrayImgFactory<>();
+                    img = imgFactory.create(new int[]{dims[2],dims[1],dims[0]}, new UnsignedShortType());
+                    Cursor cursor = img.localizingCursor();
+                    
+                    while (cursor.hasNext()){
+                        cursor.fwd();
+                        UnsignedShortType obj = (UnsignedShortType)cursor.get();
+                        int v = 100-(int)(100*mdArray.get(cursor.getIntPosition(2),cursor.getIntPosition(1),cursor.getIntPosition(0),0));
+                        if (v < minMax[0]){
+                            minMax[0] = v;
+                        }
+                        if (v >minMax[1]){
+                            minMax[1] = v;
+                        }
+                        obj.setInteger(v);
+                    }                    
+                }
+                else if (dtInfo.getElementSize()==1 && !dtInfo.isSigned()){
                     MDByteArray mdArray = reader.uint8().readMDArray(path);
                     int[] dims = mdArray.dimensions();
                     ImgFactory<UnsignedShortType> imgFactory = new ArrayImgFactory<>();
@@ -80,7 +102,7 @@ public class HDF5Image {
     float[] minMax = new float[2];
     
     static public void main(String[] args){
-        File file = new File("/net/waterston/vol9/diSPIM/20161207_tbx-9_OP636/MVR_STACKS","TP160_Ch2_Ill0_Ang0,90_Simple Segmentation.h5");
+        File file = new File("/net/waterston/vol9/diSPIM/20161207_tbx-9_OP636/MVR_STACKS","TP200_Ch2_Ill0_Ang0,90_Probabilities.h5");
         HDF5Image image = new HDF5Image(file,"exported_data");
         new ImageJ();
         ImageJFunctions.showUnsignedShort(image.getImage());

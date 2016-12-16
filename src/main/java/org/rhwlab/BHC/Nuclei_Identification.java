@@ -26,7 +26,7 @@ import org.rhwlab.dispim.datasource.TiffDataSource;
  * @author gevirl
  */
 public class Nuclei_Identification implements Runnable {
-    public Nuclei_Identification(String dir,String lineageTiff,String segSource,boolean force,boolean study){
+    public Nuclei_Identification(String dir,String lineageTiff,String segSource,boolean force,boolean study,double alpha,double s){
         System.out.println(lineageTiff);
         System.out.println(segSource);
         this.segmentedSource = segSource;
@@ -37,7 +37,8 @@ public class Nuclei_Identification implements Runnable {
         this.baseName = baseName(segFile.getName());
         this.force = force;
         this.study = study;
-        
+        this.alpha = alpha;
+        this.S = s;
         // parse the time from the filename
         this.time = getTime(segFile.getName());
         
@@ -135,18 +136,18 @@ public class Nuclei_Identification implements Runnable {
         segSource.kMeansCluster(nucleiSegment, nClusters, nPartitions).saveAsXML(microClusterFile.getPath());
     }
     private void runBHC(File microClusterFile,File BHCTreeFile)throws Exception {
-        double alpha = 1000;//1000
+ //       double alpha = 100000;//1000
 
         MicroClusterDataSource microDataSource = new MicroClusterDataSource(microClusterFile.getPath());
         ThreadedAlgorithm alg;
 //        MicroCluster4DDataSource microDataSource = new MicroCluster4DDataSource(microClusterFile.getPath());
-        do {
+//        do {
             alg = new ThreadedAlgorithm();
             alg.setTime(time);
             alg.setSource(microDataSource);
             double[] precision = new double[microDataSource.getD()];
             precision[0] = precision[1] = precision[2] = 20.0; //20
-
+            precision[0] = precision[1] = precision[2] = S;
     //        precision[3] = 200.0;
             alg.setPrecision(precision);
             alg.setNu(10); //10
@@ -154,8 +155,8 @@ public class Nuclei_Identification implements Runnable {
 
             alg.init(alpha);
             alg.run();
-            alpha = 10.*alpha;
-        } while (alg.getFinalCluster().getPosterior()!=0.0);
+  //          alpha = 10.*alpha;
+ //       } while (alg.getFinalCluster().getPosterior()!=0.0);
         
         alg.saveResultAsXML(BHCTreeFile.getPath());
     }
@@ -261,7 +262,7 @@ public class Nuclei_Identification implements Runnable {
         ProcessBuilder pb = new ProcessBuilder("ssh","grid.gs.washington.edu",scriptFile.getPath());
         Process p = pb.start();        
     }
-    static public void submitTimePoints(File directory,TreeMap<Integer,String[]> tiffs,boolean force,String memory)throws Exception {
+    static public void submitTimePoints(File directory,TreeMap<Integer,String[]> tiffs,boolean force,String memory,double alpha,double S)throws Exception {
         if (tiffs.isEmpty()) return;
         
         File scriptFile = new File(directory,"SubmitTimePoints.sh");
@@ -287,13 +288,14 @@ public class Nuclei_Identification implements Runnable {
             qsubStream.println("#$ -l h_rt=96:0:0");
      //       qsubStream.println("#$ -l h=w014");
             qsubStream.println("#$ -pe serial 1-10");
+            
             qsubStream.println("cd /nfs/waterston/Ace3D");
             qsubStream.println("PATH=/nfs/waterston/jdk1.8.0_102/bin:$PATH");
             qsubStream.println("JAVA_HOME=/nfs/waterston/jdk1.8.0_102");
             qsubStream.println("M2_HOME=/nfs/waterston/apache-maven-3.3.9");
             qsubStream.printf("/nfs/waterston/apache-maven-3.3.9/bin/mvn \"-Dexec.args=-Xms%s -Xmx%s  ",memory,memory);
             qsubStream.print(" -classpath %classpath org.rhwlab.BHC.Nuclei_Identification ");
-            qsubStream.printf(" -first %d -last %d -segTiff \'%s\'  -lineageTiff \'%s\' -dir %s  ",time,time,names[1],names[0],directory.getPath());
+            qsubStream.printf("-S %f -alpha %f -first %d -last %d -segTiff \'%s\'  -lineageTiff \'%s\' -dir %s  ",S,alpha,time,time,names[1],names[0],directory.getPath());
             if (force){
                 qsubStream.print(" -force ");
             }
@@ -317,11 +319,11 @@ public class Nuclei_Identification implements Runnable {
             submitStudyTimes(new File(cli.getDirectory()),tiffs);
         }
         else if (cli.getQsub()){
-            submitTimePoints(new File(cli.getDirectory()),tiffs,cli.getForce(),cli.getMemory());
+            submitTimePoints(new File(cli.getDirectory()),tiffs,cli.getForce(),cli.getMemory(),cli.getAlpha(),cli.getS());
         } else {
             for (int time : tiffs.keySet()){
                 String[] names = tiffs.get(time);
-                Nuclei_Identification objectID = new Nuclei_Identification(cli.getDirectory(),names[0],names[1],cli.getForce(),cli.getStudy());
+                Nuclei_Identification objectID = new Nuclei_Identification(cli.getDirectory(),names[0],names[1],cli.getForce(),cli.getStudy(),cli.getAlpha(),cli.getS());
                 objectID.run();
             }
         }
@@ -342,6 +344,8 @@ public class Nuclei_Identification implements Runnable {
     File directory;
     String baseName;
     String segmentedSource;
+    double alpha;
+    double S;
     int time=-1;
     boolean force;
     boolean study;

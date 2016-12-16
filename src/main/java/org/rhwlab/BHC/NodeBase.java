@@ -5,14 +5,14 @@
  */
 package org.rhwlab.BHC;
 
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeSet;
-import org.apache.commons.math3.dfp.Dfp;
-import org.apache.commons.math3.dfp.DfpField;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.ArrayRealVector;
+import org.apache.commons.math3.linear.LUDecomposition;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.stat.StatUtils;
@@ -26,21 +26,46 @@ import org.rhwlab.dispim.datasource.MicroCluster;
  * @author gevirl
  */
 abstract public class NodeBase implements Node {
-    
+    public NodeBase(){
+        
+    }
+    public NodeBase(MicroCluster micro) {
+        this.micro = micro;
+        this.left = null;
+        this.right = null;
+        this.parent = null;
+/*        
+        d = alpha;
+        pi = 1.0;
+        onePi = 0.0;
+        posterior();
+        */
+    } 
+    public NodeBase(NodeBase l,NodeBase r) throws ArithmeticException {
+        this.micro = null;
+        this.left = l;
+        this.right = r; 
+        ((NodeBase)this.left).parent = this;
+        ((NodeBase)this.right).parent = this;
+ //       posterior();
+    }    
+    @Override
+    public void getDataAsRealVector(List<RealVector> list) {
+        if (micro != null){
+            list.add(micro.asRealVector());
+            return;
+        }
+        left.getDataAsRealVector(list);
+        right.getDataAsRealVector(list);
+    }    
     @Override
     public void getDataAsMicroCluster(List<MicroCluster> list) {
-        if (this instanceof StdNode){
-            MicroCluster mc = ((StdNode)this).micro;
-            if (mc != null){
-                list.add(mc);
-                return;
-            }
-            left.getDataAsMicroCluster(list);
-            right.getDataAsMicroCluster(list);
-        }else {
-            left.getDataAsMicroCluster(list);
-            right.getDataAsMicroCluster(list);            
+        if (micro != null){
+            list.add(micro);
+            return;
         }
+        left.getDataAsMicroCluster(list);
+        right.getDataAsMicroCluster(list);
     } 
 
     // save a list of root nodes into an xml file
@@ -60,23 +85,26 @@ abstract public class NodeBase implements Node {
         int nodeCount = 1;
         Element nodeEle = new Element("Node");
         nodeEle.setAttribute("label", Integer.toString(label));
-        nodeEle.setAttribute("posterior",Double.toString(realR));
+        nodeEle.setAttribute("posterior",Double.toString(lnR));
         if (left != null){
             nodeCount = ((NodeBase)left).saveAsTreeXML(nodeEle);
             nodeCount = nodeCount + ((NodeBase)right).saveAsTreeXML(nodeEle);
             nodeEle.setAttribute("count",Integer.toString(nodeCount));
         } else {
-            int count = ((StdNode)this).addContent(nodeEle);
+            int count = addContent(nodeEle);
             nodeEle.setAttribute("points",Integer.toString(count));
         }
         root.addContent(nodeEle);
         return nodeCount;
+    }   
+    public int addContent(Element ele){
+        return micro.addContent(ele);
     }    
     // saves the node as GMM and returns the last used id
     // cuts the tree at the given threshold
     // saves all nodes below this node as GMM based on given threshold
     public  int saveAsXMLByThreshold(Element root,double threshold,int id){
-        if (this.getPosterior()>=threshold){
+        if (this.getLogPosterior()>=threshold){
             int used = saveAsXML(root,id);
             return used;
         }
@@ -149,7 +177,7 @@ abstract public class NodeBase implements Node {
             clusterEle.setAttribute("intensityRSD", Double.toString(getIntensityRSD()));
             clusterEle.setAttribute("sourceNode", String.format("%d", label));
 
-            clusterEle.setAttribute("posterior",Double.toString(realR));
+            clusterEle.setAttribute("posterior",Double.toString(lnR));
             
             clusterEle.setAttribute("x", Double.toString(mu.getEntry(0)));
             clusterEle.setAttribute("y", Double.toString(mu.getEntry(1)));
@@ -179,9 +207,11 @@ abstract public class NodeBase implements Node {
     public Node getRight() {
         return this.right;
     }
+    /*
     static public void setDfpField(DfpField fld){
         field = fld;
     }
+*/
     public int getN(){
 
         if (N == null){
@@ -194,7 +224,7 @@ abstract public class NodeBase implements Node {
     @Override
     public int compareTo(Object o) {
         NodeBase other = (NodeBase)o;
-        int ret = Double.compare(this.realR,other.realR);
+        int ret = Double.compare(this.lnR,other.lnR);
         if (ret == 0){
             ret = Integer.compare(this.hashCode(), other.hashCode());
         }
@@ -202,7 +232,7 @@ abstract public class NodeBase implements Node {
     }
 
     public  void allPosteriors(TreeSet<Double> posts){
-        posts.add(realR);
+        posts.add(lnR);
         
         if (left != null){
             ((NodeBase)left).allPosteriors(posts);
@@ -257,17 +287,39 @@ abstract public class NodeBase implements Node {
     public boolean isLeaf(){
         return left==null && right == null;
     }
-   
-    Integer N; // number of microclusters in assigned to this node  
+    static public void setAlpha(double a){
+        alpha = a;
+        lnAlpha = Utils.eln(alpha);
+    }    
+    static void setParameters(int n,double b,double[] mu,double[] s){
+        nu = n;
+        
+        S = new Array2DRowRealMatrix(s.length,s.length);
+        for (int i=0 ; i<s.length ; ++i){
+            S.setEntry(i, i, s[i]);
+        }
+        LUDecomposition ed = new LUDecomposition(S);
+        detS = Math.pow(ed.getDeterminant(),nu/2.0);
+        logdetSnu = Utils.eln(detS);        
+
+        beta = b;
+        lnBeta = Utils.eln(beta);
+        m = new ArrayRealVector(mu);
+        rmm = m.outerProduct(m).scalarMultiply(beta);
+        ratio = new GammaRatio(mu.length,n);
+    }    
+    Integer N; // number of microclusters assigned to this node  
+    MicroCluster micro;  // micro cluster if this is a terminal node 
     Node left;
     Node right;
     int label;
     Node parent;
+    double lnR;  // log of the posterior 
 
-    Dfp r;   // posterior of the merged hypothesis
-    double realR;
+//    Dfp r;   // posterior of the merged hypothesis
+//    double realR;
     
-    static DfpField field = new DfpField(20);  // 20 decimal digits  
+//    static DfpField field = new DfpField(20);  // 20 decimal digits  
     public static int maxN;
     
     static double nu;
@@ -280,4 +332,7 @@ abstract public class NodeBase implements Node {
     static Double lnAlpha;
     
     static Double logPi =  Utils.eln(Math.PI);
+    static double alpha;
+    static double detS;
+    static GammaRatio ratio;    
 }

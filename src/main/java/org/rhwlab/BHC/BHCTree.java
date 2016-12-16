@@ -174,11 +174,11 @@ public class BHCTree {
         }
         // find the leaf with the lowest probability
         Node minNode = leaves.first();
-        if (minNode.getPosterior() == 1.0){
+        if (minNode.getLogPosterior() == 0.0){
             return;
         }
         // add the minMode prob into the result
-        probs.put(probs.size()+1, minNode.getPosterior());
+        probs.put(probs.size()+1, minNode.getLogPosterior());
         
         // update the leaf set
         leaves.remove(minNode);

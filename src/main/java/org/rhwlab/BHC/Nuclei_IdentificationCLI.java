@@ -66,6 +66,22 @@ public class Nuclei_IdentificationCLI extends CommandLine {
         }
         return s;
     }
+    public String S(String s){
+        try {
+            S = Double.valueOf(s);
+        } catch (Exception exc){
+            return String.format("Error in option -S %s", s);
+        }
+        return null;   
+    }
+    public String alpha(String s){
+        try {
+            alpha = Double.valueOf(s);
+        } catch (Exception exc){
+            return String.format("Error in option -alpha %s", s);
+        }
+        return null;        
+    }
     public String first(String s){
         try {
             firstTime = Integer.valueOf(s);
@@ -115,6 +131,12 @@ public class Nuclei_IdentificationCLI extends CommandLine {
     }
     public String getMemory(){
         return memory;
+    }
+    public Double getAlpha(){
+        return alpha;
+    }
+    public Double getS(){
+        return this.S;
     }
     public TreeMap<Integer,String[]> getTiffs(){
 
@@ -174,6 +196,8 @@ public class Nuclei_IdentificationCLI extends CommandLine {
     String segTiff;
     Integer firstTime;
     Integer lastTime;
+    Double alpha;
+    Double S;
     boolean force=false;
     boolean qsub = false;
     boolean study = false;

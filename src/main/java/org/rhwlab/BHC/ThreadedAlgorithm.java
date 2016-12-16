@@ -34,14 +34,14 @@ public class ThreadedAlgorithm implements Runnable {
 */        
         mu = source.getDataMean().toArray();
         NodeBase.maxN = 6000;
-        StdNode.setParameters(nu,beta,mu,s);
+        NodeBase.setParameters(nu,beta,mu,s);
 //        DfpNode.setParameters(nu,beta,mu,s);
 //        RealMatrix s0 = source.getDataVariance();
 //        StdNode.setS(s0);
         
         CellCounts cc = new CellCounts();
         this.alpha = alpha;
-        StdNode.setAlpha(alpha);  // for time point 75
+        NodeBase.setAlpha(alpha);  // for time point 75
  //       DfpNode.setAlpha(alpha);  // for time point 75
         
         clusters = new ArrayList<>();

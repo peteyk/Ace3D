@@ -159,9 +159,9 @@ public class BHCTreeCutDialog extends JDialog {
         @Override
         public String toString(){
             if (n ==-1){
-                return String.format("%e %f",r,Math.log(r));
+                return String.format("%e %f",Math.exp(r),r);
             }
-            return String.format("(%d) %e %f",n,r,Math.log(r));
+            return String.format("(%d) %e %f",n,Math.exp(r),r);
         }
         
         double r;

@@ -31,7 +31,17 @@ public class CompositeTimePointImage  {
         List<String> datasets = Ace3D_Frame.datasetsSelected();
         if (datasets.isEmpty()) return null;
         
-        TimePointImage tpi = TimePointImage.getSingleImage(datasets.get(0),time);
+        // find an image to start with at this time
+        TimePointImage tpi = null;
+        for (int i=0 ; i<datasets.size() ; ++i){
+            tpi = TimePointImage.getSingleImage(datasets.get(i),time); 
+            if (tpi != null){
+                break;
+            }
+        }
+        if (tpi == null){
+            return null; // no images at this time point
+        }
         IntervalView iv = Views.hyperSlice(tpi.getImage(), dim, slice);
         Cursor cursor = iv.localizingCursor();
         cursor.fwd();
@@ -63,7 +73,12 @@ public class CompositeTimePointImage  {
             Gfactor[i] = green*f;
             Bfactor[i] = blue*f;
             if (i > 0){
-                access[i] = Views.hyperSlice(TimePointImage.getSingleImage(datasets.get(i),time).getImage(), dim, slice).randomAccess();
+                tpi = TimePointImage.getSingleImage(datasets.get(i),time); 
+                if (tpi != null){
+                    access[i] = Views.hyperSlice(TimePointImage.getSingleImage(datasets.get(i),time).getImage(), dim, slice).randomAccess();
+                } else {
+                    access[i] = null;
+                }
             }
         }
         while (cursor.hasNext()){
@@ -80,13 +95,15 @@ public class CompositeTimePointImage  {
             
             // fuse over all the images the current cursor location
             for (int i=1 ; i<datasets.size() ; ++i){
-                access[i].setPosition(cursorPos);
-//                pix = (UnsignedShortType)access[i].get();
-                pix = (AbstractIntegerType)access[i].get();
-                v = Math.max(0.0,pix.getRealDouble() - pixMin[i]);
-                r = r + Rfactor[i]*v;
-                g = g + Gfactor[i]*v;
-                b = b + Bfactor[i]*v;
+                if (access[i]!=null) {
+                    access[i].setPosition(cursorPos);
+    //                pix = (UnsignedShortType)access[i].get();
+                    pix = (AbstractIntegerType)access[i].get();
+                    v = Math.max(0.0,pix.getRealDouble() - pixMin[i]);
+                    r = r + Rfactor[i]*v;
+                    g = g + Gfactor[i]*v;
+                    b = b + Bfactor[i]*v;
+                }
             }
             Color c = new Color(Math.min(255,(int)r),Math.min(255,(int)g),Math.min(255,(int)b),255);
             ret.setRGB(x,y,c.getRGB());

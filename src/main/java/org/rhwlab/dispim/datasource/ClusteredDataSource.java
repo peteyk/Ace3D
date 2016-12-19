@@ -205,12 +205,15 @@ public class ClusteredDataSource implements VoxelDataSource {
             ele.setAttribute("PointCount", Integer.toString(comp.getN()));
             ele.setAttribute("MinimumIntensity", Integer.toString(this.clusterMin[c]));
             ele.setAttribute("MaximumIntensity", Integer.toString(this.clusterMax[c]));
+            double avgAdjusted = 0.0;
             for (int n : comp.getIndexes()){
                 Element pointEle = new Element("Point");
                 double[] point = this.X[n].coords.toArray();
                 int intensity = this.X[n].intensity;
                 pointEle.setAttribute("Intensity", Integer.toString(intensity));
-                pointEle.setAttribute("Adjusted", Double.toString(this.X[n].getAdjusted()));
+                double adj = this.X[n].getAdjusted();
+                avgAdjusted = avgAdjusted + adj;
+                pointEle.setAttribute("Adjusted", Double.toString(adj));
                 builder = new StringBuilder();
                 for (int d=0 ; d<point.length ; ++d){
                     if (d > 0 ){
@@ -221,6 +224,7 @@ public class ClusteredDataSource implements VoxelDataSource {
                 pointEle.addContent(builder.toString());
                 ele.addContent(pointEle);
             }
+            ele.setAttribute("AvgAdjusted",Double.toString(avgAdjusted/comp.indexes.size()));
             root.addContent(ele);
         }
         XMLOutputter out = new XMLOutputter(Format.getPrettyFormat());

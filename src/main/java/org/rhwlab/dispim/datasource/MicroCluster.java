@@ -162,6 +162,14 @@ public class MicroCluster {
         }
         return avgIntensity;
     }
+    public RealVector getPoint(int i){
+        short[] vals = points[i];
+        double[] d = new double[vals.length];
+        for (int j=0 ; j<d.length ; ++j){
+            d[j] = vals[j];
+        }
+        return new ArrayRealVector(d);
+    }
     double[] v;  // center
     short[][] points;
     int[] intensities;

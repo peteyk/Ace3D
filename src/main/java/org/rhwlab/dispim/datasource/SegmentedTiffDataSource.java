@@ -118,10 +118,12 @@ public class SegmentedTiffDataSource extends TiffDataSource implements Segmented
     }
     // return the ith voxel in the given segment
     @Override
-    public Voxel getSegmentVoxel(int i){
+    public Voxel getSegmentVoxel(int segIndex){
         // get the voxel from this tiff data source
-        long voxIndex = segmentation.getVoxelIndex(i);
+        long voxIndex = segmentation.getVoxelIndex(segIndex);
+        double prob = segmentation.getSegmentationProbability(segIndex);
         Voxel ret = super.get(voxIndex);
+        ret.setAdjusted(prob);
         return ret;
     } 
     Segmentation segmentation;

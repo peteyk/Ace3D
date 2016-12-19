@@ -84,6 +84,18 @@ public class LogNode extends NodeBase implements Node  {
         return Utils.eln(ed.getDeterminant()); 
 
     }
+    // use all the vioxels to compute the likelihood
+    public double logLikelihood(){
+        List<MicroCluster> micros = new ArrayList<>();
+        this.getDataAsMicroCluster(micros);
+        ArrayList<RealVector> data = new ArrayList<>();
+        for (MicroCluster micro : micros){
+            for (int i=0 ; i<micro.getPointCount() ; ++i){
+                data.add(micro.getPoint(i));
+            }
+        }
+        return logMarginalLikelihood(data);
+    }
     // the likelihood of the data in this node/cluster only - given the priors
     public double logMarginalLikelihood(List<RealVector> data)  {
 
@@ -179,8 +191,9 @@ public class LogNode extends NodeBase implements Node  {
     public void  logPosterior() throws ArithmeticException {
         List<RealVector> data = new ArrayList<>();
         this.getDataAsRealVector(data); 
-        this.lnLike = this.logMarginalLikelihood(data);
         
+        this.lnLike = this.logMarginalLikelihood(data);
+ //       this.lnLike = this.logLikelihood();
         lnDPM = this.logDPMLikelihood(data.size());
        
         lnR = Utils.elnMult(lnPi, lnLike);

@@ -15,6 +15,7 @@ import org.apache.commons.math3.linear.RealVector;
  */
 public class Segmentation {
     public Segmentation(VoxelDataSource source,double thresh){
+        this.source = source;
         this.thresh = thresh;
         segmentIndex = new ArrayList<>();
         mins = new double[source.getD()];
@@ -58,6 +59,10 @@ public class Segmentation {
     public double getThreshold(){
         return thresh;
     }
+    public double getSegmentationProbability(int segIndex){
+        return ((double)source.get(segmentIndex.get(segIndex)).getIntensity())/100.0;
+    }
+    VoxelDataSource source;
     double thresh;
     double[] mins;  // min coordinates of non-background voxels
     double[] maxs;  // max coordinates of non-background voxels  

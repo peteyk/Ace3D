@@ -33,9 +33,9 @@ public class ClusteredDataSource implements VoxelDataSource {
     public ClusteredDataSource(String file)throws Exception {
         this.openFromClusters(file);
     }
-    public ClusteredDataSource(VoxelClusterer[] clusterers,int background,int D){
+    public ClusteredDataSource(VoxelClusterer[] clusterers,double thresh,int D){
         this.D = D;
-        this.background = background;
+        this.segThresh = thresh;
         
         // how many total clusters and total points?
         int K = 0;
@@ -101,7 +101,7 @@ public class ClusteredDataSource implements VoxelDataSource {
         int N = Integer.valueOf(root.getAttributeValue("NumberOfPoints"));
         minIntensity = Integer.valueOf(root.getAttributeValue("MinimumIntensity"));
         maxIntensity = Integer.valueOf(root.getAttributeValue("MaximumIntensity"));
-        background = Integer.valueOf(root.getAttributeValue("Background"));
+        segThresh = Double.valueOf(root.getAttributeValue("SegmentationThreshold"));
         List<Element> clusterElements = root.getChildren("Cluster");
         X = new Voxel[N];
         z = new GaussianComponent[N];
@@ -185,7 +185,7 @@ public class ClusteredDataSource implements VoxelDataSource {
         root.setAttribute("NumberOfClusters",Integer.toString(centers.length));
         root.setAttribute("Dimensions",Integer.toString(D));
         root.setAttribute("NumberOfPoints",Long.toString(this.getN()));
-        root.setAttribute("Background",Integer.toString(background));
+        root.setAttribute("SegmentationThreshold",Double.toString(segThresh));
         root.setAttribute("MinimumIntensity",Integer.toString(minIntensity));
         root.setAttribute("MaximumIntensity",Integer.toString(maxIntensity));
         for (int c=0 ; c<gaussians.size() ; ++c){
@@ -268,9 +268,7 @@ public class ClusteredDataSource implements VoxelDataSource {
         }
         return ret.mapDivide(X.length);
     }
-    public int getBackground(){
-        return background;
-    }
+
     // normalize all the cluster intensities to the same range
     public void normalizeIntensity(double minI,double maxI){
         for (int c=0 ; c<gaussians.size() ; ++c){
@@ -309,7 +307,8 @@ public class ClusteredDataSource implements VoxelDataSource {
     RealVector[] centers;
     int minIntensity;
     int maxIntensity;
-    int background;
+    double segThresh; // the threshold used in the segmentation
+ //   int background;
 
     
     public static void main(String[] args) throws Exception{

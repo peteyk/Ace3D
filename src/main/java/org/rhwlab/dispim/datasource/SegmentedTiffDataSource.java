@@ -51,7 +51,7 @@ public class SegmentedTiffDataSource extends TiffDataSource implements Segmented
     }
 */
     @Override
-    public ClusteredDataSource kMeansCluster(int segment, int nClusters, int nPartitions) throws Exception {
+    public ClusteredDataSource kMeansCluster(int nClusters, int nPartitions) throws Exception {
         double[] maxs = segmentation.getMaxs();
         double[] mins = segmentation.getMins();
         
@@ -65,13 +65,13 @@ public class SegmentedTiffDataSource extends TiffDataSource implements Segmented
         for (int i=0 ; i<lists.length ; ++i){
             lists[i] = new ArrayList();
         } 
-        for (int i=0 ; i<getN(segment) ; ++i){
-            Voxel vox = get(i, segment);
+        for (int i=0 ; i<getSegmentN() ; ++i){
+            Voxel vox = getSegmentVoxel(i);
             int index = region(vox.getPoint(), nPartitions,dels);
             lists[index].add(vox);
         } 
         // build the clustering threads
-        double f = (double)getN(segment)/(double)nClusters;   
+        double f = (double)getSegmentN()/(double)nClusters;   
         ArrayList<VoxelClusterer> clusterers = new ArrayList<>();
         for (int i=0 ; i<lists.length ; ++i){
             ArrayList<Voxel> list = lists[i];
@@ -93,7 +93,7 @@ public class SegmentedTiffDataSource extends TiffDataSource implements Segmented
             clusterer.join();
         } 
 
-        return new ClusteredDataSource(clusterers.toArray(new VoxelClusterer[0]),0,this.getD());
+        return new ClusteredDataSource(clusterers.toArray(new VoxelClusterer[0]),segmentation.getThreshold(),this.getD());
     }
     // determine which region to put a given voxel
     protected int region(double[] p,int nPart,double[] dels){
@@ -113,14 +113,14 @@ public class SegmentedTiffDataSource extends TiffDataSource implements Segmented
     }    
     // return the number of voxels in the segment
     @Override
-    public int getN(int segment){
-        return segmentation.getN(segment);
+    public int getSegmentN(){
+        return segmentation.getSegmentN();
     }
     // return the ith voxel in the given segment
     @Override
-    public Voxel get(int i,int segment){
+    public Voxel getSegmentVoxel(int i){
         // get the voxel from this tiff data source
-        long voxIndex = segmentation.getVoxelIndex(segment, i);
+        long voxIndex = segmentation.getVoxelIndex(i);
         Voxel ret = super.get(voxIndex);
         return ret;
     } 

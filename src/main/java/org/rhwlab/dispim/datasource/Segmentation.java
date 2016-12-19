@@ -6,7 +6,6 @@
 package org.rhwlab.dispim.datasource;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import org.apache.commons.math3.linear.RealVector;
 
@@ -15,9 +14,9 @@ import org.apache.commons.math3.linear.RealVector;
  * @author gevirl
  */
 public class Segmentation {
-    public Segmentation(VoxelDataSource source,int bck){
-        
-        segmentIndex = new HashMap<>();
+    public Segmentation(VoxelDataSource source,double thresh){
+        this.thresh = thresh;
+        segmentIndex = new ArrayList<>();
         mins = new double[source.getD()];
         maxs = new double[source.getD()];
         for (int d=0 ; d<source.getD() ; ++d ){
@@ -27,40 +26,28 @@ public class Segmentation {
         
         for (long i=0 ; i<source.getN() ; ++i){  // process each voxel in the segmented tiff
             Voxel segVox = source.get(i);
-            int seg = segVox.getIntensity();  // intensity identifies the segment
-            if (seg != bck){  // do not build a segment for the background
-                addVoxelToSegment(segVox,i,seg);
+            if (segVox.getIntensity() >= thresh){  // do not include the voxel in the segmentation if less than the threshold
+                for (int d=0 ; d<mins.length ; ++d){
+                    RealVector v = segVox.coords;
+                    double e = v.getEntry(d);
+                    if (e < mins[d]){
+                        mins[d] = e;
+                    }
+                    if (e > maxs[d]) {
+                        maxs[d] = e;
+                    }
+                }                  
+                segmentIndex.add(i); 
             }
         }        
     }
 
-    public void addVoxelToSegment(Voxel segVox,long i,int seg){
-        // record mins and max of coordinates
-        for (int d=0 ; d<mins.length ; ++d){
-            RealVector v = segVox.coords;
-            double e = v.getEntry(d);
-            if (e < mins[d]){
-                mins[d] = e;
-            }
-            if (e > maxs[d]) {
-                maxs[d] = e;
-            }
-        }                  
-        // group the voxels by segment - intensity determines the segment
-        List<Long> positions = segmentIndex.get(seg);
-
-        if (positions == null){
-            positions = new ArrayList<>();
-            segmentIndex.put(seg, positions);
-        }
-        positions.add(i);        
-    }  
     
-    public long getVoxelIndex(int segment,int segIndex){
-        return segmentIndex.get(segment).get(segIndex);
+    public long getVoxelIndex(int segIndex){
+        return segmentIndex.get(segIndex);
     }
-    public int getN(int segment){
-        return segmentIndex.get(segment).size();
+    public int getSegmentN(){
+        return segmentIndex.size();
     }
     public double[] getMins(){
         return mins;
@@ -68,7 +55,11 @@ public class Segmentation {
     public double[] getMaxs(){
         return maxs;
     }
+    public double getThreshold(){
+        return thresh;
+    }
+    double thresh;
     double[] mins;  // min coordinates of non-background voxels
     double[] maxs;  // max coordinates of non-background voxels  
-    HashMap<Integer,List<Long>> segmentIndex;  // list of voxels in each segment    
+    List<Long> segmentIndex;  // list of voxels in each segment    
 }

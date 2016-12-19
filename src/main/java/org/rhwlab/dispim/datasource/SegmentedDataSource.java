@@ -11,7 +11,7 @@ package org.rhwlab.dispim.datasource;
  * @author gevirl
  */
 public interface SegmentedDataSource extends DataSource{
-    public ClusteredDataSource kMeansCluster(int segment,int nClusters,int nPartitions)throws Exception;
-    public int getN(int segment);
-    public Voxel get(int i,int segment);
+    public ClusteredDataSource kMeansCluster(int nClusters,int nPartitions)throws Exception;
+    public int getSegmentN();
+    public Voxel getSegmentVoxel(int i);
 }

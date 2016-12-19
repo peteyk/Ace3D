@@ -43,8 +43,15 @@ public class DataSetPropertyPanel extends JPanel {
         
         JPanel minPanel = new JPanel();
         minPanel.setLayout(new BoxLayout(minPanel,BoxLayout.X_AXIS));
+        
         minPanel.add(new JLabel("Minimum"));
         minField = new JTextField(Integer.toString(sliderMin));
+        minField.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                minSlider.setValue(Integer.valueOf(minField.getText().trim()));
+            }
+        });        
         minPanel.add(minField);
         
         minSlider = new JSlider(sliderMin,sliderMax,sliderMin);
@@ -68,9 +75,17 @@ public class DataSetPropertyPanel extends JPanel {
         
         JPanel maxPanel = new JPanel();
         maxPanel.setLayout(new BoxLayout(maxPanel,BoxLayout.X_AXIS));
+        
         maxPanel.add(new JLabel("Maximum"));
         maxField = new JTextField(Integer.toString(sliderMax));
+        maxField.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                maxSlider.setValue(Integer.valueOf(maxField.getText().trim()));
+            }
+        });
         maxPanel.add(maxField);
+        
         maxSlider = new JSlider(sliderMin,sliderMax,sliderMax);
         maxSlider.addChangeListener(new ChangeListener(){
             @Override

@@ -15,6 +15,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.jdom2.Element;
 import org.rhwlab.dispim.datasource.ByteHDF5DataSource;
+import org.rhwlab.dispim.datasource.FloatHDF5DataSource;
 import org.rhwlab.dispim.datasource.MicroCluster4DDataSource;
 import org.rhwlab.dispim.datasource.MicroClusterDataSource;
 import org.rhwlab.dispim.datasource.Segmentation;
@@ -26,7 +27,7 @@ import org.rhwlab.dispim.datasource.TiffDataSource;
  * @author gevirl
  */
 public class Nuclei_Identification implements Runnable {
-    public Nuclei_Identification(String dir,String lineageTiff,String segSource,boolean force,boolean study,double alpha,double s){
+    public Nuclei_Identification(String dir,String lineageTiff,String segSource,boolean force,boolean study,double alpha,double s,double segThresh){
         System.out.println(lineageTiff);
         System.out.println(segSource);
         this.segmentedSource = segSource;
@@ -38,6 +39,7 @@ public class Nuclei_Identification implements Runnable {
         this.force = force;
         this.study = study;
         this.alpha = alpha;
+        this.segThresh = segThresh;
         this.S = s;
         // parse the time from the filename
         this.time = getTime(segFile.getName());
@@ -91,9 +93,13 @@ public class Nuclei_Identification implements Runnable {
             try {
                 SegmentedTiffDataSource segSource;
                 if (segmentedSource.endsWith("h5")){
-                    segSource = new SegmentedTiffDataSource(lineageTff,new Segmentation(new ByteHDF5DataSource(new File(segmentedSource),"exported_data"),backgroundSegment));
+                    if (segmentedSource.contains("Prob")){
+                        segSource = new SegmentedTiffDataSource(lineageTff,new Segmentation(new FloatHDF5DataSource(new File(segmentedSource),"exported_data",100.0,1),segThresh));
+                    }else {
+                        segSource = new SegmentedTiffDataSource(lineageTff,new Segmentation(new ByteHDF5DataSource(new File(segmentedSource),"exported_data"),segThresh));
+                    }
                 } else {
-                    segSource = new SegmentedTiffDataSource(lineageTff,new Segmentation(new TiffDataSource(segmentedSource),backgroundSegment));
+                    segSource = new SegmentedTiffDataSource(lineageTff,new Segmentation(new TiffDataSource(segmentedSource),segThresh));
                 }
                 
 //                SegmentedTiffDataSource segSource = new SegmentedTiffDataSource(segmentedTiff,backgroundSegment); 
@@ -130,10 +136,10 @@ public class Nuclei_Identification implements Runnable {
         */
     }
     private void runMicroCluster(SegmentedTiffDataSource segSource,File microClusterFile)throws Exception {
-        int nVoxels = segSource.getN(nucleiSegment);
+        int nVoxels = segSource.getSegmentN();
         int nClusters = clusterCount(nVoxels);
         int nPartitions = Math.max(1,(int)Math.ceil(Math.pow(nClusters/1000.0,1.0/3.0)));                
-        segSource.kMeansCluster(nucleiSegment, nClusters, nPartitions).saveAsXML(microClusterFile.getPath());
+        segSource.kMeansCluster( nClusters, nPartitions).saveAsXML(microClusterFile.getPath());
     }
     private void runBHC(File microClusterFile,File BHCTreeFile)throws Exception {
  //       double alpha = 100000;//1000
@@ -262,7 +268,7 @@ public class Nuclei_Identification implements Runnable {
         ProcessBuilder pb = new ProcessBuilder("ssh","grid.gs.washington.edu",scriptFile.getPath());
         Process p = pb.start();        
     }
-    static public void submitTimePoints(File directory,TreeMap<Integer,String[]> tiffs,boolean force,String memory,double alpha,double S)throws Exception {
+    static public void submitTimePoints(File directory,TreeMap<Integer,String[]> tiffs,boolean force,String memory,double alpha,double S,double th)throws Exception {
         if (tiffs.isEmpty()) return;
         
         File scriptFile = new File(directory,"SubmitTimePoints.sh");
@@ -295,7 +301,7 @@ public class Nuclei_Identification implements Runnable {
             qsubStream.println("M2_HOME=/nfs/waterston/apache-maven-3.3.9");
             qsubStream.printf("/nfs/waterston/apache-maven-3.3.9/bin/mvn \"-Dexec.args=-Xms%s -Xmx%s  ",memory,memory);
             qsubStream.print(" -classpath %classpath org.rhwlab.BHC.Nuclei_Identification ");
-            qsubStream.printf("-S %f -alpha %f -first %d -last %d -segTiff \'%s\'  -lineageTiff \'%s\' -dir %s  ",S,alpha,time,time,names[1],names[0],directory.getPath());
+            qsubStream.printf("-segThresh %f -S %f -alpha %f -first %d -last %d -segTiff \'%s\'  -lineageTiff \'%s\' -dir %s  ",th,S,alpha,time,time,names[1],names[0],directory.getPath());
             if (force){
                 qsubStream.print(" -force ");
             }
@@ -319,11 +325,12 @@ public class Nuclei_Identification implements Runnable {
             submitStudyTimes(new File(cli.getDirectory()),tiffs);
         }
         else if (cli.getQsub()){
-            submitTimePoints(new File(cli.getDirectory()),tiffs,cli.getForce(),cli.getMemory(),cli.getAlpha(),cli.getS());
+            submitTimePoints(new File(cli.getDirectory()),tiffs,cli.getForce(),cli.getMemory(),cli.getAlpha(),cli.getS(),cli.getSegThresh());
         } else {
             for (int time : tiffs.keySet()){
                 String[] names = tiffs.get(time);
-                Nuclei_Identification objectID = new Nuclei_Identification(cli.getDirectory(),names[0],names[1],cli.getForce(),cli.getStudy(),cli.getAlpha(),cli.getS());
+                Nuclei_Identification objectID = 
+                        new Nuclei_Identification(cli.getDirectory(),names[0],names[1],cli.getForce(),cli.getStudy(),cli.getAlpha(),cli.getS(),cli.getSegThresh());
                 objectID.run();
             }
         }
@@ -346,9 +353,10 @@ public class Nuclei_Identification implements Runnable {
     String segmentedSource;
     double alpha;
     double S;
+    double segThresh;
     int time=-1;
     boolean force;
     boolean study;
-    static int backgroundSegment = 1;
-    static int nucleiSegment = 2;
+//    static int backgroundSegment = 1;
+ //   static int nucleiSegment = 2;
 }

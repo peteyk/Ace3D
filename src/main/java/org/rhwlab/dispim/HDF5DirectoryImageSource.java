@@ -43,7 +43,7 @@ public class HDF5DirectoryImageSource implements ImageSource{
         maxTime = Integer.MIN_VALUE;
         File[] files = directory.listFiles();
         for (File file : files){
-            if (file.getName().endsWith("h5")){
+            if (file.getName().endsWith("Probabilities.h5")){
                 Matcher matcher = p.matcher(file.getName());
                 if (matcher.find() ){
                     int time = Integer.valueOf(matcher.group(1));

@@ -82,6 +82,14 @@ public class Nuclei_IdentificationCLI extends CommandLine {
         }
         return null;        
     }
+    public String segThresh(String s){
+        try {
+            segThresh = Double.valueOf(s);
+        } catch (Exception exc){
+            return String.format("Error in option -segThresh %s", s);
+        }
+        return null;        
+    }    
     public String first(String s){
         try {
             firstTime = Integer.valueOf(s);
@@ -137,6 +145,9 @@ public class Nuclei_IdentificationCLI extends CommandLine {
     }
     public Double getS(){
         return this.S;
+    }
+    public Double getSegThresh(){
+        return segThresh;
     }
     public TreeMap<Integer,String[]> getTiffs(){
 
@@ -198,6 +209,7 @@ public class Nuclei_IdentificationCLI extends CommandLine {
     Integer lastTime;
     Double alpha;
     Double S;
+    Double segThresh;
     boolean force=false;
     boolean qsub = false;
     boolean study = false;

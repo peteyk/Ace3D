@@ -23,7 +23,9 @@ import java.util.List;
  * @author gevirl
  */
 public class FloatHDF5DataSource extends DataSourceBase implements VoxelDataSource {
-    public FloatHDF5DataSource(File hdFile,String hdDataSet){
+    public FloatHDF5DataSource(File hdFile,String hdDataSet,double scale,int segment){
+        this.scale = scale;
+        this.segment = segment;
         this.hd = hdFile;
         this.hdDataSet = hdDataSet;       
         IHDF5Reader reader = HDF5Factory.openForReading(hd);
@@ -51,16 +53,20 @@ public class FloatHDF5DataSource extends DataSourceBase implements VoxelDataSour
     public Voxel get(long i) {
         long[] coords = this.getCoords(i);
         
-        int v = (int)(100*mdArray.get((int)coords[2],(int)coords[1],(int)coords[0],0));
+        int v = (int)(scale*mdArray.get((int)coords[2],(int)coords[1],(int)coords[0],segment));
         return new Voxel(coords,v,0.0);
     }
 
     
     static public void main(String[] args){
-        ByteHDF5DataSource source = new ByteHDF5DataSource(
-                new File("/net/waterston/vol9/diSPIM/20161207_tbx-9_OP636/MVR_STACKS","TP142_Ch2_Ill0_Ang0,90_Simple Segmentation.h5"),
-                "exported_data");
+        FloatHDF5DataSource source = new FloatHDF5DataSource(
+                new File("/net/waterston/vol9/diSPIM/20161207_tbx-9_OP636/MVR_STACKS","TP200_Ch2_Ill0_Ang0,90_Probabilities.h5"),
+                "exported_data",100.0,0);  // seg=0 is background, seg=1 is foreground
+        Voxel vox = source.get(0);
+        int iuasdfuis=0;
     }
+    int segment;
+    double scale;
     File hd;
     String hdDataSet;
     MDFloatArray mdArray;

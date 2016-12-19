@@ -59,6 +59,8 @@ public class ByteHDF5DataSource extends DataSourceBase implements VoxelDataSourc
         ByteHDF5DataSource source = new ByteHDF5DataSource(
                 new File("/net/waterston/vol9/diSPIM/20161207_tbx-9_OP636/MVR_STACKS","TP142_Ch2_Ill0_Ang0,90_Simple Segmentation.h5"),
                 "exported_data");
+        Voxel vox = source.get(0);
+                int ioshfdios=0;
     }
     File hd;
     String hdDataSet;

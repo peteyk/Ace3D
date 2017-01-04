@@ -18,10 +18,11 @@ import org.jdom2.Element;
  * @author gevirl
  */
 public class MicroCluster {
-    public MicroCluster(double[] v,short[][] points,int[] intensities){
+    public MicroCluster(double[] v,short[][] points,int[] intensities,double prob){
         this.v = v;
         this.points = points;
         this.intensities = intensities;
+        this.avgProb = prob;
     }
     // construct from an xml element
     public MicroCluster (Element ele){
@@ -32,7 +33,7 @@ public class MicroCluster {
         for (int d=0 ; d<D ; ++d){
             v[d] = Double.valueOf(centerTokens[d]);
         }
-        
+        this.avgProb = Double.valueOf(ele.getAttributeValue("avgProb"));
         int nPts = Integer.valueOf(ele.getAttributeValue("points"));
         points = new short[nPts][];
         intensities = new int[nPts];
@@ -117,6 +118,7 @@ public class MicroCluster {
 
         }
         node.setAttribute("center", builder.toString());
+        node.setAttribute("avgProb", String.format("%.2f",this.avgProb));
         node.addContent(pointsAsString());
         return points.length;
     }
@@ -170,9 +172,14 @@ public class MicroCluster {
         }
         return new ArrayRealVector(d);
     }
+    public double getAvgProb(){
+        return this.avgProb;
+    }
+
     double[] v;  // center
     short[][] points;
     int[] intensities;
+    double avgProb;
     Long totalIntensity;
     Double avgIntensity;
 }

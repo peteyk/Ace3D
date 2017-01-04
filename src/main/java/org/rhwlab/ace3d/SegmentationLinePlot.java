@@ -6,6 +6,7 @@
 package org.rhwlab.ace3d;
 
 import java.util.TreeMap;
+import java.util.TreeSet;
 import javax.swing.JPanel;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
@@ -15,6 +16,8 @@ import org.jfree.chart.plot.XYPlot;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import org.rhwlab.BHC.BHCTree;
+import org.rhwlab.BHC.NucleusLogNode;
+import org.rhwlab.dispim.nucleus.BHCNucleusSet;
 
 /**
  *
@@ -25,14 +28,13 @@ public class SegmentationLinePlot extends JPanel {
         XYSeriesCollection collect = new XYSeriesCollection();
         XYSeries series = new XYSeries("");
         collect.addSeries(series);
-        TreeMap<Integer,Double> postMap = new TreeMap<>();
-        tree.allPosteriorProb(postMap);
-        for (Integer i : postMap.keySet()){
-            Double p = Math.exp(postMap.get(i));
-            series.add(i,p);
-            if (i >1000){
-                break;
-            }
+        
+        TreeMap<Integer,TreeSet<NucleusLogNode>> map =tree.allTreeCuts(1000);
+        for (Integer i : map.keySet()){
+            TreeSet<NucleusLogNode> nodes = map.get(i);
+            double lnP = nodes.first().getLogPosterior();
+            series.add((double)i,Math.exp(lnP));
+
         }
         int t = tree.getTime();
         int nu = tree.getNu();

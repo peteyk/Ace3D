@@ -5,21 +5,11 @@
  */
 package org.rhwlab.dispim.nucleus;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import org.apache.commons.math3.distribution.NormalDistribution;
-import org.apache.commons.math3.stat.StatUtils;
-import org.jdom2.Document;
 import org.jdom2.Element;
-import org.jdom2.input.SAXBuilder;
-import org.rhwlab.BHC.BHCTree;
-import org.rhwlab.BHC.Node;
 
 /**
  *
@@ -29,10 +19,10 @@ public class BHCNucleusSet {
     public BHCNucleusSet(){
         nuclei = new HashSet<>();
     }
-    public BHCNucleusSet(int time,String treeFile,double thresh,Set<BHCNucleusData> nucs){
+    
+    public BHCNucleusSet(int time,String treeFile,Set<BHCNucleusData> nucs){
         this();
         this.time = time;
-        this.cutThreshold = thresh;
         this.treeFile = treeFile;
         
         for (BHCNucleusData nuc : nucs){
@@ -45,7 +35,6 @@ public class BHCNucleusSet {
 
     public void init(Element document){
         nuclei = new HashSet<>();
-        this.cutThreshold = Double.valueOf(document.getAttributeValue("threshold"));
         this.time = Integer.valueOf(document.getAttributeValue("time"));
         this.treeFile = document.getAttributeValue("treefile");
         List<Element> gmmList = document.getChildren("GaussianMixtureModel");
@@ -55,16 +44,16 @@ public class BHCNucleusSet {
         }        
     }
 
-    public double getThreshold(){
-        return this.cutThreshold;
+    public TreeSet<BHCNucleusData> getNuclei(){
+        TreeSet<BHCNucleusData> ret = new TreeSet<>();
+        for (BHCNucleusData nuc : this.nuclei){
+            if (nuc.getVolume() >= minVolume){
+                ret.add(nuc);
+            }
+        }
+        return ret;
     }
-    public void setThreshold(double th){
-        this.cutThreshold = th;
-    }
-
-    public Set<BHCNucleusData> getNuclei(){
-        return this.nuclei;
-    }
+/*    
     // returns null if no outliers were removed
     // otherwise returns with a resegmented time point
     public BHCNucleusSet cutTreeOutlier(BHCTree tree){
@@ -123,13 +112,17 @@ public class BHCNucleusSet {
             current = next;
         }
         return ret;
-    }   
+    } 
+*/
     public int getTime(){
         return time;
     }
+    public TreeSet<BHCNucleusData> setMinVolume(double v){
+        this.minVolume = v;
+        return this.getNuclei();
+    }
     Set<BHCNucleusData> nuclei;
-    int time;   
-    double cutThreshold;  // posterior probability generating this set of nuclei
+    int time;  
+    double minVolume = 0.0;
     String treeFile;  // the BHCTree source of these nuclei
-    boolean curated;  // will be true is the nuclei were human generated, then can only be changed interactively
 }

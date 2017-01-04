@@ -194,6 +194,11 @@ public class LinkedNucleusFile implements NucleusFile {
             addNucleusRecursive(nuc.getChild2());
         }
     }
+    public void addCuratedNucleus(Nucleus nuc){
+        this.addNucleus(nuc);
+        
+        this.curatedSet.add(nuc.getTime());
+    }
     @Override
     public void addNucleus(Nucleus nuc) {
         int t= nuc.getTime();
@@ -243,7 +248,7 @@ public class LinkedNucleusFile implements NucleusFile {
         if (curated) curatedSet.add(bhcToAdd.getTime());
         
         TreeMap<String,Nucleus> nucsAtTime = new TreeMap<>();
-        for (NucleusData nuc : bhcToAdd.getNuclei()){
+        for (BHCNucleusData nuc : bhcToAdd.getNuclei()){
             Nucleus linkedNuc = new Nucleus(nuc);
 
             nucsAtTime.put(linkedNuc.getName(),linkedNuc);
@@ -613,7 +618,7 @@ public class LinkedNucleusFile implements NucleusFile {
             return lastNucleusInCell(nuc.getChild1());
         }
     }
-    @Override
+    //@Override
     public boolean isCurated(int time) {
         return curatedSet.contains(time);
     }

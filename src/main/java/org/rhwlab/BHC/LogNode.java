@@ -26,6 +26,8 @@ import org.rhwlab.dispim.datasource.MicroCluster;
  * @author gevirl
  */
 public class LogNode extends NodeBase implements Node  {
+    public LogNode(){
+    }
     public LogNode(MicroCluster micro){  // node composed of a single microcluster
         super(micro);
         lnd = lnAlpha;
@@ -37,19 +39,7 @@ public class LogNode extends NodeBase implements Node  {
         super(l,r);
         logPosterior();
     }
-    public LogNode(Element ele,Node par){
-        this.parent = par;
-        this.label = Integer.valueOf(ele.getAttributeValue("label"));
-        this.lnR = Double.valueOf(ele.getAttributeValue("posterior"));
-        String centerStr = ele.getAttributeValue("center");
-        if (centerStr == null){
-            List<Element> children = ele.getChildren("Node");
-            this.left = new LogNode(children.get(0),this);
-            this.right = new LogNode(children.get(1),this);
-        } else {
-            this.micro = new MicroCluster(ele);
-        }
-    }    
+   
     @Override
     public double  getLogPosterior() {
         return lnR;
@@ -198,7 +188,9 @@ public class LogNode extends NodeBase implements Node  {
        
         lnR = Utils.elnMult(lnPi, lnLike);
         lnR = Utils.elnMult(lnR, -lnDPM);
-        
+        if (lnR == 0){
+            int iousahdfui=0;
+        }
 
         
 //        dfpR = field.newDfp(realR);
@@ -209,12 +201,12 @@ public class LogNode extends NodeBase implements Node  {
         List<RealVector> data = new ArrayList<>();
         this.getDataAsRealVector(data);
         stream.printf("Size=%d\n", data.size());
-        
+ /*       
         for (RealVector vec : data){
             stream.print(vectorAsString(vec));
         }
         stream.println();
-        
+   */     
         stream.printf("lnd=%s\n", Double.toString(lnd));
         stream.printf("lnLike=%s\n", Double.toString(lnLike));
         stream.printf("lnDPM=%s\n", Double.toString(lnDPM));
@@ -247,5 +239,6 @@ public class LogNode extends NodeBase implements Node  {
     
     static double lambda = 1.0;
     static double lnLambda = Math.log(lambda);
+
     
 }

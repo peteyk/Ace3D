@@ -5,12 +5,17 @@
  */
 package org.rhwlab.dispim.nucleus;
 
+import java.util.ArrayList;
+import java.util.Set;
+import java.util.TreeSet;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import org.apache.commons.math3.linear.EigenDecomposition;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.jdom2.Element;
+import org.rhwlab.BHC.NodeBase;
+import org.rhwlab.BHC.NucleusLogNode;
 
 /**
  *
@@ -27,6 +32,8 @@ public class BHCNucleusData extends NucleusData {
         this.totalIntensity = jsonObj.getJsonNumber("Intensity").longValue();
         init();
     }
+    
+    // construct from Nucleus xml element saved in a file
     public BHCNucleusData(Element nucleusEle){
         super(nucleusEle);
         this.id = super.getName().substring(super.getName().indexOf('_')+1);
@@ -38,9 +45,9 @@ public class BHCNucleusData extends NucleusData {
         init();        
         
     }
-    // contruct the nucleus from a gmm nodebase element
+    // contruct from a BHC nodebase element
     public BHCNucleusData(int time,Element gmm){
-        super(time,name(time,gmm.getAttributeValue("id")),center(gmm),10.0);  // for now make all radii the same
+        super(time,name(time,gmm.getAttributeValue("id")),center(gmm));  
         id = gmm.getAttributeValue("id");
         count = Integer.valueOf(gmm.getAttributeValue("count"));
         sourceNode = gmm.getAttributeValue("sourceNode");
@@ -56,6 +63,25 @@ public class BHCNucleusData extends NucleusData {
         this.setAdjustment(R);
         init();
 
+    }
+    static public Set<BHCNucleusData> factory(TreeSet<NucleusLogNode> cut,double minVolume,int time){
+        TreeSet<BHCNucleusData> ret = new TreeSet<>();
+        int i=1;
+        for (NucleusLogNode logNode : cut){
+            BHCNucleusData nucData = BHCNucleusData.factory(logNode, i, time);
+            if (nucData!=null && nucData.getVolume()>=minVolume){
+                ret.add(nucData);
+                ++i;
+            }
+        }  
+        return ret;
+    }
+    static public BHCNucleusData factory(NodeBase node,int id,int time){
+        Element ele = node.formElementXML(id);
+        if (ele != null){
+            return  new BHCNucleusData(time,ele);
+        }
+        return null;
     }
     private void init(){
         volume = vf;
@@ -179,6 +205,7 @@ public class BHCNucleusData extends NucleusData {
     long totalIntensity;        // sum of all voxel intensities
     double intensityDensity;  // intensity per unit volume
     double intensityRSD;  // intensity stadard deviation / mean
+    double segmentedProb;  // average segmented probability of all the microclusters 
     int voxels;  // number of voxels in the nucleus
 }
 

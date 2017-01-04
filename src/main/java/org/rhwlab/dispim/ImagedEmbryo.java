@@ -27,8 +27,11 @@ import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 import org.jdom2.Element;
+import org.rhwlab.BHC.BHCTree;
+import org.rhwlab.BHC.NodeBase;
 import org.rhwlab.ace3d.Ace3D_Frame;
 import org.rhwlab.ace3d.SynchronizedMultipleSlicePanel;
+import org.rhwlab.dispim.nucleus.BHCNucleusData;
 import org.rhwlab.dispim.nucleus.LinkedNucleusFile;
 import org.rhwlab.dispim.nucleus.NamedNucleusFile;
 import org.rhwlab.dispim.nucleus.NucleusFile;
@@ -252,9 +255,11 @@ public class ImagedEmbryo implements Observable {
         notifyListeners();
     }
     public void notifyListeners(){
+        int t = panel.getTime();
         for (InvalidationListener listener : listeners){
             listener.invalidated(this);
         }
+        panel.changeTime(t);
     }
 
     @Override
@@ -301,14 +306,15 @@ public class ImagedEmbryo implements Observable {
     }
     // join the selected nucleus to its sister
     public void joinSelectedNucleus()throws Exception {
-/*       
+       
         Nucleus nuc = nucFile.getSelected();
         if (nuc == null) return;
         int time = nuc.getTime();
+        LinkedNucleusFile nf = ((LinkedNucleusFile)nucFile);
         
         // make a Nucleus from the selected nucleus' parent node
         BHCNucleusData bhcNuc = (BHCNucleusData)nuc.getNucleusData();
-        BHCTree tree = getBHCTree(time);
+        BHCTree tree = nf.getTreeDirectory().getTree(time);
         NodeBase node = (NodeBase)tree.findNode(Integer.valueOf(bhcNuc.getSourceNode()));
         NodeBase parent = (NodeBase)node.getParent();
         BHCNucleusData joinedNuc = new BHCNucleusData(nuc.getTime(),parent.formElementXML(Integer.valueOf(bhcNuc.getID())));
@@ -323,19 +329,13 @@ public class ImagedEmbryo implements Observable {
                 break;
             }
         }
-        // unlink the nuclei
-        Ace3DNucleusFile nf = ((Ace3DNucleusFile)nucFile);
-        nf.unlinkTime(time);
-        nf.unlinkTime(time-1);
             
         nf.removeNucleus(nuc, false);
         nf.removeNucleus(sisterNuc, false);
-        nf.addNucleus(new Nucleus(joinedNuc),false);
+        nf.addCuratedNucleus(new Nucleus(joinedNuc));
 
-//        nf.linkTimePoint(time-1);
-//        nf.linkTimePoint(time);
         nf.notifyListeners();        
-*/
+
     }
     // split the selected nucleus into daughters 
     public void splitSelectedNucleus(){

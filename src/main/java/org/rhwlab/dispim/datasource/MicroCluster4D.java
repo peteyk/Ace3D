@@ -14,8 +14,8 @@ import org.jdom2.Element;
  * @author gevirl
  */
 public class MicroCluster4D extends MicroCluster {
-    public MicroCluster4D(double[] v,short[][] points,int[] intensities){
-        super(v,points,intensities);
+    public MicroCluster4D(double[] v,short[][] points,int[] intensities,double prob){
+        super(v,points,intensities,prob);
     }
     public MicroCluster4D (Element ele){
         super(ele);

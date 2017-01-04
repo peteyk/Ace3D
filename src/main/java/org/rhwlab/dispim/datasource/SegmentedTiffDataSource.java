@@ -93,7 +93,9 @@ public class SegmentedTiffDataSource extends TiffDataSource implements Segmented
             clusterer.join();
         } 
 
-        return new ClusteredDataSource(clusterers.toArray(new VoxelClusterer[0]),segmentation.getThreshold(),this.getD());
+        ClusteredDataSource ret =  new ClusteredDataSource(clusterers.toArray(new VoxelClusterer[0]),segmentation.getThreshold(),this.getD());
+        ret.setPartition(mx);
+        return ret;
     }
     // determine which region to put a given voxel
     protected int region(double[] p,int nPart,double[] dels){

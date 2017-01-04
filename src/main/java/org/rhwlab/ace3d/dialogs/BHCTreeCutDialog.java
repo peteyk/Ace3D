@@ -6,26 +6,32 @@
 package org.rhwlab.ace3d.dialogs;
 
 import java.awt.BorderLayout;
+import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JDialog;
+import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTextField;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import org.jdom2.Element;
 import org.rhwlab.BHC.BHCTree;
+import org.rhwlab.BHC.NucleusLogNode;
 import org.rhwlab.ace3d.Ace3D_Frame;
 import org.rhwlab.dispim.ImagedEmbryo;
 import org.rhwlab.dispim.nucleus.BHCNucleusData;
 import org.rhwlab.dispim.nucleus.BHCNucleusSet;
 import org.rhwlab.dispim.nucleus.LinkedNucleusFile;
+import org.rhwlab.dispim.nucleus.Nucleus;
 import org.rhwlab.dispim.nucleus.NucleusFile;
 
 /**
@@ -35,12 +41,31 @@ import org.rhwlab.dispim.nucleus.NucleusFile;
 public class BHCTreeCutDialog extends JDialog {
     public BHCTreeCutDialog(Ace3D_Frame owner,ImagedEmbryo embryo){
         super(owner,false);
-        this.embryo = embryo;
+        this.owner = owner;
         this.nucleusFile = embryo.getNucleusFile();
         this.setTitle("Cut the BHC Tree");
         this.setSize(300, 500);
         this.getContentPane().setLayout(new BorderLayout());
         this.setLocationRelativeTo(owner);
+        
+        JPanel volumePanel = new JPanel();
+        volumePanel.setLayout(new FlowLayout());
+        volumePanel.add(new JLabel("Minimum Volume: "));
+        volumePanel.add(volumeField);
+        volumeField.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    minVolume = Double.valueOf(volumeField.getText().trim());
+                    ok();
+                }catch (Exception exc){
+                    
+                }
+            }
+        });
+        volumePanel.add(new JLabel("  List Size: "));
+        volumePanel.add(maxItemsField);
+        this.getContentPane().add(volumePanel,BorderLayout.NORTH);
         
         jList = new JList();
         jList.addListSelectionListener(new ListSelectionListener(){
@@ -55,18 +80,7 @@ public class BHCTreeCutDialog extends JDialog {
         this.getContentPane().add(scroll, BorderLayout.CENTER);
         
         JPanel button = new JPanel();
-/*        
-        JButton ok = new JButton("Ok");
-        ok.addActionListener(new ActionListener(){
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                BHCTreeCutDialog.this.ok();
-                BHCTreeCutDialog.this.setVisible(false);
-                result = true;
-            }
-        });        
-        button.add(ok);
-*/        
+       
         JButton cancel = new JButton("Done");
         cancel.addActionListener(new ActionListener(){
             @Override
@@ -85,8 +99,10 @@ public class BHCTreeCutDialog extends JDialog {
             int t = tree.getTime();
             LinkedNucleusFile f = (LinkedNucleusFile)this.nucleusFile;
             f.clearInterCuratedRegion(t, false);
-            BHCNucleusSet bhc = tree.cutToN(((Posterior)sel).n);
-            nucleusFile.addNuclei(bhc,true);
+            Set<BHCNucleusData> nucData =  BHCNucleusData.factory(tree.cutToN(((CutDescriptor)sel).getNodeCount()), minVolume, t);
+            BHCNucleusSet nucSet = new BHCNucleusSet(t,tree.getFileName(),nucData);
+            nucleusFile.addNuclei(nucSet,true);
+            owner.stateChanged(null);
 /*            
             nucleusFile.unlinkTime(t);
             nucleusFile.unlinkTime(t-1);
@@ -105,6 +121,7 @@ public class BHCTreeCutDialog extends JDialog {
 */
         }
     }
+/*    
     public void countClusters(){
         Posterior selected = (Posterior)jList.getSelectedValue();
         if (selected == null){
@@ -116,26 +133,40 @@ public class BHCTreeCutDialog extends JDialog {
         }
         jList.repaint();
     }
+*/
     public void setBHCTree(BHCTree tree){
-        Posterior selected = null;
+        
         this.tree = tree;
+        buildListModel();
+
+    }
+    private void buildListModel(){
+        CutDescriptor sel = (CutDescriptor)jList.getSelectedValue(); 
+        Integer n = null;
+        if (sel != null){
+            n = sel.getNodeCount();
+        }
+        
         DefaultListModel model = new DefaultListModel();
-        TreeMap<Integer,Double> postMap = new TreeMap<>(); 
         if (tree == null) {
             return;
         }
-        this.tree.allPosteriorProb(postMap);
-//        Set<Double> posts = tree.allPosteriors();
-        for (Integer m : postMap.keySet()){
-            Double post = postMap.get(m);
-            Posterior posterior = new Posterior(post,m);
-            model.addElement(posterior);
-            if (post == thresh){
-                selected = posterior;
-            }            
+        
+        CutDescriptor selected = null;
+        CutDescriptor cutDesc = new CutDescriptor(tree.firstTreeCut());
+        while (cutDesc.getNodeCount() <= maxItems){
+            model.addElement(cutDesc);
+            if (n != null && cutDesc.getNodeCount()==n){
+                selected = cutDesc;
+            }
+            TreeSet<NucleusLogNode> current = cutDesc.getCut();
+            TreeSet<NucleusLogNode> next = tree.nextTreeCut(current);
+            cutDesc = new CutDescriptor(next);
         }
+
         jList.setModel(model);
-        jList.setSelectedValue(selected,true);
+        jList.setSelectedValue(selected,true);    
+        
     }
     public boolean isOK(){
         return this.result;
@@ -144,12 +175,34 @@ public class BHCTreeCutDialog extends JDialog {
         return thresh;
     }
     boolean result = false;
-    double thresh;
-    ImagedEmbryo embryo;
+    double thresh = Math.log(.9);
+    Ace3D_Frame owner;
     NucleusFile nucleusFile;
     BHCTree tree;
     JList jList;
+    JTextField volumeField = new JTextField("1000");;
+    JTextField maxItemsField  = new JTextField("60");;
+    int maxItems=60;
+    double minVolume=1000.0;
     
+    class CutDescriptor {
+        public CutDescriptor(TreeSet<NucleusLogNode> cut){
+            this.cut = cut;
+        }
+        public int getNodeCount(){
+            return cut.size();
+        }
+        public TreeSet<NucleusLogNode> getCut(){
+            return cut;
+        }
+        public String toString(){
+            NucleusLogNode first = cut.first();
+            double lnP = first.getLogPosterior();
+            return String.format("(%d) %e %f",getNodeCount(),Math.exp(lnP),lnP);
+        }
+        TreeSet<NucleusLogNode> cut;
+    }
+/*    
     class Posterior {
         public Posterior(double r,int n){
             this.r = r;
@@ -167,4 +220,5 @@ public class BHCTreeCutDialog extends JDialog {
         double r;
         int n;
     }
+*/
 }

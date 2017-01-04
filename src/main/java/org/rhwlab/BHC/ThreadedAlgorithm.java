@@ -33,7 +33,7 @@ public class ThreadedAlgorithm implements Runnable {
         MicroCluster.setField(field);
 */        
         mu = source.getDataMean().toArray();
-        NodeBase.maxN = 6000;
+        NodeBase.maxN = 10000;
         NodeBase.setParameters(nu,beta,mu,s);
 //        DfpNode.setParameters(nu,beta,mu,s);
 //        RealMatrix s0 = source.getDataVariance();

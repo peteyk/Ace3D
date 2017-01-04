@@ -6,7 +6,6 @@
 package org.rhwlab.BHC;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -58,14 +57,22 @@ public class Nuclei_IdentificationCLI extends CommandLine {
     public String segTiff(String s){
         return noOption(s);
     }
-    public String dir(String s){
+    public String bhcDir(String s){
         File dir = new File(s);
         if (dir.isDirectory()){
-            this.directory = dir.getPath();
+            this.bhcDir = dir.getPath();
             return null;
         }
         return s;
     }
+    public String seriesDir(String s){
+        File dir = new File(s);
+        if (dir.isDirectory()){
+            this.seriesDir = dir.getPath();
+            return null;
+        }
+        return s;
+    }    
     public String S(String s){
         try {
             S = Double.valueOf(s);
@@ -106,6 +113,14 @@ public class Nuclei_IdentificationCLI extends CommandLine {
         }
         return null;
     }   
+    public String nu(String s){
+        try {
+            nu = Integer.valueOf(s);
+        } catch (Exception exc){
+            return String.format("Error in option -nu %s", s);
+        }
+        return null;
+    }       
     public void force(){
         this.force = true;
     }
@@ -119,6 +134,7 @@ public class Nuclei_IdentificationCLI extends CommandLine {
     public void study(){
         this.study = true;
     }
+    
     public Integer getFirstTime(){
         return this.firstTime;
     }
@@ -134,8 +150,14 @@ public class Nuclei_IdentificationCLI extends CommandLine {
     public boolean getStudy(){
         return this.study;
     }
-    public String getDirectory(){
-        return this.directory;
+    public String getBHCDirectory(){
+        return this.bhcDir;
+    }
+    public String getSegmentTiff(){
+        return this.segTiff;
+    }
+    public String getLineTiff(){
+        return this.lineTiff;
     }
     public String getMemory(){
         return memory;
@@ -149,11 +171,59 @@ public class Nuclei_IdentificationCLI extends CommandLine {
     public Double getSegThresh(){
         return segThresh;
     }
-    public TreeMap<Integer,String[]> getTiffs(){
-
- 
-        TreeMap<Integer,String> segMap = getFiles(this.segTiff);
-        TreeMap<Integer,String> lineMap = getFiles(this.lineTiff);
+    public Integer getNu(){
+        return nu;
+    }
+    static public TreeMap<Integer,String[]> getMVRFiles(String seriesDir,int start,int end){
+        File mvrDir = new File(seriesDir,"MVR_STACKS");
+        File[] files = mvrDir.listFiles();
+        TreeMap<Integer,String[]> ret = new TreeMap<>();
+        
+        // find a Probabilities file
+        File typical = null;
+        for (File file : files){
+            if (file.getName().contains("Probabilities")){
+                typical = file;
+                break;
+            }
+        }
+        Pattern segPattern = Pattern.compile("TP(\\d{1,4})(_Ch.+)_Probabilities.+");
+        Matcher m = segPattern.matcher(typical.getName());
+        m.matches();
+        String base = m.group(2);      
+        Pattern linePattern = Pattern.compile("TP(\\d{1,4})"+base+".tif");
+        for (File file : files){
+            m = segPattern.matcher(file.getName());
+            if (m.matches()) {
+                int t =Integer.valueOf(m.group(1));
+                if (start <= t && t <=end){
+                    String[] names = ret.get(t);
+                    if (names == null){
+                        names= new String[2];
+                        ret.put(t,names);
+                    }
+                    names[1] = file.getPath();
+                }
+            } else {
+                m = linePattern.matcher(file.getName());
+                if (m.matches()){
+                    int t =Integer.valueOf(m.group(1));
+                    if (start <= t && t <=end){
+                        String[] names = ret.get(t);
+                        if (names == null){
+                            names= new String[2];
+                            ret.put(t,names);
+                        } 
+                        names[0] = file.getPath();
+                    }
+                }
+            }
+        }
+        return ret;
+    }
+    static public TreeMap<Integer,String[]> getTiffs(String segFile,String lineFile,Integer start,Integer end){
+        TreeMap<Integer,String> segMap = getFiles(segFile,start,end);
+        TreeMap<Integer,String> lineMap = getFiles(lineFile,start,end);
         TreeMap<Integer,String[]> timeMap = new TreeMap<>();
         for (int time : lineMap.keySet()){
             String seg = segMap.get(time);
@@ -166,12 +236,12 @@ public class Nuclei_IdentificationCLI extends CommandLine {
         }
         return timeMap;
     }
-    public TreeMap<Integer,String> getFiles(String typical){
-        TreeMap ret = new TreeMap<>();
-        
-        File tiff = new File(typical);
 
-        File dir = tiff.getParentFile();
+    static public TreeMap<Integer,String> getFiles(String typical,Integer start,Integer end){
+        TreeMap ret = new TreeMap<>();
+        File tiff = new File(typical);
+        File dir = tiff.getParentFile(); 
+
         File[] files = dir.listFiles();
         
         Pattern p = p = Pattern.compile("(TP)(\\d{1,4})(_.+)");      
@@ -189,10 +259,10 @@ public class Nuclei_IdentificationCLI extends CommandLine {
             m = p.matcher(file.getName());
             if (m.matches()){
                 int time = Integer.valueOf(m.group(1));
-                if (firstTime != null && time < firstTime){
+                if (start != null && time < start){
                     continue;
                 }
-                if (lastTime != null && time > lastTime){
+                if (end != null && time > end){
                     continue;
                 }
                 ret.put(time, file.getPath());
@@ -202,7 +272,8 @@ public class Nuclei_IdentificationCLI extends CommandLine {
         return ret;
     }
     String memory;
-    String directory;
+    String bhcDir;
+    String seriesDir;
     String lineTiff;
     String segTiff;
     Integer firstTime;
@@ -210,6 +281,7 @@ public class Nuclei_IdentificationCLI extends CommandLine {
     Double alpha;
     Double S;
     Double segThresh;
+    Integer nu;
     boolean force=false;
     boolean qsub = false;
     boolean study = false;

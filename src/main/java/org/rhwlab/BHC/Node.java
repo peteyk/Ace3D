@@ -27,8 +27,9 @@ public interface Node extends Comparable {
     public Node getRight();
     public void print(PrintStream stream);
     public void getDataAsMicroCluster(List<MicroCluster> list);
-    public int saveAsXML(Element root,int id);
-    public  int saveAsXMLByThreshold(Element root,double threshold,int id);
+//    public int saveAsXML(Element root,int id);  
+    public int saveAsTreeXML(Element root);
+//    public  int saveAsXMLByThreshold(Element root,double threshold,int id);
     public int getN();
     public boolean isLeaf();
 }

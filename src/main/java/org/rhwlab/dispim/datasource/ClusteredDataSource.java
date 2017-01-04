@@ -5,7 +5,6 @@
  */
 package org.rhwlab.dispim.datasource;
 
-import org.rhwlab.dispim.datasource.Voxel;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
@@ -22,7 +21,6 @@ import org.jdom2.Element;
 import org.jdom2.input.SAXBuilder;
 import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
-import org.rhwlab.dispim.datasource.VoxelDataSource;
 import org.rhwlab.variationalbayesian.GaussianMixture;
 
 /**
@@ -48,8 +46,9 @@ public class ClusteredDataSource implements VoxelDataSource {
             }
         }
   
-        clusterMin = new int[K];
-        clusterMax = new int[K];
+        clusterMinIntensity = new int[K];
+        clusterMaxIntensity = new int[K];
+        this.clusterSegmentedProb = new double[K];
         centers = new RealVector[K];
         X = new Voxel[N];
         z = new GaussianComponent[N];
@@ -63,8 +62,9 @@ public class ClusteredDataSource implements VoxelDataSource {
                 GaussianComponent comp = new GaussianComponent(this,k);
                 gaussians.add(comp);            
                 centers[k] = new ArrayRealVector(cluster.getCenter().getPoint());
-                this.clusterMin[k] = Integer.MAX_VALUE;
-                this.clusterMax[k] = Integer.MIN_VALUE;
+                this.clusterMinIntensity[k] = Integer.MAX_VALUE;
+                this.clusterMaxIntensity[k] = Integer.MIN_VALUE;
+                this.clusterSegmentedProb[k] = 0.0;
                 for (Voxel vox : cluster.getPoints()){
                     X[n] = vox;
                     if (vox.intensity < minIntensity){
@@ -73,16 +73,18 @@ public class ClusteredDataSource implements VoxelDataSource {
                     if (vox.intensity > maxIntensity){
                         maxIntensity = vox.intensity;
                     }
-                    if (vox.intensity < clusterMin[k]){
-                        clusterMin[k] = vox.intensity;
+                    if (vox.intensity < clusterMinIntensity[k]){
+                        clusterMinIntensity[k] = vox.intensity;
                     }
-                    if (vox.intensity > clusterMax[k]){
-                        clusterMax[k] = vox.intensity;
+                    if (vox.intensity > clusterMaxIntensity[k]){
+                        clusterMaxIntensity[k] = vox.intensity;
                     }
+                    this.clusterSegmentedProb[k] = this.clusterSegmentedProb[k] + vox.getAdjusted();
                     comp.addPoint(n, false);
                     z[n] = comp;
                     ++n;
                 }
+                this.clusterSegmentedProb[k] = this.clusterSegmentedProb[k]/comp.indexes.size();
                 ++k;
                 comp.calculateStatistics();
             } 
@@ -95,8 +97,9 @@ public class ClusteredDataSource implements VoxelDataSource {
         Element root = doc.getRootElement();
         int K = Integer.valueOf(root.getAttributeValue("NumberOfClusters"));
         D = Integer.valueOf(root.getAttributeValue("Dimensions"));
-        clusterMin = new int[K];
-        clusterMax = new int[K];
+        clusterMinIntensity = new int[K];
+        clusterMaxIntensity = new int[K];
+        this.clusterSegmentedProb = new double[K];
         centers = new RealVector[K];
         int N = Integer.valueOf(root.getAttributeValue("NumberOfPoints"));
         minIntensity = Integer.valueOf(root.getAttributeValue("MinimumIntensity"));
@@ -118,8 +121,9 @@ public class ClusteredDataSource implements VoxelDataSource {
             
             GaussianComponent comp = new GaussianComponent(this,k);
             gaussians.add(comp);            
-            this.clusterMin[k] = Integer.valueOf(clusterElement.getAttributeValue("MinimumIntensity"));
-            this.clusterMax[k] = Integer.valueOf(clusterElement.getAttributeValue("MaximumIntensity"));
+            this.clusterMinIntensity[k] = Integer.valueOf(clusterElement.getAttributeValue("MinimumIntensity"));
+            this.clusterMaxIntensity[k] = Integer.valueOf(clusterElement.getAttributeValue("MaximumIntensity"));
+            this.clusterSegmentedProb[k] = Double.valueOf(clusterElement.getAttributeValue("AvgAdjusted"));
             List<Element> pointElements = clusterElement.getChildren("Point");
             for (Element pointElement : pointElements){
                 tokens = pointElement.getTextNormalize().split(" ");
@@ -140,7 +144,7 @@ public class ClusteredDataSource implements VoxelDataSource {
         }
 
     }
-
+/*
     public void saveAsGMMFormatXML(String file)throws Exception {
         OutputStream stream = new FileOutputStream(file);
         Element root = new Element("ClusteredVoxels");      
@@ -178,11 +182,12 @@ public class ClusteredDataSource implements VoxelDataSource {
         out.output(root, stream);
         stream.close(); 
     }
-    
+*/   
     public void saveAsXML(String file)throws Exception {
         OutputStream stream = new FileOutputStream(file);
         Element root = new Element("KMeansClustering");
         root.setAttribute("NumberOfClusters",Integer.toString(centers.length));
+        root.setAttribute("Partitions", Integer.toString(partitions));
         root.setAttribute("Dimensions",Integer.toString(D));
         root.setAttribute("NumberOfPoints",Long.toString(this.getN()));
         root.setAttribute("SegmentationThreshold",Double.toString(segThresh));
@@ -203,8 +208,8 @@ public class ClusteredDataSource implements VoxelDataSource {
             ele.setAttribute("Center", builder.toString());
             
             ele.setAttribute("PointCount", Integer.toString(comp.getN()));
-            ele.setAttribute("MinimumIntensity", Integer.toString(this.clusterMin[c]));
-            ele.setAttribute("MaximumIntensity", Integer.toString(this.clusterMax[c]));
+            ele.setAttribute("MinimumIntensity", Integer.toString(this.clusterMinIntensity[c]));
+            ele.setAttribute("MaximumIntensity", Integer.toString(this.clusterMaxIntensity[c]));
             double avgAdjusted = 0.0;
             for (int n : comp.getIndexes()){
                 Element pointEle = new Element("Point");
@@ -277,9 +282,9 @@ public class ClusteredDataSource implements VoxelDataSource {
     public void normalizeIntensity(double minI,double maxI){
         for (int c=0 ; c<gaussians.size() ; ++c){
             GaussianComponent comp = gaussians.get(c);
-            double f = (maxI-minI)/(clusterMax[c]-clusterMin[c]);
+            double f = (maxI-minI)/(clusterMaxIntensity[c]-clusterMinIntensity[c]);
             for (int i : comp.getIndexes()){
-                X[i].intensity = (int)(minI + (int)(f*(X[i].intensity-clusterMin[c])));
+                X[i].intensity = (int)(minI + (int)(f*(X[i].intensity-clusterMinIntensity[c])));
             }
         }
     }
@@ -288,6 +293,9 @@ public class ClusteredDataSource implements VoxelDataSource {
     }
     public RealVector getCenter(int cl){
         return centers[cl];
+    }
+    public double getSegmentedProb(int cl){
+        return this.clusterSegmentedProb[cl];
     }
     // return all the vectors (voxel coordinates)  in this cluster
     public RealVector[] getClusterVectors(int cl){
@@ -302,12 +310,17 @@ public class ClusteredDataSource implements VoxelDataSource {
         return ret;
     }
 
+    public void setPartition(int part){
+        this.partitions = part;
+    }
+    int partitions;
     int D;
     Voxel[] X;
     GaussianComponent[] z;  // the Gaussian component that each voxel is currently assigned
     List<GaussianComponent> gaussians = new ArrayList<>();
-    int[] clusterMin;
-    int[] clusterMax;
+    int[] clusterMinIntensity; 
+    int[] clusterMaxIntensity;
+    double[] clusterSegmentedProb;
     RealVector[] centers;
     int minIntensity;
     int maxIntensity;

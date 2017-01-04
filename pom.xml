@@ -42,7 +42,7 @@
         </plugins>
     </build>
     <properties>
-        <scijava.jvm.version>1.7</scijava.jvm.version>
+        <scijava.jvm.version>1.8</scijava.jvm.version>
         <ImageJ_3D_Viewer.version>4.0.0</ImageJ_3D_Viewer.version>
     </properties>
 
@@ -68,6 +68,16 @@
 
         
     <dependencies>
+        <dependency>   
+            <groupId>com.joptimizer</groupId>   
+            <artifactId>joptimizer</artifactId>   
+            <version>3.5.1</version> 
+        </dependency>
+        <dependency>
+            <groupId>org.ojalgo</groupId>
+            <artifactId>ojalgo</artifactId>
+            <version>41.0.0</version>
+        </dependency>         
         <dependency>
             <groupId>jgrapht</groupId>
             <artifactId>jgrapht</artifactId>

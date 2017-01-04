@@ -41,7 +41,7 @@ public class MicroClusterDataSource implements DataSource {
             for (int i=0 ; i<v.length ; ++i){
                 v[i] = Double.valueOf(tokens[i]);
             }
-            
+            double prob = Double.valueOf(clusterElement.getAttributeValue("AvgAdjusted"));
             List<Element> pointElements = clusterElement.getChildren("Point");
             short[][] points = new short[pointElements.size()][];
             int[] intensities = new int[pointElements.size()];
@@ -55,7 +55,7 @@ public class MicroClusterDataSource implements DataSource {
                 }
                 ++n;
             }          
-            micros[k] = new MicroCluster(v,points,intensities);
+            micros[k] = new MicroCluster(v,points,intensities,prob);
             ++k;
         }
     }

@@ -7,13 +7,16 @@ package org.rhwlab.dispim.nucleus;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import org.rhwlab.BHC.BHCTree;
+import org.rhwlab.dispim.ImagedEmbryo;
 import static org.rhwlab.dispim.nucleus.LinkedNucleusFile.threshold;
 
 /**
@@ -26,42 +29,159 @@ public class Linkage implements Comparable {
         this.from = fromN;
         this.to = toN;
     }
-
-    // automatic segmentation and linkage to next time point
-    static Nucleus[] autoLinkage(Nucleus[] nucsToLink,int fromTime,BHCTreeDirectory bhcTreeDir)throws Exception {
-        if (fromTime == 71){
-            int asuiofhduis=0;
+/*
+    // link the unlinked nuclei at a given time point to the previous time point
+    // will attempt to segment the previous time point optimally, if not a curated time point
+    static public Nucleus[] linkBack(ImagedEmbryo embryo,int time,BHCTreeDirectory bhcTreeDir)throws Exception {
+        int earlyTime = time-1;
+        // get the unlinked nuclei at the given time
+        ArrayList<Nucleus> laterNucsToLink = new ArrayList<>();
+        Set<Nucleus> nucsFromSet = embryo.getNuclei(time);
+        for (Nucleus nuc : nucsFromSet){
+            if (nuc.getParent() == null){
+                laterNucsToLink.add(nuc);   // only looking at roots
+            }
         }
-        Nucleus[] currentFrom = cloneNuclei(nucsToLink);
-        if (currentFrom.length == 0)return null;
+        Set<Nucleus> existingEarlyNucs = embryo.getNuclei(earlyTime);
+        if (existingEarlyNucs.isEmpty()){
+            // form the same number of nuclei as the from time
+            BHCTree tree= bhcTreeDir.getTree(earlyTime);
+            BHCNucleusSet  earlyNucsSet = tree.cutToN(nucsFromSet.size());
+            
+            // link with Hungarian algorithm
+            HungarianLinkInTime(earlyNucsSet.getNuclei(),laterNucsToLink);
+            
+            // form possible divisions by joining early nucs using BHC tree 
+            
+        }else if (embryo.getNucleusFile().isCurated(earlyTime)){
+            // get the nuclei still available to link to
+            ArrayList<Nucleus> leafEarlyNucs = new ArrayList<>();
+            for (Nucleus nuc : existingEarlyNucs){
+                if (nuc.isLeaf()){
+                    leafEarlyNucs.add(nuc);
+                }
+            }
+            // use Hungarian to link to early time point leaves
+            HungarianLinkInTime(leafEarlyNucs,laterNucsToLink);
+            
+            
+        } else {
+            
+        }
+        
+            
+        
+        
+        return null;
+    }
+    */
+    static void HungarianLinkInTime(Collection from,Collection to){
+        Nucleus[] fromNucs = (Nucleus[])from.toArray(new Nucleus[0]);
+        Nucleus[] toNucs = (Nucleus[])to.toArray(new Nucleus[0]);
+        HungarianLinkInTime(fromNucs,toNucs);
+    }
+    // link a set of from nucs to a set of to nucs in time
+    // the from nucs must be leaves and the to nucs must be roots
+    static void HungarianLinkInTime(Nucleus[] fromNucs,Nucleus[] toNucs){
+        // compute all pairwise distance between nuclei in the two adjacent time points
+        double[][] dist = new double[fromNucs.length][];
+        for (int r=0 ; r<dist.length ; ++r){
+            dist[r] = new double[toNucs.length];
+            for (int c=0 ; c<toNucs.length ; ++c){
+                dist[r][c] = fromNucs[r].distance(toNucs[c]);  // this distance is weighted by intensity and volume
+            }
+        }
+        
+        // use Hungarian Algorithm to assign linking
+        HungarianAlgorithm hungarian = new HungarianAlgorithm(dist);
+        int[] linkage = hungarian.execute();
+        
+        // link the nuclei
+        for (int i=0 ; i<linkage.length ; ++i){
+            if (linkage[i]!=-1){
+                double d = fromNucs[i].distance(toNucs[linkage[i]]);
+                if (d < timeLinkDistThresh){
+                    fromNucs[i].linkTo(toNucs[linkage[i]]);
+
+                    // if the from nuc is in a named cell , put child nuc in same cell
+                    String cellname = fromNucs[i].getCellName();
+                    toNucs[linkage[i]].setCellName(cellname,fromNucs[i].isUsernamed());
+                }
+            }
+        }          
+    }
+    /*
+    static Nucleus[] bestCut(int n,BHCTree tree,double minVolume){
+        Set<BHCNucleusData> currentSet = tree.cutToN(n).setMinVolume(minVolume);
+        
+        while (true){
+            ++n;
+            Set<BHCNucleusData> nextSet = tree.cutToN(n).setMinVolume(minVolume);
+            if (currentSet.size() == nextSet.size()){
+                break;
+            }
+            currentSet = nextSet;
+        }
+        Nucleus[] ret = new Nucleus[currentSet.size()];
+        int i=0;
+        for (BHCNucleusData data : currentSet){
+            ret[i] = new Nucleus(data);
+            ++i;
+        }
+        return ret; 
+    }
+    
+    static Nucleus[] autoLinkage(Nucleus[] nucsToLink,int fromTime,BHCTreeDirectory bhcTreeDir)throws Exception {
+        if (nucsToLink.length == 0)return null;
         
         BHCTree nextTree = bhcTreeDir.getTree(fromTime+1);
         if (nextTree == null){
             return null; // no tree built for the to time
         }
-        TreeMap<Integer,Double> probMap = new TreeMap<>();
-        nextTree.allPosteriorProb(probMap);    
-        int nextN = currentFrom.length;  // start with the same number of nuclei as prior time
         
-        // find a probability at which to cut the nextTree
+        Nucleus[] toNucs = bestCut(nucsToLink.length,nextTree,3000.0);
+        Linkage next = new Linkage(nucsToLink,toNucs);
+        next.formLinkage();        
+        
+        return toNucs;
+           
+    }
+    */
+    // automatic segmentation and linkage to next time point
+    static Nucleus[] autoLinkage(Nucleus[] nucsToLink,int fromTime,BHCTreeDirectory bhcTreeDir)throws Exception {
+
+        Nucleus[] currentFrom = cloneNuclei(nucsToLink);
+        if (nucsToLink.length == 0)return null;
+        
+        BHCTree nextTree = bhcTreeDir.getTree(fromTime+1);
+        if (nextTree == null){
+            return null; // no tree built for the to time
+        }
+        int nextN = currentFrom.length;  // start with the same number of nuclei as prior time
+        TreeMap<Integer,Double> probMap = nextTree.allPosteriorProb(Math.min(10*nextN,600));    
+        
+       // find a probability at which to cut the nextTree
         double prob = probMap.get(nextN);
         while (prob < threshold){
             ++nextN;  // skipping cuts that have a probability less than the threshold
+            if (probMap.get(nextN)==null){
+                int iosdfihsd=0;
+            }
             prob = probMap.get(nextN);
         }  
-        
+      
         // form a first  potential linkage
-        Nucleus[] currentTo = cutTreeToNuclei(nextTree,nextN);
-        double nextProb = probMap.get(nextN);        
+        Nucleus[] currentTo = nextTree.cutToN(nextN, minVolume(fromTime+1), 0.95);
+        double nextProb = Math.exp(probMap.get(nextN));        
         Linkage current = new Linkage(currentFrom,currentTo);
         current.formLinkage();
         
         if (nextProb < .95){
             do {
                 ++nextN;
-                nextProb = probMap.get(nextN);
+                nextProb = Math.exp(probMap.get(nextN));
                 Nucleus[] nextFrom = cloneNuclei(nucsToLink);
-                Nucleus[] nextTo = cutTreeToNuclei(nextTree,nextN);
+                Nucleus[] nextTo = nextTree.cutToN(nextN, minVolume(fromTime+1), 0.95);
                 
                 // find the minimum nucleus
                 boolean tooSmall=false;
@@ -95,6 +215,8 @@ public class Linkage implements Comparable {
         }
         
         return current.getTo();
+        
+        
     }
     static Nucleus[] cloneNuclei(Nucleus[] nucs){
         Nucleus[] ret = new Nucleus[nucs.length];
@@ -102,7 +224,7 @@ public class Linkage implements Comparable {
             ret[i] = nucs[i].clone();
         }
         return ret;
-    }
+    }/*
     static private Nucleus[] cutTreeToNuclei(BHCTree nextTree,int n){
         BHCNucleusSet nextNucSet = nextTree.cutToN(n);
         Set<BHCNucleusData> nucData = nextNucSet.getNuclei();
@@ -114,6 +236,7 @@ public class Linkage implements Comparable {
         }    
         return toNucs;
     }
+*/
      public void formLinkage(){
         // link the polar bodies first
         this.linkPolarBodies();
@@ -283,11 +406,22 @@ public class Linkage implements Comparable {
     }
 
     static public double minVolume(int time){
+        if (minVolumes==null){
+            minVolumes = new TreeMap<>();
+            minVolumes.put(15, 5000.);
+            minVolumes.put(40,4000.);
+            minVolumes.put(100, 3000.);
+        }
+        Entry e = minVolumes.ceilingEntry(time);
+        if (e != null){
+            return (Double)e.getValue();
+        }
         return minVolume;
     }    
     Nucleus[] from;
     Nucleus[] to;   
     
     static double timeLinkDistThresh = 50;
-    static double minVolume = 2500.;
+    static double minVolume = 1000.;
+    static TreeMap<Integer,Double> minVolumes = null;
 }

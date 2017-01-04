@@ -81,9 +81,9 @@ public class NucleusData implements Comparable {
     }   
 
     public NucleusData (int time,double[] center,double radius){
-        this(time,randomName(),center,radius);
+        this(time,randomName(),center);
     }
-    public NucleusData (int time,String name,double[] center,double radius){
+    public NucleusData (int time,String name,double[] center){
         this.time = time;
 
         this.name = name;

@@ -78,8 +78,10 @@ public class Navigation_Frame extends JFrame implements PlugIn,InvalidationListe
                     panel.changePosition(nuc.getCenter());
                 } else{
                     String timeLabel = (String)node.getUserObject();
-                    int t = Integer.valueOf(timeLabel.substring(5,timeLabel.indexOf(' ')));
-                    panel.changeTime(t);
+                    try {
+                        int t = Integer.valueOf(timeLabel.substring(5,timeLabel.indexOf(' ')));
+                        panel.changeTime(t);
+                    } catch (Exception exc){}
                 }
             }
         });

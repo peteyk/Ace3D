@@ -11,6 +11,7 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import org.apache.commons.math3.analysis.function.Logistic;
@@ -25,6 +26,7 @@ import org.jdom2.output.XMLOutputter;
 import org.rhwlab.dispim.nucleus.BHCNucleusData;
 import org.rhwlab.dispim.nucleus.BHCNucleusDirectory;
 import org.rhwlab.dispim.nucleus.BHCNucleusSet;
+import org.rhwlab.dispim.nucleus.Nucleus;
 
 /**
  *
@@ -73,7 +75,7 @@ public class BHCTree {
         }
         
         for (Element nodeEle : root.getChildren("Node")){
-            LogNode std = new LogNode(nodeEle,null);  // build the node and all the children
+            LogNode std = new NucleusLogNode(nodeEle,null);  // build the node and all the children
             roots.add(std);
         }
     }    
@@ -124,13 +126,14 @@ public class BHCTree {
         stream.close();         
     }
    
-    
+ /*   
     public void saveCutAtThresholdAsXML(String file,double thresh)throws Exception {
         saveXML(file,cutTreeAtThreshold(thresh));
     }  
     public BHCNucleusSet cutToNucleusFile(double threshold){
         return new BHCNucleusSet(cutTreeAtThreshold(threshold));
     }
+    
     // cut this tree at the given threshold into an XML element
     // the children of the returned Element are the GaussianMixtureModel descriptions of a nucleus
     public Element cutTreeAtThreshold(double threshold){
@@ -147,11 +150,112 @@ public class BHCTree {
         }
         return root;
     } 
+*/    
+    /*
     public int nodeCountAtThreshold(double thresh){
         Element el = this.cutTreeAtThreshold(thresh);
         return el.getChildren("GaussianMixtureModel").size();
     }
+   */ 
+    // cut the tree to N given a minimum volume and a maximum probability
+    // may have to return less than N nuclei to meet volume and prob criteria
+    public Nucleus[] cutToN(int n,double minVolume,double maxProb){
+        int cutN = n;
+        TreeSet<NucleusLogNode>  volReducedCut;
+        ArrayList<Nucleus> retList = new ArrayList<>();
+        while(true){
+            TreeSet<NucleusLogNode> cut = cutToN(cutN);
+            volReducedCut = new TreeSet<>();
+            int i=1;
+            retList.clear();
+            for (NucleusLogNode logNode : cut){
+                BHCNucleusData nucData = BHCNucleusData.factory(logNode, i, time);
+                if (nucData!=null && nucData.getVolume()>=minVolume){
+                    volReducedCut.add(logNode);
+                    retList.add(new Nucleus(nucData));
+                    ++i;
+                }
+            }
+            double prob = Math.exp(cut.first().getLogPosterior());
+            if (volReducedCut.size() < n && prob <=maxProb){
+                ++cutN;
+            }else {
+                break;
+            }
+        }
+
+        return retList.toArray(new Nucleus[0]);
+    }
     
+    public TreeSet<NucleusLogNode> cutToN(int n){
+        TreeSet<NucleusLogNode> cut = firstTreeCut();
+        while (cut.size()<n) {
+            cut = nextTreeCut(cut);
+        } 
+        return cut;
+/*        
+        TreeSet<BHCNucleusData> nucSet = new TreeSet<>();
+        int i = 1;
+        for (NucleusLogNode node : cut){
+            Element ele = node.formElementXML(i);
+            if (ele !=null){
+                BHCNucleusData bhcNuc = new BHCNucleusData(time,ele);
+                nucSet.add(bhcNuc);
+                ++i;
+            }
+        }        
+        return new BHCNucleusSet(time,fileName,nucSet);
+*/        
+    }
+    
+    public TreeSet<NucleusLogNode> firstTreeCut(){
+        TreeSet<NucleusLogNode> cut = new TreeSet<>();
+        for (Node root : roots){
+            cut.add((NucleusLogNode)root);
+        }
+        return cut;
+    }
+    public TreeMap<Integer,TreeSet<NucleusLogNode>> allTreeCuts(int maxNodes){
+        TreeMap<Integer,TreeSet<NucleusLogNode>> ret = new TreeMap<>();
+        
+        TreeSet<NucleusLogNode> cut = firstTreeCut();
+        ret.put(cut.size(),cut);       
+        while (cut.size()<maxNodes) {
+            cut = nextTreeCut(cut);
+            ret.put(cut.size(), cut);
+        }
+        return ret;
+    }
+    // cuts the tree at the next level - produce one more node than previous cut
+    public TreeSet<NucleusLogNode> nextTreeCut(TreeSet<NucleusLogNode> previous){
+        TreeSet<NucleusLogNode> ret = new TreeSet<>();
+        // find the minimum probability node that can be split
+        Iterator<NucleusLogNode> iter = previous.iterator();
+        while(iter.hasNext()){
+            NucleusLogNode node = iter.next();
+            if (node.getLeft() != null && node.getRight() != null){
+                ret.addAll(previous);
+                ret.remove(node);
+                ret.add((NucleusLogNode)node.getLeft());
+                ret.add((NucleusLogNode)node.getRight());
+                break;
+            }             
+        }     
+        return ret;
+    }
+       public TreeMap<Integer,Double> allPosteriorProb( int maxProbs){
+        TreeMap<Integer,TreeSet<NucleusLogNode>> allCuts = allTreeCuts(maxProbs);
+        TreeMap<Integer,Double> ret = new TreeMap<>();
+        for (Integer i : allCuts.keySet()){
+            TreeSet<NucleusLogNode> nodes = allCuts.get(i);
+            double p = Math.exp(nodes.first().getLogPosterior());
+            ret.put(i,p);
+        }
+
+        return ret;
+    } 
+   
+   /*
     public TreeSet<Double> allPosteriors(){
         if (this.allPosts == null){
             this.allPosts = new TreeSet<>();
@@ -161,52 +265,64 @@ public class BHCTree {
         }        
         return allPosts;
     }
-    public void allPosteriorProb(TreeMap<Integer,Double> probs){
-        TreeSet<Node> leaves = new TreeSet<>();
-        for (Node root : roots){
-            leaves.add(root);
-        }
-        this.allPosteriorProb(leaves, probs);
-    }
-    public void allPosteriorProb(TreeSet<Node> leaves,TreeMap<Integer,Double> probs){
-        if (leaves.isEmpty()){
+
+    public void allPosteriorProb(TreeSet<Node> leaves,TreeMap<Double,Integer> probs,double minVolume,int maxProbs){
+        
+        if (leaves.isEmpty() || probs.size()==maxProbs){
             return ;
         }
         // find the leaf with the lowest probability
         Node minNode = leaves.first();
-        if (minNode.getLogPosterior() == 0.0){
-            return;
-        }
-        // add the minMode prob into the result
-        probs.put(probs.size()+1, minNode.getLogPosterior());
+        probs.put(minNode.getLogPosterior(),leaves.size());
+
         
         // update the leaf set
         leaves.remove(minNode);
+        if (((NodeBase)minNode).getLabel()==2){
+            int sdkjfnsdiu=0;
+        }
         // add the children of minNode to the input list
         if (minNode.getLeft()!=null && minNode.getRight()!=null){
-            leaves.add(minNode.getLeft());
-            leaves.add(minNode.getRight());
-        }
-        allPosteriorProb(leaves,probs);
-    }
-    public BHCNucleusSet cutToN(int n){
-        TreeSet<Node> leaves =  new TreeSet<>();
-        leaves.addAll(roots);
-        this.cutToN(n,leaves);
-        TreeSet<BHCNucleusData> nucSet = new TreeSet<>();
-        
-        Node[] nodeArray = leaves.toArray(new Node[0]);
-        
-        for (int i=0 ; i<nodeArray.length ; ++i){
-            NodeBase nodeBase = (NodeBase)nodeArray[i];
-            Element ele = nodeBase.formElementXML(i);
-            if (ele != null){
-                nucSet.add(new BHCNucleusData(time,ele));
+            if (((NucleusLogNode)minNode.getLeft()).getVolume() >= minVolume){
+                leaves.add(minNode.getLeft());
             }
-            int iusdfi=0;
-        }
-        return new BHCNucleusSet(time,fileName,0.,nucSet);
+            if (((NucleusLogNode)minNode.getRight()).getVolume() >= minVolume){
+                leaves.add(minNode.getRight());
+            }
     }
+        allPosteriorProb(leaves,probs,minVolume,maxProbs);
+    }
+    // form a set of nuclei that meet the probability threshold and minimum volume
+    public BHCNucleusSet cutAtProbability(double prob,double minVolume){
+        TreeSet<Node> nodes = new TreeSet<>();
+        for (Node root : this.roots){
+            cutAtProbability((LogNode)root,prob,nodes);
+        }
+        
+        TreeSet<BHCNucleusData> nucSet = new TreeSet<>();
+        int i = 1;
+        for (Node node : nodes){
+            if (((NucleusLogNode)node).getVolume() >=minVolume){
+                Element ele = ((NodeBase)node).formElementXML(i);
+                BHCNucleusData bhcNuc = new BHCNucleusData(time,ele);
+                nucSet.add(bhcNuc);
+                ++i;
+            }
+        }
+        return new BHCNucleusSet(time,fileName,nucSet);
+    }
+    // cut the tree rooted at the given node to the given probability
+    public void cutAtProbability(LogNode node,double prob,TreeSet<Node> leaves){
+        if (Math.exp(node.getLogPosterior()) >= prob) {
+            leaves.add(node);
+            return;
+        }
+        cutAtProbability((LogNode)node.getRight(),prob,leaves);
+        cutAtProbability((LogNode)node.getLeft(),prob,leaves);
+    }
+    
+
+
     public void cutToN(int n,TreeSet<Node> leaves){
         if (leaves.size() == n){
             return;  // done - found n nodes
@@ -227,6 +343,9 @@ public class BHCTree {
         leaves.add(minNode.getRight());
         cutToN(n,leaves);
     }
+    
+   */ 
+    
     public int getTime(){
         return time;
     }
@@ -287,6 +406,7 @@ public class BHCTree {
         Node childNode = parentNode.findNodeWithlabel(child);
         return childNode != null;
     }
+/*    
     public Element[] cutTreeWithLinearFunction(){
         Double[] posteriors = this.allPosteriors().toArray(new Double[0]);
         int x0 = 0;
@@ -325,7 +445,7 @@ public class BHCTree {
         }
         return ret;
     }
-
+*/
     double lmsError(int x0,int x1,Double[] y){
         double e = 0.0;
         double xDel = (double)(x1-x0);
@@ -344,6 +464,7 @@ public class BHCTree {
         }
         return e;        
     }
+    /*
     public Element cutTreeWithLogisticFunction(){
         Double[] posteriors = this.allPosteriors().toArray(new Double[0]);
         WeightedObservedPoints points = new WeightedObservedPoints();
@@ -378,6 +499,7 @@ public class BHCTree {
         return null;
 //        double[] results = fitter.fit(points);
     }
+*/
     public double getAlpha(){
         return alpha;
     }
@@ -387,13 +509,19 @@ public class BHCTree {
     public int getNu(){
         return nu;
     }
+    public Node trimSubTree(Node subtree,double minProb){
+        return null;
+    }
     static public void main(String[] args) throws Exception {
         String f = "/net/waterston/vol2/home/gevirl/rnt-1/xml/img_TL017_Simple_SegmentationBHCTree.xml";
 //        BHCTree tree = new BHCTree(f);
  //       tree.cutTreeWithLinearFunction();
 
-    }     
-    String fileName ;
+    } 
+    public String getFileName(){
+        return fileName;
+    }
+   String fileName;
     int time;
     List<Node> roots;
     double alpha;
@@ -403,5 +531,9 @@ public class BHCTree {
     TreeSet<Double> allPosts = null;
     
             
- //   TreeMap<Double,Integer> cutCounts = new TreeMap<>();
+    public class TreeCut{
+        public double posterior;
+        public double volume;
+        
+    }
 }

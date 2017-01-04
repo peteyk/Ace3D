@@ -36,6 +36,7 @@ import org.jdom2.input.SAXBuilder;
 import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
 import org.rhwlab.BHC.BHCTree;
+import org.rhwlab.ace3d.dialogs.BHCSubmitDialog;
 import org.rhwlab.ace3d.dialogs.BHCTreeCutDialog;
 import org.rhwlab.ace3d.dialogs.PanelDisplay;
 import org.rhwlab.dispim.HDF5DirectoryImageSource;
@@ -55,6 +56,8 @@ import org.rhwlab.dispim.nucleus.NucleusFile;
  */
 public class Ace3D_Frame extends JFrame implements PlugIn,ChangeListener  {
     public  Ace3D_Frame()  {
+        
+        
         dirChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
         imagedEmbryo = new ImagedEmbryo();
         TimePointImage.setEmbryo(imagedEmbryo);
@@ -452,7 +455,21 @@ public class Ace3D_Frame extends JFrame implements PlugIn,ChangeListener  {
             }
             
         });
-        segmenting.add(removeAll);        
+        segmenting.add(removeAll);  
+        segmenting.addSeparator();
+        
+        JMenuItem submitBHC = new JMenuItem("Submit to Grid");
+        segmenting.add(submitBHC);
+        submitBHC.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (bhc.getDirectory() != null){
+                    
+                    submitDialog = new BHCSubmitDialog(Ace3D_Frame.this,bhc.getDirectory().getParent());
+                    submitDialog.setVisible(true);
+                }
+            }
+        });
 /*        
         JMenuItem outlierItem = new JMenuItem("Resegment Outliers");
         outlierItem.addActionListener(new ActionListener(){
@@ -917,6 +934,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn,ChangeListener  {
     Navigation_Frame navFrame;
     LookUpTables lookUpTables = new LookUpTables();
     BHCTreeCutDialog treeCutDialog;
+    BHCSubmitDialog submitDialog;
     BHCTreeDirectory bhc;
     VolumeIntensityPlot viPlot;
     PanelDisplay viDialog;

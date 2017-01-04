@@ -20,6 +20,7 @@ import org.jdom2.Element;
 import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
 import org.rhwlab.dispim.datasource.MicroCluster;
+import org.rhwlab.dispim.nucleus.BHCNucleusData;
 
 /**
  *
@@ -86,6 +87,21 @@ abstract public class NodeBase implements Node {
         Element nodeEle = new Element("Node");
         nodeEle.setAttribute("label", Integer.toString(label));
         nodeEle.setAttribute("posterior",Double.toString(lnR));
+        Element nucEle = this.formElementXML(label);
+        if (nucEle != null){
+            BHCNucleusData bhcNuc = new BHCNucleusData(1,nucEle);  
+            nodeEle.setAttribute("volume", Double.toString(bhcNuc.getVolume()));
+            double[] ecc = bhcNuc.eccentricity();
+            StringBuilder builder = new StringBuilder();
+            for (double e : ecc){
+                builder.append(e);
+                builder.append(" ");
+            }
+            nodeEle.setAttribute("eccentricity", builder.toString());
+            nodeEle.setAttribute("avgIntensity", Double.toString(bhcNuc.getAverageIntensity()));
+            nodeEle.setAttribute("intensityRSD", Double.toString(bhcNuc.getIntensityRSD()));
+            
+        }
         if (left != null){
             nodeCount = ((NodeBase)left).saveAsTreeXML(nodeEle);
             nodeCount = nodeCount + ((NodeBase)right).saveAsTreeXML(nodeEle);
@@ -99,7 +115,8 @@ abstract public class NodeBase implements Node {
     }   
     public int addContent(Element ele){
         return micro.addContent(ele);
-    }    
+    } 
+/*    
     // saves the node as GMM and returns the last used id
     // cuts the tree at the given threshold
     // saves all nodes below this node as GMM based on given threshold
@@ -133,6 +150,7 @@ abstract public class NodeBase implements Node {
         }
 
     }
+    */
     // calculate the relative standard deviation of the intensities
     public double getIntensityRSD(){
         List<MicroCluster> micros = new ArrayList<>();

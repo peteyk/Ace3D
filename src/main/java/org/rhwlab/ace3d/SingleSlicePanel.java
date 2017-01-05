@@ -81,8 +81,15 @@ public class SingleSlicePanel extends JPanel implements ChangeListener {
                     bufH = buffered.getHeight();
                     bufW = buffered.getWidth();
 
-                    double rw = (double)panelSize.width/(double)bufW;
-                    double rh = (double)panelSize.height/(double)bufH;
+                    double rw,rh;
+                    if (dim ==0){
+                        rw = (double)panelSize.width/(double)bufH;
+                        rh = (double)panelSize.height/(double)bufW;                       
+                    }else {
+                         rw = (double)panelSize.width/(double)bufW;
+                        rh = (double)panelSize.height/(double)bufH;                        
+                    }
+
                     scale = Math.max(1.0, Math.min(rw, rh));
 
 //                    AffineTransform xForm = AffineTransform.getScaleInstance(scale, scale);

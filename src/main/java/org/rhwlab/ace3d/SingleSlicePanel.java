@@ -140,6 +140,10 @@ public class SingleSlicePanel extends JPanel implements ChangeListener {
                     Dimension d = this.getSize();
                     panelg2.fillRect(0,0,d.width,d.height);                   
                     AffineTransform xForm = AffineTransform.getScaleInstance(scale, scale);
+                    AffineTransform flip = new AffineTransform(0.0,1.0,1.0,0.0,0.0,0.0);
+                    if (dim == 0) {
+                        xForm.concatenate(flip);
+                    }
                     panelg2.drawImage(buffered,new AffineTransformOp(xForm,AffineTransformOp.TYPE_NEAREST_NEIGHBOR),0,0);   
                     panelg2.setColor(save);
                 }
@@ -198,7 +202,11 @@ public class SingleSlicePanel extends JPanel implements ChangeListener {
                         }
                         break;
                     case 'e':
-                        embryo.splitSelectedNucleus();
+                        try {
+                            embryo.splitSelectedNucleus();
+                        } catch(Exception exc){
+                            exc.printStackTrace();
+                        }
                         break;
                     }
                 
@@ -216,8 +224,12 @@ public class SingleSlicePanel extends JPanel implements ChangeListener {
             }
             @Override
             public void mouseClicked(MouseEvent e){
-                
-                long [] pos = imageCoordinates(e.getX(),e.getY());
+                long [] pos;
+                if (dim == 0){
+                    pos = imageCoordinates(e.getY(),e.getX());
+                }else {
+                    pos = imageCoordinates(e.getX(),e.getY());
+                }
                 if (e.getButton() == MouseEvent.BUTTON1){
                     int mask = MouseEvent.SHIFT_DOWN_MASK;
                     if (( e.getModifiersEx()&mask) == mask){

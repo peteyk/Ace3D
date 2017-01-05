@@ -32,4 +32,6 @@ public interface Node extends Comparable {
 //    public  int saveAsXMLByThreshold(Element root,double threshold,int id);
     public int getN();
     public boolean isLeaf();
+    public boolean isDescendent(Node other);
+    public Node commonAncestor(Node other);
 }

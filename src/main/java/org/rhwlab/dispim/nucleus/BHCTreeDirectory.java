@@ -6,8 +6,6 @@
 package org.rhwlab.dispim.nucleus;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Set;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -57,6 +55,7 @@ public class BHCTreeDirectory {
             File file = this.treeFiles.get(time);
             if (file != null){
                 ret = new BHCTree(file.getPath(),time);
+                bhcTrees.put(time, ret);
             }
         }
         return ret;

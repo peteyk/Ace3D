@@ -39,6 +39,10 @@ public class LogNode extends NodeBase implements Node  {
         super(l,r);
         logPosterior();
     }
+    public LogNode(LogNode l,LogNode r,boolean post){
+        super(l,r);
+        if (post) logPosterior();
+    }
    
     @Override
     public double  getLogPosterior() {

@@ -24,12 +24,6 @@ public class SelectedNucleus extends javafx.beans.value.ObservableValueBase {
         this.fireValueChangedEvent();
     }
     public void setMarked(Nucleus mark){
-        if (mark.getChild2()!=null){
-            return;  // cannot mark a nucleus that has no available child slot
-        }
-        if (mark == selected){
-            selected = null;
-        }
 
         this.marked = mark;
         this.fireValueChangedEvent();

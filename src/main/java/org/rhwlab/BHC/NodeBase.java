@@ -326,6 +326,33 @@ abstract public class NodeBase implements Node {
         rmm = m.outerProduct(m).scalarMultiply(beta);
         ratio = new GammaRatio(mu.length,n);
     }    
+    
+    // determine if a given node is a descendent
+    public boolean isDescendent(Node other){
+        if (this.isLeaf()){
+            return false;  // a leaf has no descentdents
+        }
+        if (left.equals(other)){
+            return true;
+        }
+        if (right.equals(other)){
+            return true;
+        }        
+        return left.isDescendent( other) || right.isDescendent(other);
+    }
+    // find a parent of this node who is also parent of the given node
+    // find the common ancestory
+    public Node commonAncestor(Node other){
+        if (isDescendent(other)) {
+            return this;  // the other is a descendent of this node, so this is the common ancestor
+        }
+        
+        if (this.parent == null){
+            return null;  // there can be no common ancestor if this is a root and other is not a descendent
+        }
+        
+        return this.parent.commonAncestor(other);  // the common ancestor will be this parents common ancestor
+    }
     Integer N; // number of microclusters assigned to this node  
     MicroCluster micro;  // micro cluster if this is a terminal node 
     Node left;

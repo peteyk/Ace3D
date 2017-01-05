@@ -7,6 +7,8 @@ package org.rhwlab.ace3d;
 
 import ij.plugin.PlugIn;
 import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import javafx.beans.value.ObservableValue;
@@ -32,25 +34,25 @@ public class SelectedNucleusFrame extends JFrame implements PlugIn,javafx.beans.
         this.setTitle("Selected Nucleus");
         
         JPanel content = new JPanel();
-        content.setLayout(new BorderLayout());
+        content.setLayout(new BoxLayout(content,BoxLayout.Y_AXIS));
         
-        JPanel panel = new JPanel();
-        panel.setLayout(new BoxLayout(panel,BoxLayout.X_AXIS));
+        JPanel mainPanel = new JPanel();
+        mainPanel.setLayout(new BoxLayout(mainPanel,BoxLayout.X_AXIS));
         npPanel = new NucleusPropertiesPanel();
         embryo.addListener(npPanel);
-        panel.add(npPanel);
+        mainPanel.add(npPanel);
         
         radiusControl = new RadiusControlPanel(owner);
         radiusControl.setEmbryo(embryo);
         embryo.addListener(radiusControl);
-        panel.add(radiusControl);
+        mainPanel.add(radiusControl);
 /*        
         MarkedNucleiPanel nucPanel = new MarkedNucleiPanel();
         embryo.addListener(nucPanel);
         panel.add(nucPanel);       
  */       
         JPanel buttonPanel = new JPanel();
-        buttonPanel.setLayout(new BoxLayout(buttonPanel,BoxLayout.X_AXIS));
+        buttonPanel.setLayout(new GridLayout(4,3));
         
         JButton unselectButton = new JButton("Unselect");
         unselectButton.addActionListener(new ActionListener(){
@@ -60,6 +62,15 @@ public class SelectedNucleusFrame extends JFrame implements PlugIn,javafx.beans.
             }
         });
         buttonPanel.add(unselectButton);
+        
+        JButton unmarkButton = new JButton("Unmark");
+        unmarkButton.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                embryo.setMarked(null);
+            }
+        });
+        buttonPanel.add(unmarkButton);        
 /*        
         JButton calcExp = new JButton("Calc Expression");
         calcExp.addActionListener(new ActionListener(){
@@ -103,6 +114,36 @@ public class SelectedNucleusFrame extends JFrame implements PlugIn,javafx.beans.
                 embryo.notifyListeners();
             }
         });
+        
+        JButton join = new JButton("Join");
+        buttonPanel.add(join);
+        join.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    if (embryo.getMarked()!=null){
+                        embryo.joinSelectedToMarked();
+                    } else {
+                        embryo.joinSelectedNucleus();
+                    }
+                }catch (Exception exc){
+                    exc.printStackTrace();
+                }
+            }
+        });
+        
+        JButton split = new JButton("Split");
+        buttonPanel.add(split);
+        split.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    embryo.splitSelectedNucleus();
+                }catch (Exception exc){
+                    exc.printStackTrace();
+                }
+            }
+        });      
         
         JButton remove = new JButton("Remove Nucleus");
         buttonPanel.add(remove); 
@@ -151,8 +192,8 @@ public class SelectedNucleusFrame extends JFrame implements PlugIn,javafx.beans.
             }
         });
         
-        content.add(panel,BorderLayout.CENTER);
-        content.add(buttonPanel,BorderLayout.SOUTH);
+        content.add(mainPanel);
+        content.add(buttonPanel);
         this.setContentPane(content);
         pack();
     }

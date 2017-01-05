@@ -28,6 +28,7 @@ import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 import org.jdom2.Element;
 import org.rhwlab.BHC.BHCTree;
+import org.rhwlab.BHC.LogNode;
 import org.rhwlab.BHC.NodeBase;
 import org.rhwlab.ace3d.Ace3D_Frame;
 import org.rhwlab.ace3d.SynchronizedMultipleSlicePanel;
@@ -304,43 +305,7 @@ public class ImagedEmbryo implements Observable {
     public void renameSelectedCell(String newName){
 //        ((Ace3DNucleusFile)nucFile).renameCell(newName);
     }
-    // join the selected nucleus to its sister
-    public void joinSelectedNucleus()throws Exception {
-       
-        Nucleus nuc = nucFile.getSelected();
-        if (nuc == null) return;
-        int time = nuc.getTime();
-        LinkedNucleusFile nf = ((LinkedNucleusFile)nucFile);
-        
-        // make a Nucleus from the selected nucleus' parent node
-        BHCNucleusData bhcNuc = (BHCNucleusData)nuc.getNucleusData();
-        BHCTree tree = nf.getTreeDirectory().getTree(time);
-        NodeBase node = (NodeBase)tree.findNode(Integer.valueOf(bhcNuc.getSourceNode()));
-        NodeBase parent = (NodeBase)node.getParent();
-        BHCNucleusData joinedNuc = new BHCNucleusData(nuc.getTime(),parent.formElementXML(Integer.valueOf(bhcNuc.getID())));
-        
-        // find the Nucleus that corresponds to the sister node
-        Nucleus sisterNuc = null;
-        int sisterLabel = ((NodeBase)node.getSister()).getLabel();
-        for (Nucleus possibleSister : nucFile.getNuclei(time)){
-            int possibleLabel = Integer.valueOf(((BHCNucleusData)possibleSister.getNucleusData()).getSourceNode());
-            if (possibleLabel == sisterLabel){
-                sisterNuc = possibleSister;
-                break;
-            }
-        }
-            
-        nf.removeNucleus(nuc, false);
-        nf.removeNucleus(sisterNuc, false);
-        nf.addCuratedNucleus(new Nucleus(joinedNuc));
 
-        nf.notifyListeners();        
-
-    }
-    // split the selected nucleus into daughters 
-    public void splitSelectedNucleus(){
-        
-    }
     /*
     public BHCTree getBHCTree(int time)throws Exception {
         BHCTree tree = this.bhcTreeMap.get(time);
@@ -385,6 +350,98 @@ public class ImagedEmbryo implements Observable {
     public Nucleus getMarked(){
         return nucFile.getMarked();
     }
+    // join the selected nucleus to its sister
+    public void joinSelectedNucleus()throws Exception {
+       
+        Nucleus nuc = nucFile.getSelected();
+        if (nuc == null) return;
+        int time = nuc.getTime();
+        LinkedNucleusFile nf = ((LinkedNucleusFile)nucFile);
+        
+        // make a Nucleus from the selected nucleus' parent node
+        BHCNucleusData bhcNuc = (BHCNucleusData)nuc.getNucleusData();
+        BHCTree tree = nf.getTreeDirectory().getTree(time);
+        NodeBase node = (NodeBase)tree.findNode(Integer.valueOf(bhcNuc.getSourceNode()));
+        LogNode parent = (LogNode)node.getParent();
+        BHCNucleusData joinedNuc = new BHCNucleusData(nuc.getTime(),parent.formElementXML(Integer.valueOf(bhcNuc.getID())));
+        
+        replace(time,tree,parent,joinedNuc);
+      
+
+    }     
+    public void joinSelectedToMarked()throws Exception {
+        joinSelectedTo(getMarked());
+    }
+    public void joinSelectedTo(Nucleus other)throws Exception {
+        Nucleus selected = nucFile.getSelected();
+        if (other==null || selected==null || (selected.getTime() != other.getTime())){
+            return;
+        }
+        int time = selected.getTime();
+        LinkedNucleusFile nf = ((LinkedNucleusFile)nucFile);
+        
+        BHCTree tree = nf.getTreeDirectory().getTree(time);
+        LogNode selNode = (LogNode)tree.findNode(Integer.valueOf(((BHCNucleusData)selected.getNucleusData()).getSourceNode()));
+        LogNode markNode = (LogNode)tree.findNode(Integer.valueOf(((BHCNucleusData)other.getNucleusData()).getSourceNode()));
+        
+        LogNode commonAncestor = (LogNode)selNode.commonAncestor(markNode);        
+        BHCNucleusData ancestorNuc = new BHCNucleusData(time,commonAncestor.formElementXML(Integer.valueOf(((BHCNucleusData)selected.getNucleusData()).getID())));
+        
+        replace(time,tree,commonAncestor,ancestorNuc);
+                
+    }
+    
+    private void replace(int time,BHCTree tree,LogNode commonAncestor,BHCNucleusData ancestorNuc){
+        LinkedNucleusFile nf = ((LinkedNucleusFile)nucFile);
+        // remove any nodes that are a descendent of the common ancestor
+        ArrayList<Nucleus> toRemove = new ArrayList<>();
+        for (Nucleus nuc : nf.getNuclei(time)){
+            LogNode nucNode = (LogNode)tree.findNode(Integer.valueOf(((BHCNucleusData)nuc.getNucleusData()).getSourceNode()));
+            if (commonAncestor.isDescendent(nucNode)){
+                toRemove.add(nuc);
+            }
+        }
+        for (Nucleus nuc : toRemove){
+            nf.removeNucleus(nuc, false);
+        }       
+        // add the new node
+        Nucleus ancNuc = new Nucleus(ancestorNuc);
+        nf.addCuratedNucleus(ancNuc);
+        nf.setSelected(ancNuc);
+        nf.notifyListeners();          
+    }
+
+    // split the selected nucleus into daughters 
+    public void splitSelectedNucleus()throws Exception {
+        Nucleus selected = nucFile.getSelected();
+        if (selected == null){
+            return;
+        }
+        
+        int time = selected.getTime();
+        LinkedNucleusFile nf = ((LinkedNucleusFile)nucFile); 
+        
+        int n = 0;
+        for (Nucleus nuc : nf.getNuclei(time)){
+            BHCNucleusData data = (BHCNucleusData)nuc.getNucleusData();
+            int i = Integer.valueOf(data.getID());
+            if (i > n){
+                n = i;
+            }
+        }
+        
+        BHCTree tree = nf.getTreeDirectory().getTree(time);    
+        LogNode selNode = (LogNode)tree.findNode(Integer.valueOf(((BHCNucleusData)selected.getNucleusData()).getSourceNode()));
+        
+        BHCNucleusData leftNuc = new BHCNucleusData(time,((NodeBase)selNode.getLeft()).formElementXML(n+1));
+        BHCNucleusData rightNuc = new BHCNucleusData(time,((NodeBase)selNode.getRight()).formElementXML(n+2));
+        
+        nf.removeNucleus(selected, false);
+        nf.addCuratedNucleus(new Nucleus(leftNuc));
+        nf.addCuratedNucleus(new Nucleus(rightNuc));
+        nf.notifyListeners();  
+    }
+   
     NucleusFile nucFile;
     List<ImageSource>  sources;
     

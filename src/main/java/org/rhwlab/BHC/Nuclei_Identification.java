@@ -270,8 +270,11 @@ public class Nuclei_Identification implements Runnable {
     }
     static public void submitTimePoints(File directory,TreeMap<Integer,String[]> tiffs,boolean force,int cores,int memory,double alpha,double S,int nu,double th)throws Exception {
         if (tiffs.isEmpty()) return;
+        directory.mkdir();
+        directory.setWritable(true, false);
         
-        File scriptFile = new File(directory,"SubmitTimePoints.sh");
+        System.getProperty("user.name");
+        File scriptFile = new File(directory,System.getProperty("user.name")+"SubmitTimePoints.sh");
         
         PrintStream scriptStream = new PrintStream(scriptFile);
         scriptStream.printf("cd %s\n", directory.getPath());

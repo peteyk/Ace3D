@@ -29,5 +29,5 @@ public class VoxelClusterer extends Thread {
     }
     ArrayList<Voxel> voxels;
     Clusterer clusterer;
-    List result;  // the result of the clustering
+    private List result;  // the result of the clustering
 }

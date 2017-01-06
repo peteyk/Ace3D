@@ -70,11 +70,11 @@ abstract public class NodeBase implements Node {
     } 
 
     // save a list of root nodes into an xml file
-    static public void saveAsTreeListXML(String file, List<Node> nodes)throws Exception {
+    static public void saveAsTreeListXML(int time,String file, List<Node> nodes)throws Exception {
         OutputStream stream = new FileOutputStream(file);
         Element root = new Element("BHCTrees"); 
         for (Node node : nodes){
-            ((NodeBase)node).saveAsTreeXML(root);
+            ((NodeBase)node).saveAsTreeXML(time,root);
         }
         XMLOutputter out = new XMLOutputter(Format.getPrettyFormat());
         out.output(root, stream);
@@ -82,14 +82,14 @@ abstract public class NodeBase implements Node {
     }
     
     // save this node and all its children into an xml element
-    public int saveAsTreeXML(Element root){
+    public int saveAsTreeXML(int time,Element root){
         int nodeCount = 1;
         Element nodeEle = new Element("Node");
         nodeEle.setAttribute("label", Integer.toString(label));
         nodeEle.setAttribute("posterior",Double.toString(lnR));
         Element nucEle = this.formElementXML();
         if (nucEle != null){
-            BHCNucleusData bhcNuc = new BHCNucleusData(1,nucEle);  
+            BHCNucleusData bhcNuc = new BHCNucleusData(time,nucEle);  
             nodeEle.setAttribute("volume", Double.toString(bhcNuc.getVolume()));
             double[] ecc = bhcNuc.eccentricity();
             StringBuilder builder = new StringBuilder();
@@ -103,8 +103,8 @@ abstract public class NodeBase implements Node {
             
         }
         if (left != null){
-            nodeCount = ((NodeBase)left).saveAsTreeXML(nodeEle);
-            nodeCount = nodeCount + ((NodeBase)right).saveAsTreeXML(nodeEle);
+            nodeCount = ((NodeBase)left).saveAsTreeXML(time,nodeEle);
+            nodeCount = nodeCount + ((NodeBase)right).saveAsTreeXML(time,nodeEle);
             nodeEle.setAttribute("count",Integer.toString(nodeCount));
         } else {
             int count = addContent(nodeEle);

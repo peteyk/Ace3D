@@ -7,12 +7,12 @@ package org.rhwlab.ace3d.dialogs;
 
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
+import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.TreeSet;
+import javax.swing.BoxLayout;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -23,7 +23,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import org.jdom2.Element;
 import org.rhwlab.BHC.BHCTree;
 import org.rhwlab.BHC.NucleusLogNode;
 import org.rhwlab.ace3d.Ace3D_Frame;
@@ -31,7 +30,6 @@ import org.rhwlab.dispim.ImagedEmbryo;
 import org.rhwlab.dispim.nucleus.BHCNucleusData;
 import org.rhwlab.dispim.nucleus.BHCNucleusSet;
 import org.rhwlab.dispim.nucleus.LinkedNucleusFile;
-import org.rhwlab.dispim.nucleus.Nucleus;
 import org.rhwlab.dispim.nucleus.NucleusFile;
 
 /**
@@ -49,23 +47,50 @@ public class BHCTreeCutDialog extends JDialog {
         this.setLocationRelativeTo(owner);
         
         JPanel volumePanel = new JPanel();
-        volumePanel.setLayout(new FlowLayout());
+        volumePanel.setLayout(new GridLayout(3,3));
         volumePanel.add(new JLabel("Minimum Volume: "));
         volumePanel.add(volumeField);
+        volumeField.setColumns(6);
         volumeField.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
-                    minVolume = Double.valueOf(volumeField.getText().trim());
+                    minVolume = Integer.valueOf(volumeField.getText().trim());
                     ok();
                 }catch (Exception exc){
-                    
+                    volumeField.setText(Integer.toString(minVolume));
                 }
             }
         });
-        volumePanel.add(new JLabel("  List Size: "));
+        volumePanel.add(new JLabel("List Size: "));
         volumePanel.add(maxItemsField);
+        maxItemsField.setColumns(6);
+        maxItemsField.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    maxItems = Integer.valueOf(maxItemsField.getText().trim());
+                    buildListModel();
+                }catch (Exception exc){
+                    maxItemsField.setText(Integer.toString(maxItems));
+                }
+            }
+        });
         this.getContentPane().add(volumePanel,BorderLayout.NORTH);
+        
+        volumePanel.add(new JLabel("Min Seg Prob"));
+        volumePanel.add(minSegProbField);
+        minSegProbField.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    minSegProb = Integer.valueOf(minSegProbField.getText().trim());
+                    ok();
+                }catch (Exception exc){
+                    minSegProbField.setText(Integer.toString(minSegProb));
+                }
+            }
+        });
         
         jList = new JList();
         jList.addListSelectionListener(new ListSelectionListener(){
@@ -182,8 +207,10 @@ public class BHCTreeCutDialog extends JDialog {
     JList jList;
     JTextField volumeField = new JTextField("1000");;
     JTextField maxItemsField  = new JTextField("60");;
+    JTextField minSegProbField = new JTextField("50");
     int maxItems=60;
-    double minVolume=1000.0;
+    int minVolume=1000;
+    int minSegProb = 50;
     
     class CutDescriptor {
         public CutDescriptor(TreeSet<NucleusLogNode> cut){

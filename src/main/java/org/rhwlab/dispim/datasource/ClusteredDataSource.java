@@ -39,7 +39,7 @@ public class ClusteredDataSource implements VoxelDataSource {
         int K = 0;
         int N = 0;
         for (VoxelClusterer clusterer : clusterers){
-            List<CentroidCluster<Voxel>> clusterList = clusterer.result;
+            List<CentroidCluster<Voxel>> clusterList = clusterer.getResult();
             K = K + clusterList.size();
             for (CentroidCluster cluster : clusterList ){
                 N = N + cluster.getPoints().size();
@@ -57,7 +57,7 @@ public class ClusteredDataSource implements VoxelDataSource {
         minIntensity = Integer.MAX_VALUE;
         maxIntensity = Integer.MIN_VALUE;
         for (VoxelClusterer clusterer : clusterers){
-            List<CentroidCluster<Voxel>> clusterList = clusterer.result;
+            List<CentroidCluster<Voxel>> clusterList = clusterer.getResult();
             for (CentroidCluster<Voxel> cluster : clusterList ){
                 GaussianComponent comp = new GaussianComponent(this,k);
                 gaussians.add(comp);            

@@ -105,7 +105,7 @@ public class BHCTree {
         root.setAttribute("mu", builder.toString());
         
         for (Node node : roots){
-            ((NodeBase)node).saveAsTreeXML(root);
+            ((NodeBase)node).saveAsTreeXML(time,root);
             TreeSet<Double> posts = new TreeSet<>();
             ((NodeBase)node).allPosteriors(posts);
             int aoshdfuihs=0;

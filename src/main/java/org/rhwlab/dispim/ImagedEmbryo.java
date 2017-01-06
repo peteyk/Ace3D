@@ -441,6 +441,9 @@ public class ImagedEmbryo implements Observable {
         nf.addCuratedNucleus(new Nucleus(rightNuc));
         nf.notifyListeners();  
     }
+    public void clearSources(){
+        sources.clear();
+    }
    
     NucleusFile nucFile;
     List<ImageSource>  sources;

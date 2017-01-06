@@ -131,30 +131,37 @@ public class Ace3D_Frame extends JFrame implements PlugIn,ChangeListener  {
                     File mvrDir = new File(sel,"MVR_STACKS");
                     
                     HDF5DirectoryImageSource source = new HDF5DirectoryImageSource(mvrDir,"exported_data","Segmented",imagedEmbryo,false);
-                    panel.setTimeRange(Math.max(source.getMinTime(),panel.getMinTime())
-                        ,Math.min(source.getMaxTime(),panel.getMaxTime()) ); 
-                    
-                    int lineChannel = source.getChannel();
-                    int expChannel = 1;
-                    if (lineChannel == 1){
-                        expChannel = 2;
+                    boolean segFound = source.open();
+                    if (segFound){
+                        
+                        panel.setTimeRange(Math.max(source.getMinTime(),panel.getMinTime())
+                            ,Math.min(source.getMaxTime(),panel.getMaxTime()) ); 
+
+                        int lineChannel = source.getChannel();
+                        int expChannel = 1;
+                        if (lineChannel == 1){
+                            expChannel = 2;
+                        }
+
+                        File typical = new File(mvrDir,String.format("TP1_Ch%d_Ill0_Ang0,90.tif",lineChannel));
+                        TifDirectoryImageSource lineSource = new TifDirectoryImageSource(typical.getPath(),"Lineaging",imagedEmbryo,true);             
+                        panel.setTimeRange(Math.max(lineSource.getMinTime(),panel.getMinTime())
+                            ,Math.min(lineSource.getMaxTime(),panel.getMaxTime()) ); 
+
+                        typical = new File(mvrDir,String.format("TP1_Ch%d_Ill0_Ang0,90.tif",expChannel));
+                        TifDirectoryImageSource expSource = new TifDirectoryImageSource(typical.getPath(),"Expressing",imagedEmbryo,false);             
+                        panel.setTimeRange(Math.max(expSource.getMinTime(),panel.getMinTime())
+                            ,Math.min(expSource.getMaxTime(),panel.getMaxTime()) );    
+
+                        bhc  = new BHCTreeDirectory(new File(sel,"BHC"));
+                        imagedEmbryo.getNucleusFile().setBHCTreeDirectory(bhc);                    
+
+                        imagedEmbryo.notifyListeners();                    
+                        props.setProperty("MVRDir",sel.getPath());
+                    }else {
+                        imagedEmbryo.clearSources();
+                        JOptionPane.showMessageDialog(Ace3D_Frame.this, "No Segmentation probability hdf5 files found");
                     }
-                    
-                    File typical = new File(mvrDir,String.format("TP1_Ch%d_Ill0_Ang0,90.tif",lineChannel));
-                    TifDirectoryImageSource lineSource = new TifDirectoryImageSource(typical.getPath(),"Lineaging",imagedEmbryo,true);             
-                    panel.setTimeRange(Math.max(lineSource.getMinTime(),panel.getMinTime())
-                        ,Math.min(lineSource.getMaxTime(),panel.getMaxTime()) ); 
-                    
-                    typical = new File(mvrDir,String.format("TP1_Ch%d_Ill0_Ang0,90.tif",expChannel));
-                    TifDirectoryImageSource expSource = new TifDirectoryImageSource(typical.getPath(),"Expressing",imagedEmbryo,false);             
-                    panel.setTimeRange(Math.max(expSource.getMinTime(),panel.getMinTime())
-                        ,Math.min(expSource.getMaxTime(),panel.getMaxTime()) );    
-                    
-                    bhc  = new BHCTreeDirectory(new File(sel,"BHC"));
-                    imagedEmbryo.getNucleusFile().setBHCTreeDirectory(bhc);                    
-                    
-                    imagedEmbryo.notifyListeners();                    
-                    props.setProperty("MVRDir",sel.getPath());
                 }             
             }
         });

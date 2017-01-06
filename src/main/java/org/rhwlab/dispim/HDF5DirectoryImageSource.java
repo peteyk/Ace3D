@@ -28,10 +28,11 @@ public class HDF5DirectoryImageSource implements ImageSource{
         this.HDF5dataset = hddataset;
         this.aceDataset = aceDataSet;
         this.select = sel;
-        open();
+
     }
     public HDF5DirectoryImageSource(Element e,ImagedEmbryo emb){
         this(new File(e.getAttributeValue("directory")),"exported_data",e.getAttributeValue("dataset"),emb,Boolean.valueOf(e.getAttributeValue("selected")));
+        open();
     }    
     @Override
     public boolean open() {
@@ -57,6 +58,9 @@ public class HDF5DirectoryImageSource implements ImageSource{
                     }
                 }
             }
+        }
+        if (fileNames.isEmpty()){
+            return false;
         }
         Iterator<DataSetDesc> iter = getDataSets().iterator();
         while (iter.hasNext()){

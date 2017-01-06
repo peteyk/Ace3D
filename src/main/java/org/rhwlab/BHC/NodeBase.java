@@ -87,7 +87,7 @@ abstract public class NodeBase implements Node {
         Element nodeEle = new Element("Node");
         nodeEle.setAttribute("label", Integer.toString(label));
         nodeEle.setAttribute("posterior",Double.toString(lnR));
-        Element nucEle = this.formElementXML(label);
+        Element nucEle = this.formElementXML();
         if (nucEle != null){
             BHCNucleusData bhcNuc = new BHCNucleusData(1,nucEle);  
             nodeEle.setAttribute("volume", Double.toString(bhcNuc.getVolume()));
@@ -172,7 +172,7 @@ abstract public class NodeBase implements Node {
         return Math.sqrt(StatUtils.variance(intensityValues, iMean)) / iMean;        
     }
     // form an XML Element from this node
-    public Element formElementXML(int id){
+    public Element formElementXML(){
         List<MicroCluster> micros = new ArrayList<>();
         this.getDataAsMicroCluster(micros);
         int voxels = 0;
@@ -186,7 +186,7 @@ abstract public class NodeBase implements Node {
         RealMatrix W = MicroCluster.precision(micros, mu);
         if (W != null){
             Element clusterEle = new Element("GaussianMixtureModel");
-            clusterEle.setAttribute("id", String.format("%d", id));
+//clusterEle.setAttribute("id", String.format("%d", id));
  //           clusterEle.setAttribute("parent", "-1");
             clusterEle.setAttribute("count", String.format("%d",micros.size()));
             clusterEle.setAttribute("voxels", String.format("%d",voxels));

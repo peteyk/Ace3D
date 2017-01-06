@@ -363,8 +363,8 @@ public class ImagedEmbryo implements Observable {
         BHCTree tree = nf.getTreeDirectory().getTree(time);
         NodeBase node = (NodeBase)tree.findNode(Integer.valueOf(bhcNuc.getSourceNode()));
         LogNode parent = (LogNode)node.getParent();
-        BHCNucleusData joinedNuc = new BHCNucleusData(nuc.getTime(),parent.formElementXML(Integer.valueOf(bhcNuc.getID())));
-        
+ //       BHCNucleusData joinedNuc = new BHCNucleusData(nuc.getTime(),parent.formElementXML(Integer.valueOf(bhcNuc.getID())));
+        BHCNucleusData joinedNuc = new BHCNucleusData(nuc.getTime(),parent.formElementXML());
         replace(time,tree,parent,joinedNuc);
       
 
@@ -385,8 +385,8 @@ public class ImagedEmbryo implements Observable {
         LogNode markNode = (LogNode)tree.findNode(Integer.valueOf(((BHCNucleusData)other.getNucleusData()).getSourceNode()));
         
         LogNode commonAncestor = (LogNode)selNode.commonAncestor(markNode);        
-        BHCNucleusData ancestorNuc = new BHCNucleusData(time,commonAncestor.formElementXML(Integer.valueOf(((BHCNucleusData)selected.getNucleusData()).getID())));
-        
+        //BHCNucleusData ancestorNuc = new BHCNucleusData(time,commonAncestor.formElementXML(Integer.valueOf(((BHCNucleusData)selected.getNucleusData()).getID())));
+        BHCNucleusData ancestorNuc = new BHCNucleusData(time,commonAncestor.formElementXML());
         replace(time,tree,commonAncestor,ancestorNuc);
                 
     }
@@ -433,9 +433,10 @@ public class ImagedEmbryo implements Observable {
         BHCTree tree = nf.getTreeDirectory().getTree(time);    
         LogNode selNode = (LogNode)tree.findNode(Integer.valueOf(((BHCNucleusData)selected.getNucleusData()).getSourceNode()));
         
-        BHCNucleusData leftNuc = new BHCNucleusData(time,((NodeBase)selNode.getLeft()).formElementXML(n+1));
-        BHCNucleusData rightNuc = new BHCNucleusData(time,((NodeBase)selNode.getRight()).formElementXML(n+2));
-        
+ //       BHCNucleusData leftNuc = new BHCNucleusData(time,((NodeBase)selNode.getLeft()).formElementXML(n+1));
+//        BHCNucleusData rightNuc = new BHCNucleusData(time,((NodeBase)selNode.getRight()).formElementXML(n+2));
+        BHCNucleusData leftNuc = new BHCNucleusData(time,((NodeBase)selNode.getLeft()).formElementXML());
+        BHCNucleusData rightNuc = new BHCNucleusData(time,((NodeBase)selNode.getRight()).formElementXML());        
         nf.removeNucleus(selected, false);
         nf.addCuratedNucleus(new Nucleus(leftNuc));
         nf.addCuratedNucleus(new Nucleus(rightNuc));

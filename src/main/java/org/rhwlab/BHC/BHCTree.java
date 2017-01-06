@@ -169,7 +169,7 @@ public class BHCTree {
             int i=1;
             retList.clear();
             for (NucleusLogNode logNode : cut){
-                BHCNucleusData nucData = BHCNucleusData.factory(logNode, i, time);
+                BHCNucleusData nucData = BHCNucleusData.factory(logNode,time);
                 if (nucData!=null && nucData.getVolume()>=minVolume){
                     volReducedCut.add(logNode);
                     retList.add(new Nucleus(nucData));

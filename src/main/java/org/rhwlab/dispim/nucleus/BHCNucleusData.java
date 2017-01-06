@@ -26,7 +26,7 @@ public class BHCNucleusData extends NucleusData {
     public BHCNucleusData(JsonObject jsonObj){
         super(jsonObj);
         this.sourceNode = jsonObj.getString("SourceNode");
-        this.id = super.getName().substring(super.getName().indexOf('_')+1);
+//this.id = super.getName().substring(super.getName().indexOf('_')+1);
         this.count = jsonObj.getInt("Count");
         this.voxels = jsonObj.getInt("Voxels");
         this.totalIntensity = jsonObj.getJsonNumber("Intensity").longValue();
@@ -36,7 +36,7 @@ public class BHCNucleusData extends NucleusData {
     // construct from Nucleus xml element saved in a file
     public BHCNucleusData(Element nucleusEle){
         super(nucleusEle);
-        this.id = super.getName().substring(super.getName().indexOf('_')+1);
+//this.id = super.getName().substring(super.getName().indexOf('_')+1);
         count = Integer.valueOf(nucleusEle.getAttributeValue("count"));
         sourceNode = nucleusEle.getAttributeValue("sourceNode");
         totalIntensity = Long.valueOf(nucleusEle.getAttributeValue("intensity"));
@@ -47,8 +47,8 @@ public class BHCNucleusData extends NucleusData {
     }
     // contruct from a BHC nodebase element
     public BHCNucleusData(int time,Element gmm){
-        super(time,name(time,gmm.getAttributeValue("id")),center(gmm));  
-        id = gmm.getAttributeValue("id");
+        super(time,name(time,gmm.getAttributeValue("sourceNode")),center(gmm));  
+//id = gmm.getAttributeValue("id");
         count = Integer.valueOf(gmm.getAttributeValue("count"));
         sourceNode = gmm.getAttributeValue("sourceNode");
         totalIntensity = Long.valueOf(gmm.getAttributeValue("intensity"));
@@ -68,7 +68,7 @@ public class BHCNucleusData extends NucleusData {
         TreeSet<BHCNucleusData> ret = new TreeSet<>();
         int i=1;
         for (NucleusLogNode logNode : cut){
-            BHCNucleusData nucData = BHCNucleusData.factory(logNode, i, time);
+            BHCNucleusData nucData = BHCNucleusData.factory(logNode, time);
             if (nucData!=null && nucData.getVolume()>=minVolume){
                 ret.add(nucData);
                 ++i;
@@ -76,8 +76,8 @@ public class BHCNucleusData extends NucleusData {
         }  
         return ret;
     }
-    static public BHCNucleusData factory(NodeBase node,int id,int time){
-        Element ele = node.formElementXML(id);
+    static public BHCNucleusData factory(NodeBase node,int time){
+        Element ele = node.formElementXML();
         if (ele != null){
             return  new BHCNucleusData(time,ele);
         }
@@ -133,11 +133,14 @@ public class BHCNucleusData extends NucleusData {
         int n = Integer.valueOf(id);
         return String.format("%03d_%03d", time,n);
     }
+/*
     static String name(Element gmm){
         return gmm.getAttributeValue("name");
     }
+*/
     public String getID(){
-        return id;
+//        return id;
+        return this.sourceNode;
     }
 
     @Override
@@ -197,7 +200,7 @@ public class BHCNucleusData extends NucleusData {
         return v*ir*super.distance(other);
     }
     static double vf = 4.0*Math.PI/3.0;
-    String id;
+//    String id;
     int count;  // number of micro clusters in the nucleus
     String sourceNode;  // the BHC tree node from which this nucleus is built
     double volume;  // volume of nucleus

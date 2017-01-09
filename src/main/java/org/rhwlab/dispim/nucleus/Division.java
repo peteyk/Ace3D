@@ -47,7 +47,7 @@ public class Division {
     public boolean isPossible(){
         
         
-        if (parent.getCellName().contains("Polar")){
+        if (parent.getCellName().contains("Polar") || parent.getCellName().contains("polar")) {
             System.out.println("Polar");
             return false;  // polar bodies do not divide
         }

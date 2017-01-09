@@ -10,6 +10,7 @@ import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.rhwlab.command.CommandLine;
+import org.rhwlab.dispim.datasource.BoundingBox;
 
 /**
  *
@@ -19,6 +20,11 @@ public class Nuclei_IdentificationCLI extends CommandLine {
 
     @Override
     public void init() {
+        mins = new Double[3];
+        maxs = new Double[3];
+        for (int i=0 ; i<3 ; ++i){
+            mins[i] = maxs[i] = null;
+        }
     }
 
     @Override
@@ -54,6 +60,54 @@ public class Nuclei_IdentificationCLI extends CommandLine {
         System.out.println("\t-force\tforce recalculation for the time point(s)");
         System.out.println("\t-qsub\trun on the whead cluster");
     }
+    public String xMin(String s){
+        try {
+            mins[0] = Double.valueOf(s);
+        } catch (Exception exc){
+            return String.format("Error in option -xMin %s", s);
+        }
+        return null;          
+    }
+    public String xMax(String s){
+        try {
+            maxs[0] = Double.valueOf(s);
+        } catch (Exception exc){
+            return String.format("Error in option -xMax %s", s);
+        }
+        return null;          
+    }    
+    public String yMin(String s){
+        try {
+            mins[1] = Double.valueOf(s);
+        } catch (Exception exc){
+            return String.format("Error in option -yMin %s", s);
+        }
+        return null;          
+    }
+    public String yMax(String s){
+        try {
+            maxs[1] = Double.valueOf(s);
+        } catch (Exception exc){
+            return String.format("Error in option -yMax %s", s);
+        }
+        return null;          
+    }  
+        public String zMin(String s){
+        try {
+            mins[2] = Double.valueOf(s);
+        } catch (Exception exc){
+            return String.format("Error in option -zMin %s", s);
+        }
+        return null;          
+    }
+    public String zMax(String s){
+        try {
+            maxs[2] = Double.valueOf(s);
+        } catch (Exception exc){
+            return String.format("Error in option -zMax %s", s);
+        }
+        return null;          
+    }  
     public String segTiff(String s){
         return noOption(s);
     }
@@ -174,6 +228,9 @@ public class Nuclei_IdentificationCLI extends CommandLine {
     public Integer getNu(){
         return nu;
     }
+    public BoundingBox getBoundingBox(){
+        return new BoundingBox(mins,maxs);
+    }
     static public TreeMap<Integer,String[]> getMVRFiles(String seriesDir,int start,int end){
         File mvrDir = new File(seriesDir,"MVR_STACKS");
         File[] files = mvrDir.listFiles();
@@ -271,6 +328,8 @@ public class Nuclei_IdentificationCLI extends CommandLine {
        
         return ret;
     }
+    Double[] mins;
+    Double[] maxs;
     String memory;
     String bhcDir;
     String seriesDir;

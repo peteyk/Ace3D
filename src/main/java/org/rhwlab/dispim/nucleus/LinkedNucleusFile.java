@@ -496,6 +496,31 @@ public class LinkedNucleusFile implements NucleusFile {
         }
         return ret;
     }
+    // auto link between given times
+    // non-curated time points will be segmented
+    // curated time point are not resegmented
+    // all links are removed and recreated
+    public void autoLink(int fromTime,int toTime)throws Exception {
+        
+        Nucleus[] fromNucs = this.getNuclei(fromTime).toArray(new Nucleus[0]);
+        Nucleus[] toNucs;
+        for (int t=fromTime+1 ; t<=toTime ; ++t){
+            if (isCurated(t)){
+                toNucs = this.getNuclei(t).toArray(new Nucleus[0]);
+            }else {
+                BHCTree tree = bhcTreeDir.getTree(t);
+                toNucs = tree.cutToN(fromNucs.length, Linkage.minVolume(t), 0.9);
+                this.removeNuclei(t, false);
+                for (Nucleus nuc : toNucs){
+                    this.addNucleus(nuc);
+                }
+            }
+            Linkage linkage = new Linkage(fromNucs,toNucs);
+            linkage.formLinkage();
+            fromNucs = toNucs;
+        }
+        this.notifyListeners();
+    }
     public void autoLinkBetweenCuratedTimes(int time)throws Exception {
         Integer[] curatedTimes = curatedTimes(time);
         if (curatedTimes[0] == null || curatedTimes[1] == null) return;

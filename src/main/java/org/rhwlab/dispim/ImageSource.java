@@ -24,4 +24,5 @@ public interface ImageSource {
     public Collection<DataSetDesc> getDataSets();
     public void setFirstTime(int minTime);
     public Element toXML();
+
 }

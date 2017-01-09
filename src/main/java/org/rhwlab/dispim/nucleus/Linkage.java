@@ -110,27 +110,8 @@ public class Linkage implements Comparable {
             }
         }          
     }
-    /*
-    static Nucleus[] bestCut(int n,BHCTree tree,double minVolume){
-        Set<BHCNucleusData> currentSet = tree.cutToN(n).setMinVolume(minVolume);
-        
-        while (true){
-            ++n;
-            Set<BHCNucleusData> nextSet = tree.cutToN(n).setMinVolume(minVolume);
-            if (currentSet.size() == nextSet.size()){
-                break;
-            }
-            currentSet = nextSet;
-        }
-        Nucleus[] ret = new Nucleus[currentSet.size()];
-        int i=0;
-        for (BHCNucleusData data : currentSet){
-            ret[i] = new Nucleus(data);
-            ++i;
-        }
-        return ret; 
-    }
-    
+
+/*    
     static Nucleus[] autoLinkage(Nucleus[] nucsToLink,int fromTime,BHCTreeDirectory bhcTreeDir)throws Exception {
         if (nucsToLink.length == 0)return null;
         
@@ -237,7 +218,14 @@ public class Linkage implements Comparable {
         return toNucs;
     }
 */
+    // form the linkage between the two sets of nuclei in this linkage
      public void formLinkage(){
+         
+         // make sure the to nuclei are unlinked
+         for (Nucleus nuc : this.to){
+             nuc.unlink();
+         }
+         
         // link the polar bodies first
         this.linkPolarBodies();
         
@@ -408,7 +396,7 @@ public class Linkage implements Comparable {
     static public double minVolume(int time){
         if (minVolumes==null){
             minVolumes = new TreeMap<>();
-            minVolumes.put(15, 5000.);
+            minVolumes.put(15, 4000.);
             minVolumes.put(40,4000.);
             minVolumes.put(100, 3000.);
         }

@@ -14,7 +14,7 @@ import org.apache.commons.math3.linear.RealVector;
  * @author gevirl
  */
 public class Segmentation {
-    public Segmentation(VoxelDataSource source,double thresh){
+    public Segmentation(VoxelDataSource source,double thresh,BoundingBox box){
         this.source = source;
         this.thresh = thresh;
         segmentIndex = new ArrayList<>();
@@ -27,7 +27,7 @@ public class Segmentation {
         
         for (long i=0 ; i<source.getN() ; ++i){  // process each voxel in the segmented tiff
             Voxel segVox = source.get(i);
-            if (segVox.getIntensity() >= thresh){  // do not include the voxel in the segmentation if less than the threshold
+            if (segVox.getIntensity() >= thresh && box.isWithin(segVox)){  // do not include the voxel in the segmentation if less than the threshold or outside the bounding box
                 for (int d=0 ; d<mins.length ; ++d){
                     RealVector v = segVox.coords;
                     double e = v.getEntry(d);

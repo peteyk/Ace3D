@@ -162,6 +162,15 @@ public class SingleSlicePanel extends JPanel implements ChangeListener {
             @Override
             public void keyPressed(KeyEvent e){
                 char k = e.getKeyChar();
+                int kCode = e.getKeyCode();
+                if (kCode == KeyEvent.VK_F2){
+                    
+                } else if (kCode == KeyEvent.VK_F1){
+                    
+                }else if (kCode == KeyEvent.VK_F4){
+                    
+                }
+                else {
 //                int mask = KeyEvent.SHIFT_DOWN_MASK;
 //                int modifier = e.getModifiersEx();
  //               if ((modifier&mask) == mask){
@@ -216,7 +225,7 @@ public class SingleSlicePanel extends JPanel implements ChangeListener {
                         }
                         break;
                     }
-                
+                }
             }
         });
         this.addMouseWheelListener(new MouseAdapter(){

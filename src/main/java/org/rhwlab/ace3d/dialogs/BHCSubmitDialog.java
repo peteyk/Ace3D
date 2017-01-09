@@ -23,14 +23,14 @@ import org.rhwlab.ace3d.Ace3D_Frame;
  * @author gevirl
  */
 public class BHCSubmitDialog extends JDialog {
-    public BHCSubmitDialog(Ace3D_Frame owner,String initDir){
+    public BHCSubmitDialog(Ace3D_Frame owner,String initDir,int[] dims){
         super(owner,false);
         this.setTitle("Submit To Grid");
-        this.setSize(400, 300);
+        this.setSize(450, 300);
         this.setLocationRelativeTo(owner);    
         this.getContentPane().setLayout(new BorderLayout());
         
-        panel = new BHCSubmitPanel(initDir);
+        panel = new BHCSubmitPanel(initDir, dims);
         this.getContentPane().add(panel,BorderLayout.CENTER);
         
         JPanel buttons = new JPanel();
@@ -43,8 +43,8 @@ public class BHCSubmitDialog extends JDialog {
                 File bhcDir = new File(seriesDir,"BHC");
                 TreeMap<Integer,String[]> files = Nuclei_IdentificationCLI.getMVRFiles(seriesDir.getPath(),panel.getStartTime(),panel.getEndTime());
                 try {
-                Nuclei_Identification.submitTimePoints(
-                        bhcDir,files,panel.isForce(),panel.getCores(),panel.getMemory(),panel.getAlpha(),panel.getVariance(),panel.getDegrees(),panel.getProb());
+                Nuclei_Identification.submitTimePoints(panel.isWaterston(),
+                        bhcDir,files,panel.isForce(),panel.getCores(),panel.getMemory(),panel.getAlpha(),panel.getVariance(),panel.getDegrees(),panel.getProb(),panel.getBoundingBox());
                 }catch (Exception exc){
                     exc.printStackTrace();
                 }

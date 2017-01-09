@@ -43,6 +43,7 @@ public class TimePointImage{
         return ret;
     }
 
+
     @Override
     public boolean equals(Object obj){
         if (obj instanceof TimePointImage){
@@ -160,11 +161,14 @@ public class TimePointImage{
     }
 
 
-    static public long[] getMinCoordinate(){
+    static public int[] getIntDims(){
         initCache();
         TimePointImage tpi = timePointCache.get(0);
-        long[] ret = new long[tpi.getImage().numDimensions()];
-        tpi.getImage().min(ret);
+        int[] ret = new int[tpi.getImage().numDimensions()];
+        long[] r = tpi.getDims();
+        for (int i=0 ; i<ret.length ; ++i){
+            ret[i] = (int)r[i];
+        }
         return ret;
     }
     static public void setEmbryo(ImagedEmbryo emb){

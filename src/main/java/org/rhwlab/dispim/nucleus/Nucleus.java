@@ -80,7 +80,7 @@ public class Nucleus implements Comparable {
         return nucData.getName();
     }
     public String getFullName(){
-        return String.format("%s|%s",getName(),cellName);
+        return String.format("%s|%s",getName(),getCellName());
     }
 
     public void setMarked(boolean s){
@@ -471,6 +471,28 @@ public class Nucleus implements Comparable {
         }
         this.child1.descedentsInCell(ret);
         
+    }
+    // unkin this nucleus from its parent
+    public void unlink(){
+        Nucleus parent = this.getParent();
+        if (parent == null){
+            return;
+        }
+        // the nucleus being unlinked must get a new cellname
+        this.renameContainingCell(this.getName());
+        
+        if (parent.getChild1()==this){
+            // move parents child2 into child1
+            parent.setDaughters(parent.getChild2(), null);
+        }else {
+            // unlinking parents child2
+            parent.setDaughters(parent.getChild1(), null);
+        }
+        if (parent.getChild1()!=null){
+            // child1 now part of parents cell
+            parent.getChild1().renameContainingCell(parent.getCellName());            
+        }
+        this.setParent(null);
     }
 
     private Nucleus child1;

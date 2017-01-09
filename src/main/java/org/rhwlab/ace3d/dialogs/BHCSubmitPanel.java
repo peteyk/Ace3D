@@ -15,23 +15,29 @@ import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
+import org.rhwlab.dispim.datasource.BoundingBox;
 
 /**
  *
  * @author gevirl
  */
 public class BHCSubmitPanel extends JPanel {
-    public BHCSubmitPanel(String init){
-        this.setLayout(new GridLayout(10,3));
+    public BHCSubmitPanel(String init, int[] dims){
+        this.dims = dims;
+        this.setLayout(new GridLayout(14,3));
         
         this.add(new JLabel("Cores to request"));
         this.add(cores);
-        this.add(new JLabel("(1-16"));
+        this.add(new JLabel("(1-16)"));
         
         this.add(new JLabel("Memory per Core (Gigs)"));
         this.add(memory);
         this.add(new JLabel(""));
         
+        this.add(new JLabel("To waterston grid"));
+        waterque.setSelected(true);
+        this.add(waterque);  
+        this.add(new JLabel(""));        
         
         this.add(new JLabel("Force Replacement"));
         this.add(force);  
@@ -75,6 +81,27 @@ public class BHCSubmitPanel extends JPanel {
         this.add(new JLabel("Degrees Freedom"));
         this.add(degrees);
         this.add(new JLabel("4-20"));
+        
+        this.add(new JLabel("X Range"));
+        xMin = new JTextField(Integer.toString((int)(0.05*dims[0])));
+        xMax = new JTextField(Integer.toString((int)(.95*dims[0])));
+        this.add(xMin);       
+        this.add(xMax);
+
+        this.add(new JLabel("Y Range"));
+        yMin = new JTextField(Integer.toString((int)(0.05*dims[1])));
+        yMax = new JTextField(Integer.toString((int)(.95*dims[1])));
+        this.add(yMin);       
+        this.add(yMax);
+        
+        this.add(new JLabel("Z Range"));
+        zMin = new JTextField(Integer.toString((int)(0.05*dims[2])));
+        zMax = new JTextField(Integer.toString((int)(.95*dims[2])));
+        this.add(zMin);       
+        this.add(zMax);
+        
+        
+        
     }
     public boolean isForce(){
         return force.isSelected();
@@ -138,7 +165,51 @@ public class BHCSubmitPanel extends JPanel {
             return 4;
         }
     }    
+    public BoundingBox getBoundingBox(){
+        Double[] mins = new Double[dims.length];
+        Double[] maxs = new Double[dims.length];
+        
+        String s;
+        s = xMin.getText().trim();
+        mins[0] = null;
+        if (!s.equals("")){
+            mins[0] = new Double(s);
+        }
+        s = xMax.getText().trim();
+        maxs[0] = null;
+        if (!s.equals("")){
+            maxs[0] = new Double(s);
+        }  
+        
+        s = yMin.getText().trim();
+        mins[1] = null;
+        if (!s.equals("")){
+            mins[1] = new Double(s);
+        }
+        s = yMax.getText().trim();
+        maxs[1] = null;
+        if (!s.equals("")){
+            maxs[1] = new Double(s);
+        } 
+
+        s = zMin.getText().trim();
+        mins[2] = null;
+        if (!s.equals("")){
+            mins[2] = new Double(s);
+        }
+        s = zMax.getText().trim();
+        maxs[2] = null;
+        if (!s.equals("")){
+            maxs[2] = new Double(s);
+        } 
+        return new BoundingBox(mins,maxs);
+    }
+    public boolean isWaterston(){
+        return waterque.isSelected();
+    }
+    int[] dims;
     JCheckBox force = new JCheckBox();
+    JCheckBox waterque = new JCheckBox();
     JTextField cores = new JTextField("4");
     JTextField memory = new JTextField("5");
     JTextField seriesDir;
@@ -148,4 +219,10 @@ public class BHCSubmitPanel extends JPanel {
     JTextField variance = new JTextField("20");
     JTextField degrees = new JTextField("10");
     JTextField segProb = new JTextField("50");
+    JTextField zMax;
+    JTextField zMin;
+    JTextField xMin;
+    JTextField xMax;
+    JTextField yMin;
+    JTextField yMax;
 }

@@ -472,7 +472,8 @@ public class Ace3D_Frame extends JFrame implements PlugIn,ChangeListener  {
             public void actionPerformed(ActionEvent e) {
                 if (bhc.getDirectory() != null){
                     
-                    submitDialog = new BHCSubmitDialog(Ace3D_Frame.this,bhc.getDirectory().getParent());
+                    int[] dims = TimePointImage.getIntDims();
+                    submitDialog = new BHCSubmitDialog(Ace3D_Frame.this,bhc.getDirectory().getParent(),dims);
                     submitDialog.setVisible(true);
                 }
             }
@@ -501,7 +502,19 @@ public class Ace3D_Frame extends JFrame implements PlugIn,ChangeListener  {
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
-                    ((LinkedNucleusFile)imagedEmbryo.getNucleusFile()).autoLinkBetweenCuratedTimes(getCurrentTime());
+                    int fromTime = -1;
+                    while (fromTime == -1){
+                        try {
+                            String ans = JOptionPane.showInputDialog("Enter time to link back to");
+                            if (ans == null){
+                                return;
+                            }
+                            fromTime = Integer.valueOf(ans);
+                        } catch (Exception exc){}
+                    }
+                    ((LinkedNucleusFile)imagedEmbryo.getNucleusFile()).autoLink(fromTime, getCurrentTime());
+                    
+ //                   ((LinkedNucleusFile)imagedEmbryo.getNucleusFile()).autoLinkBetweenCuratedTimes(getCurrentTime());
                 } catch (Exception exc){
                     exc.printStackTrace();
                 }

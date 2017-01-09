@@ -29,7 +29,8 @@ public class SegmentationLinePlot extends JPanel {
         XYSeries series = new XYSeries("");
         collect.addSeries(series);
         
-        TreeMap<Integer,TreeSet<NucleusLogNode>> map =tree.allTreeCuts(1000);
+        TreeMap<Integer,TreeSet<NucleusLogNode>> map =tree.allTreeCuts(100);
+        
         for (Integer i : map.keySet()){
             TreeSet<NucleusLogNode> nodes = map.get(i);
             double lnP = nodes.first().getLogPosterior();

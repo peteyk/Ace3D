@@ -14,6 +14,7 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.jdom2.Element;
+import org.rhwlab.dispim.datasource.BoundingBox;
 import org.rhwlab.dispim.datasource.ByteHDF5DataSource;
 import org.rhwlab.dispim.datasource.FloatHDF5DataSource;
 import org.rhwlab.dispim.datasource.MicroCluster4DDataSource;
@@ -27,9 +28,10 @@ import org.rhwlab.dispim.datasource.TiffDataSource;
  * @author gevirl
  */
 public class Nuclei_Identification implements Runnable {
-    public Nuclei_Identification(String dir,String lineageTiff,String segSource,boolean force,boolean study,double alpha,double s,int nu,double segThresh){
+    public Nuclei_Identification(String dir,String lineageTiff,String segSource,boolean force,boolean study,double alpha,double s,int nu,double segThresh,BoundingBox box){
         System.out.println(lineageTiff);
         System.out.println(segSource);
+        this.box = box;
         this.segmentedSource = segSource;
         segSource = cleanName(segSource);
         this.lineageTff = lineageTiff;
@@ -95,12 +97,12 @@ public class Nuclei_Identification implements Runnable {
                 SegmentedTiffDataSource segSource;
                 if (segmentedSource.endsWith("h5")){
                     if (segmentedSource.contains("Prob")){
-                        segSource = new SegmentedTiffDataSource(lineageTff,new Segmentation(new FloatHDF5DataSource(new File(segmentedSource),"exported_data",100.0,1),segThresh));
+                        segSource = new SegmentedTiffDataSource(lineageTff,new Segmentation(new FloatHDF5DataSource(new File(segmentedSource),"exported_data",100.0,1),segThresh,box));
                     }else {
-                        segSource = new SegmentedTiffDataSource(lineageTff,new Segmentation(new ByteHDF5DataSource(new File(segmentedSource),"exported_data"),segThresh));
+                        segSource = new SegmentedTiffDataSource(lineageTff,new Segmentation(new ByteHDF5DataSource(new File(segmentedSource),"exported_data"),segThresh,box));
                     }
                 } else {
-                    segSource = new SegmentedTiffDataSource(lineageTff,new Segmentation(new TiffDataSource(segmentedSource),segThresh));
+                    segSource = new SegmentedTiffDataSource(lineageTff,new Segmentation(new TiffDataSource(segmentedSource),segThresh,box));
                 }
                 
 //                SegmentedTiffDataSource segSource = new SegmentedTiffDataSource(segmentedTiff,backgroundSegment); 
@@ -226,6 +228,7 @@ public class Nuclei_Identification implements Runnable {
         }
         return ret;
     }
+/*    
     static public void submitStudyTimes(File directory,TreeMap<Integer,String[]> tiffs)throws Exception {
         if (tiffs.isEmpty()) return;
         
@@ -268,13 +271,15 @@ public class Nuclei_Identification implements Runnable {
         ProcessBuilder pb = new ProcessBuilder("ssh","grid.gs.washington.edu",scriptFile.getPath());
         Process p = pb.start();        
     }
-    static public void submitTimePoints(File directory,TreeMap<Integer,String[]> tiffs,boolean force,int cores,int memory,double alpha,double S,int nu,double th)throws Exception {
+    */
+    static public void submitTimePoints(boolean water,File directory,TreeMap<Integer,String[]> tiffs,boolean force,int cores,int memory,double alpha,double S,int nu,double th,BoundingBox box)throws Exception {
         if (tiffs.isEmpty()) return;
         directory.mkdir();
         directory.setWritable(true, false);
         
         System.getProperty("user.name");
         File scriptFile = new File(directory,System.getProperty("user.name")+"SubmitTimePoints.sh");
+        scriptFile.setWritable(true,false);
         
         PrintStream scriptStream = new PrintStream(scriptFile);
         scriptStream.printf("cd %s\n", directory.getPath());
@@ -298,13 +303,17 @@ public class Nuclei_Identification implements Runnable {
             scriptStream.printf("qsub -e %s -o %s \"%s.qsub\"\n",directory.getPath(),directory.getPath(),baseName);
             
             // write the qsub file
-            PrintStream qsubStream = new PrintStream(new File(directory,baseName+".qsub"));
+            File qsubFile = new File(directory,baseName+".qsub");
+            qsubFile.setWritable(true,false);
+            PrintStream qsubStream = new PrintStream(qsubFile);
             qsubStream.println("#$ -S /bin/bash");
             qsubStream.printf("#$ -l mfree=%sG\n",memory);
             qsubStream.println("#$ -l h_rt=96:0:0");
      //       qsubStream.println("#$ -l h=w014");
             qsubStream.printf("#$ -pe serial %d\n",cores);
-            
+            if (!water){
+                qsubStream.println("#$ -P sage");
+            }
             qsubStream.println("cd /nfs/waterston/Ace3D");
             qsubStream.println("PATH=/nfs/waterston/jdk1.8.0_102/bin:$PATH");
             qsubStream.println("JAVA_HOME=/nfs/waterston/jdk1.8.0_102");
@@ -315,6 +324,24 @@ public class Nuclei_Identification implements Runnable {
             if (force){
                 qsubStream.print(" -force ");
             }
+            if (box.getMin(0)!=null){
+                qsubStream.printf(" -xMin %f", box.getMin(0));
+            }
+            if (box.getMin(1)!=null){
+                qsubStream.printf(" -yMin %f", box.getMin(1));
+            }
+            if (box.getMin(2)!=null){
+                qsubStream.printf(" -zMin %f", box.getMin(2));
+            }
+            if (box.getMax(0)!=null){
+                qsubStream.printf(" -xMax %f", box.getMax(0));
+            }
+            if (box.getMax(1)!=null){
+                qsubStream.printf(" -yMax %f", box.getMax(1));
+            }
+            if (box.getMax(2)!=null){
+                qsubStream.printf(" -zMax %f", box.getMax(2));
+            }            
             qsubStream.print("\" -Dexec.executable=/nfs/waterston/jdk1.8.0_102/bin/java -Dexec.classpathScope=runtime org.codehaus.mojo:exec-maven-plugin:1.2.1:exec");
             qsubStream.println();
             qsubStream.close();
@@ -335,7 +362,7 @@ public class Nuclei_Identification implements Runnable {
 //            submitTimePoints(new File(cli.getBHCDirectory()),tiffs,cli.getForce(),cli.getMemory(),cli.getAlpha(),cli.getS(),cli.getNu(),cli.getSegThresh());
         } else {
             Nuclei_Identification objectID = new Nuclei_Identification
-                (cli.getBHCDirectory(),cli.getLineTiff(),cli.getSegmentTiff(),cli.getForce(),cli.getStudy(),cli.getAlpha(),cli.getS(),cli.getNu(),cli.getSegThresh());
+                (cli.getBHCDirectory(),cli.getLineTiff(),cli.getSegmentTiff(),cli.getForce(),cli.getStudy(),cli.getAlpha(),cli.getS(),cli.getNu(),cli.getSegThresh(),cli.getBoundingBox());
             objectID.run();
         }
 /*                
@@ -362,6 +389,7 @@ public class Nuclei_Identification implements Runnable {
     int time=-1;
     boolean force;
     boolean study;
+    BoundingBox box;
 //    static int backgroundSegment = 1;
  //   static int nucleiSegment = 2;
     

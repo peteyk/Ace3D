@@ -157,14 +157,14 @@ public class BHCTree {
         return el.getChildren("GaussianMixtureModel").size();
     }
    */ 
-    // cut the tree to N given a minimum volume and a maximum probability
+    // cut the tree to at least N given a minimum volume and a maximum probability
     // may have to return less than N nuclei to meet volume and prob criteria
     public Nucleus[] cutToN(int n,double minVolume,double maxProb){
         int cutN = n;
         TreeSet<NucleusLogNode>  volReducedCut;
         ArrayList<Nucleus> retList = new ArrayList<>();
         while(true){
-            TreeSet<NucleusLogNode> cut = cutToN(cutN);
+            TreeSet<NucleusLogNode> cut = cutToN(cutN);  // cuts to exactly cutN
             volReducedCut = new TreeSet<>();
             int i=1;
             retList.clear();
@@ -177,7 +177,7 @@ public class BHCTree {
                 }
             }
             double prob = Math.exp(cut.first().getLogPosterior());
-            if (volReducedCut.size() < n && prob <=maxProb){
+            if (prob <=maxProb){
                 ++cutN;
             }else {
                 break;
@@ -187,6 +187,7 @@ public class BHCTree {
         return retList.toArray(new Nucleus[0]);
     }
     
+    // cut tree to exactly n nodes
     public TreeSet<NucleusLogNode> cutToN(int n){
         TreeSet<NucleusLogNode> cut = firstTreeCut();
         while (cut.size()<n) {

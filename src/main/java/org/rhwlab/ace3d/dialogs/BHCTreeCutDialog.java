@@ -123,8 +123,9 @@ public class BHCTreeCutDialog extends JDialog {
         if (sel != null){
             int t = tree.getTime();
             LinkedNucleusFile f = (LinkedNucleusFile)this.nucleusFile;
-            f.clearInterCuratedRegion(t, false);
-            Set<BHCNucleusData> nucData =  BHCNucleusData.factory(tree.cutToN(((CutDescriptor)sel).getNodeCount()), minVolume, t);
+            f.removeNuclei(t, false);
+            TreeSet<NucleusLogNode> cut = tree.cutToN(((CutDescriptor)sel).getNodeCount());
+            Set<BHCNucleusData> nucData =  BHCNucleusData.factory(cut, minVolume, t);
             BHCNucleusSet nucSet = new BHCNucleusSet(t,tree.getFileName(),nucData);
             nucleusFile.addNuclei(nucSet,true);
             owner.stateChanged(null);

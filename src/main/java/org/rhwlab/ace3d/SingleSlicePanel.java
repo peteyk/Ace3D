@@ -228,6 +228,7 @@ public class SingleSlicePanel extends JPanel implements ChangeListener {
                 }
             }
         });
+        
         this.addMouseWheelListener(new MouseAdapter(){
             @Override
             public void mouseWheelMoved(MouseWheelEvent e){

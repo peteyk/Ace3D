@@ -443,11 +443,11 @@ public class SingleSlicePanel extends JPanel implements ChangeListener {
 
            Shape nucShape = nuc.getShape(slice, dim, bufW, bufH);   
            if (nucShape != null){
-                if (nuc == this.embryo.selectedNucleus()){
-                    g2.setColor(Color.RED);
+               if (nuc == this.embryo.getMarked()){
+                    g2.setColor(Color.CYAN);
                 }
-                else if (nuc == this.embryo.getMarked()){
-                    g2.setColor(Color.BLUE);
+                else if (nuc == this.embryo.selectedNucleus()){
+                    g2.setColor(Color.RED);
                 }
                 else {
                     g2.setColor(Color.GREEN);

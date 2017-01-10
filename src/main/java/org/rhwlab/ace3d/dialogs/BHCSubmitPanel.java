@@ -24,7 +24,7 @@ import org.rhwlab.dispim.datasource.BoundingBox;
 public class BHCSubmitPanel extends JPanel {
     public BHCSubmitPanel(String init, int[] dims){
         this.dims = dims;
-        this.setLayout(new GridLayout(14,3));
+        this.setLayout(new GridLayout(15,3));
         
         this.add(new JLabel("Cores to request"));
         this.add(cores);
@@ -39,8 +39,12 @@ public class BHCSubmitPanel extends JPanel {
         this.add(waterque);  
         this.add(new JLabel(""));        
         
-        this.add(new JLabel("Force Replacement"));
-        this.add(force);  
+        this.add(new JLabel("Force KMeans/BHC"));
+        this.add(forceKMeans);  
+        this.add(new JLabel(""));
+        
+        this.add(new JLabel("Force BHC only"));
+        this.add(forceBHC);  
         this.add(new JLabel(""));
         
         this.add(new JLabel("Series Directory"));
@@ -103,9 +107,21 @@ public class BHCSubmitPanel extends JPanel {
         
         
     }
-    public boolean isForce(){
-        return force.isSelected();
+    public boolean isForceKMeans(){
+        return forceKMeans.isSelected();
     }
+    public boolean isForceBHC(){
+        return forceBHC.isSelected();
+    }
+    public String getForce(){
+        if (isForceKMeans()){
+            return "KMeans";
+        } else if (isForceBHC()){
+            return "BHC";
+        }
+        return null;
+    }
+    
     public int getMemory(){
         try {
             return  Integer.valueOf(memory.getText().trim());
@@ -208,7 +224,8 @@ public class BHCSubmitPanel extends JPanel {
         return waterque.isSelected();
     }
     int[] dims;
-    JCheckBox force = new JCheckBox();
+    JCheckBox forceKMeans = new JCheckBox();
+    JCheckBox forceBHC = new JCheckBox();
     JCheckBox waterque = new JCheckBox();
     JTextField cores = new JTextField("4");
     JTextField memory = new JTextField("5");

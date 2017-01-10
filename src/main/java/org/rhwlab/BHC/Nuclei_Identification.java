@@ -28,7 +28,7 @@ import org.rhwlab.dispim.datasource.TiffDataSource;
  * @author gevirl
  */
 public class Nuclei_Identification implements Runnable {
-    public Nuclei_Identification(String dir,String lineageTiff,String segSource,boolean force,boolean study,double alpha,double s,int nu,double segThresh,BoundingBox box){
+    public Nuclei_Identification(String dir,String lineageTiff,String segSource,String force,double alpha,double s,int nu,double segThresh,BoundingBox box){
         System.out.println(lineageTiff);
         System.out.println(segSource);
         this.box = box;
@@ -39,7 +39,6 @@ public class Nuclei_Identification implements Runnable {
         File segFile = new File(segSource);
         this.baseName = baseName(segFile.getName());
         this.force = force;
-        this.study = study;
         this.alpha = alpha;
         this.segThresh = segThresh;
         this.S = s;
@@ -84,15 +83,8 @@ public class Nuclei_Identification implements Runnable {
         File[] xmls = xmlFiles(directory,baseName);
         File microClusterFile = xmls[0];
         File BHCTreeFile = xmls[1];
-        if (study){
-            try {
-//                runBHCStudy(microClusterFile);
-            } catch (Exception exc){
-                exc.printStackTrace();
-            }
-            return;
-        }
-        if (!microClusterFile.exists()  || force){
+
+        if (!microClusterFile.exists()  || (force!=null && force.toLowerCase().contains("kmeans"))){
             try {
                 SegmentedTiffDataSource segSource;
                 if (segmentedSource.endsWith("h5")){
@@ -116,7 +108,7 @@ public class Nuclei_Identification implements Runnable {
             }
         }
         
-        if (!BHCTreeFile.exists() || force){
+        if (!BHCTreeFile.exists() || (force !=null && force.toLowerCase().contains("bhc") )){
             try {
                 this.runBHC(microClusterFile,BHCTreeFile);
 //                this.runTreeCut(BHCTreeFile,gmmFile);
@@ -272,13 +264,14 @@ public class Nuclei_Identification implements Runnable {
         Process p = pb.start();        
     }
     */
-    static public void submitTimePoints(boolean water,File directory,TreeMap<Integer,String[]> tiffs,boolean force,int cores,int memory,double alpha,double S,int nu,double th,BoundingBox box)throws Exception {
+    static public void submitTimePoints(boolean water,File directory,TreeMap<Integer,String[]> tiffs,String force,int cores,int memory,double alpha,double S,int nu,double th,BoundingBox box)throws Exception {
         if (tiffs.isEmpty()) return;
         directory.mkdir();
         directory.setWritable(true, false);
         
         System.getProperty("user.name");
-        File scriptFile = new File(directory,System.getProperty("user.name")+"SubmitTimePoints.sh");
+        long t = System.currentTimeMillis();
+        File scriptFile = new File(directory,System.getProperty("user.name")+Long.toString(t)+"Submit.sh");
         scriptFile.setWritable(true,false);
         
         PrintStream scriptStream = new PrintStream(scriptFile);
@@ -296,7 +289,7 @@ public class Nuclei_Identification implements Runnable {
             String baseName = baseName(fileName);
             File[] xmls = xmlFiles(directory,baseName);
 
-            if (xmls[0].exists() && xmls[1].exists() && !force){
+            if (xmls[0].exists() && xmls[1].exists() && force==null){
                 continue;
             }
            
@@ -321,8 +314,8 @@ public class Nuclei_Identification implements Runnable {
             qsubStream.printf("/nfs/waterston/apache-maven-3.3.9/bin/mvn \"-Dexec.args=-Xms%sG -Xmx%sG  ",cores*memory,cores*memory);
             qsubStream.print(" -classpath %classpath org.rhwlab.BHC.Nuclei_Identification ");
             qsubStream.printf("-segThresh %f -S %f -nu %d -alpha %f -segTiff \'%s\'  -lineageTiff \'%s\' -bhcDir %s  ",th,S,nu,alpha,names[1],names[0],directory.getPath());
-            if (force){
-                qsubStream.print(" -force ");
+            if (force!=null){
+                qsubStream.printf(" -force %s ",force);
             }
             if (box.getMin(0)!=null){
                 qsubStream.printf(" -xMin %f", box.getMin(0));
@@ -362,7 +355,7 @@ public class Nuclei_Identification implements Runnable {
 //            submitTimePoints(new File(cli.getBHCDirectory()),tiffs,cli.getForce(),cli.getMemory(),cli.getAlpha(),cli.getS(),cli.getNu(),cli.getSegThresh());
         } else {
             Nuclei_Identification objectID = new Nuclei_Identification
-                (cli.getBHCDirectory(),cli.getLineTiff(),cli.getSegmentTiff(),cli.getForce(),cli.getStudy(),cli.getAlpha(),cli.getS(),cli.getNu(),cli.getSegThresh(),cli.getBoundingBox());
+                (cli.getBHCDirectory(),cli.getLineTiff(),cli.getSegmentTiff(),cli.getForce(),cli.getAlpha(),cli.getS(),cli.getNu(),cli.getSegThresh(),cli.getBoundingBox());
             objectID.run();
         }
 /*                
@@ -387,8 +380,8 @@ public class Nuclei_Identification implements Runnable {
     int nu;
     double segThresh;
     int time=-1;
-    boolean force;
-    boolean study;
+
+    String force;
     BoundingBox box;
 //    static int backgroundSegment = 1;
  //   static int nucleiSegment = 2;

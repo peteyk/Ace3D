@@ -175,8 +175,10 @@ public class Nuclei_IdentificationCLI extends CommandLine {
         }
         return null;
     }       
-    public void force(){
-        this.force = true;
+    public String force(String s){
+        
+        this.force = s;
+        return null;
     }
     public void qsub(){
         this.qsub = true;
@@ -195,7 +197,7 @@ public class Nuclei_IdentificationCLI extends CommandLine {
     public Integer getLastTime(){
         return this.lastTime;
     }
-    public boolean getForce(){
+    public String getForce(){
         return this.force;
     }
     public boolean getQsub(){
@@ -341,7 +343,7 @@ public class Nuclei_IdentificationCLI extends CommandLine {
     Double S;
     Double segThresh;
     Integer nu;
-    boolean force=false;
+    String force=null;
     boolean qsub = false;
     boolean study = false;
 }

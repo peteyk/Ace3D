@@ -6,11 +6,13 @@
 package org.rhwlab.ace3d;
 
 import ij.ImagePlus;
+import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.Shape;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
@@ -19,6 +21,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Ellipse2D;
+import java.awt.geom.Line2D;
 import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 import java.util.Map.Entry;
@@ -76,8 +79,8 @@ public class SingleSlicePanel extends JPanel implements ChangeListener {
                     if (buffered == null){
                         return ;
                     }
-  
-                    
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);                   
                     bufH = buffered.getHeight();
                     bufW = buffered.getWidth();
 
@@ -521,7 +524,9 @@ public class SingleSlicePanel extends JPanel implements ChangeListener {
             if (nuc.equals(this.embryo.selectedNucleus())){
                 Nucleus sister = nuc.getSisterNucleus();
                 if (sister != null){
-                    g2.drawLine(screenX(nuc.getCenter()),screenY(nuc.getCenter()),screenX(sister.getCenter()),screenY(sister.getCenter()));
+                    Graphics2D g3 = (Graphics2D) g2;
+                    g3.setStroke(new BasicStroke(3));
+                    g3.draw(new Line2D.Float(screenX(nuc.getCenter()),screenY(nuc.getCenter()),screenX(sister.getCenter()),screenY(sister.getCenter())));                    
                 }
             }
         }

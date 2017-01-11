@@ -6,6 +6,9 @@
 package org.rhwlab.ace3d;
 
 import java.awt.BorderLayout;
+import java.awt.Container;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.List;
 import javafx.beans.InvalidationListener;
 import javafx.beans.Observable;
@@ -26,7 +29,8 @@ import org.rhwlab.dispim.nucleus.Nucleus;
  * @author gevirl
  */
 public class SynchronizedMultipleSlicePanel extends JPanel implements ChangeListener,InvalidationListener,javafx.beans.value.ChangeListener  {
-    public SynchronizedMultipleSlicePanel(int n){
+    public SynchronizedMultipleSlicePanel(Ace3D_Frame frame,int n){
+        this.frame3D = frame;
         this.nDims = n;
         position = new long[n];
         panels = new SingleSlicePanel[n]; 
@@ -52,6 +56,15 @@ public class SynchronizedMultipleSlicePanel extends JPanel implements ChangeList
         this.add(slider,BorderLayout.SOUTH);
         navBar = new NavigationBar(this);
         this.add(navBar,BorderLayout.NORTH);
+        
+        this.addMouseListener(new MouseAdapter(){
+            @Override
+            public void mouseEntered(MouseEvent e){
+ //               slicePanel.requestFocusInWindow();
+                frame3D.toFront();
+                frame3D.requestFocus();
+            }             
+        });
     }
     public void showCurrentImage(){
         timePointImage = embryo.getImage(time); 
@@ -130,6 +143,7 @@ public class SynchronizedMultipleSlicePanel extends JPanel implements ChangeList
         }
     }
     public void changePosition(long[] pos){
+        if (pos == null) return;
         for (int d=0 ; d<pos.length ; ++d){
             position[d] = pos[d];
         }
@@ -236,6 +250,9 @@ public class SynchronizedMultipleSlicePanel extends JPanel implements ChangeList
     public int getMaxTime(){
         return slider.getMaximum();
     }
+    public Ace3D_Frame getAce3D_Frame(){
+        return frame3D;
+    }
     int nDims;
     JSlider slider;
     int time;
@@ -245,7 +262,7 @@ public class SynchronizedMultipleSlicePanel extends JPanel implements ChangeList
     SingleSlicePanel[] panels;
     long[] position;
     NavigationBar navBar;
-
+    Ace3D_Frame frame3D;
 
 
 }

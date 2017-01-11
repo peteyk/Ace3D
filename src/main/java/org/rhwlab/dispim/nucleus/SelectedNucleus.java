@@ -19,12 +19,16 @@ public class SelectedNucleus extends javafx.beans.value.ObservableValueBase {
         return ret;
     }
     public void setSelectedNucleus(Nucleus nuc){
+        if (marked.equals(nuc)){
+            marked = null;
+        }
         this.selected = nuc;
-
         this.fireValueChangedEvent();
     }
     public void setMarked(Nucleus mark){
-
+        if (selected.equals(mark)){
+            this.selected = null;
+        }
         this.marked = mark;
         this.fireValueChangedEvent();
     }

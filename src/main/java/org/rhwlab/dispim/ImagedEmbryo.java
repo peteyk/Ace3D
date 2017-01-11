@@ -14,6 +14,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import javafx.beans.InvalidationListener;
 import javafx.beans.Observable;
+import javax.swing.JOptionPane;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccessible;
 import net.imglib2.algorithm.region.localneighborhood.EllipsoidCursor;
@@ -444,6 +445,19 @@ public class ImagedEmbryo implements Observable {
     }
     public void clearSources(){
         sources.clear();
+    }
+    // link the marked nucleus to the selected nucleus
+    // marked is parent, selected is dausghter
+    public void formLink(){
+        Nucleus sel = selectedNucleus();
+        Nucleus mark = getMarked();
+        if (sel == null || mark == null) return;
+        if (mark.getTime()+1 != sel.getTime()) {
+            JOptionPane.showMessageDialog(panel, "Nuclei are not consecutive in time");
+            return;
+        }
+        mark.linkTo(sel);
+        notifyListeners();        
     }
    
     NucleusFile nucFile;

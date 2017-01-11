@@ -108,10 +108,8 @@ public class SelectedNucleusFrame extends JFrame implements PlugIn,javafx.beans.
         link.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
-                Nucleus sel = embryo.selectedNucleus();
-                Nucleus mark = embryo.getMarked();
-                mark.linkTo(sel);
-                embryo.notifyListeners();
+                embryo.formLink();
+
             }
         });
         

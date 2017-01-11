@@ -18,6 +18,7 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionAdapter;
 import java.awt.event.MouseWheelEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Ellipse2D;
@@ -167,11 +168,11 @@ public class SingleSlicePanel extends JPanel implements ChangeListener {
                 char k = e.getKeyChar();
                 int kCode = e.getKeyCode();
                 if (kCode == KeyEvent.VK_F2){
-                    
+                    rightClick(mousePosition,false);
                 } else if (kCode == KeyEvent.VK_F1){
-                    
+                    rightClick(mousePosition,true);
                 }else if (kCode == KeyEvent.VK_F4){
-                    
+                    embryo.formLink();
                 }
                 else {
 //                int mask = KeyEvent.SHIFT_DOWN_MASK;
@@ -238,10 +239,29 @@ public class SingleSlicePanel extends JPanel implements ChangeListener {
                 slider.setValue(slider.getValue()+e.getWheelRotation());
             }            
         });
-        this.addMouseListener(new MouseAdapter(){
-            public void mouseEntered(MouseEvent e){
+        
+        this.addMouseMotionListener(new MouseMotionAdapter(){
+            @Override
+            public void mouseMoved(MouseEvent e){
                 slicePanel.requestFocusInWindow();
+               
+                if (dim == 0){
+                    mousePosition = imageCoordinates(e.getY(),e.getX());
+                }else {
+                    mousePosition = imageCoordinates(e.getX(),e.getY());
+                }                
+            }            
+        });
+        
+        this.addMouseListener(new MouseAdapter(){
+
+            @Override
+            public void mouseEntered(MouseEvent e){
+                parent.getAce3D_Frame().toFront();
+                parent.getAce3D_Frame().requestFocus();
+
             }
+          
             @Override
             public void mouseClicked(MouseEvent e){
                 long [] pos;
@@ -271,37 +291,40 @@ public class SingleSlicePanel extends JPanel implements ChangeListener {
                     }                 
                 } 
                 else if (e.getButton() == MouseEvent.BUTTON3){
-                    // finding the closest nucleus
-                    Set<Nucleus> nucs = embryo.getNuclei(timePointImage.getTime());
-                    double min = Double.MAX_VALUE;
-                    Nucleus closest = null;
-                    for (Nucleus nuc : nucs){
-                        double d = nuc.distanceSqaured(pos);
-                        if (d < min){
-                            closest = nuc;
-                            min = d;
-                        }
-                    }                    
                     int mask = MouseEvent.SHIFT_DOWN_MASK;
-                    if (( e.getModifiersEx()&mask) == mask){   // right shift toggles the marked status of the nucleus
-                        Nucleus mark = embryo.getMarked();
-                        if (mark!=null && mark.equals(closest)) {
-                            embryo.setMarked(null);
-                        } else {
-                            embryo.setMarked(closest);
-                        }
-
-                    }
-                    else {  // right mouse button selects a nucleus
-                        embryo.setSelectedNucleus(closest);
-                       
-                    }
-                     parent.repaint();
+                    rightClick(pos,( e.getModifiersEx()&mask) == mask);
                 }
             }
         });        
     }
 
+    private void rightClick(long[] pos,boolean shift){
+        // finding the closest nucleus
+        Set<Nucleus> nucs = embryo.getNuclei(timePointImage.getTime());
+        double min = Double.MAX_VALUE;
+        Nucleus closest = null;
+        for (Nucleus nuc : nucs){
+            double d = nuc.distanceSqaured(pos);
+            if (d < min){
+                closest = nuc;
+                min = d;
+            }
+        }                    
+        if (shift) {   // right shift toggles the marked status of the nucleus
+            Nucleus mark = embryo.getMarked();
+            if (mark!=null && mark.equals(closest)) {
+                embryo.setMarked(null);
+            } else {
+                embryo.setMarked(closest);
+            }
+
+        }
+        else {  // right mouse button selects a nucleus
+            embryo.setSelectedNucleus(closest);
+
+        }
+        parent.repaint();        
+    }
     public int getDimension(){
         return dim;
     }
@@ -379,6 +402,8 @@ public class SingleSlicePanel extends JPanel implements ChangeListener {
         }
     }     
     public long[] imageCoordinates(int screenX,int screenY){
+        if (timePointImage == null) return null;
+        
         long[] pos = new long[timePointImage.numDimensions()];
         pos[dim] = SingleSlicePanel.this.slice;
         double bufX = screenX/scale/bufW;
@@ -585,5 +610,6 @@ public class SingleSlicePanel extends JPanel implements ChangeListener {
     CompositeTimePointImage timePointImage;
     ImagedEmbryo embryo;
     long[] imagePosition;
+    long[] mousePosition;
 
 }

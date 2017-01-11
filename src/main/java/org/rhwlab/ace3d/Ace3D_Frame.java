@@ -12,6 +12,8 @@ import ij.process.LUT;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
@@ -57,6 +59,14 @@ import org.rhwlab.dispim.nucleus.NucleusFile;
 public class Ace3D_Frame extends JFrame implements PlugIn,ChangeListener  {
     public  Ace3D_Frame()  {
         
+        this.addMouseListener(new MouseAdapter(){
+            @Override
+            public void mouseEntered(MouseEvent e){
+ //               slicePanel.requestFocusInWindow();
+                Ace3D_Frame.this.toFront();
+                Ace3D_Frame.this.requestFocus();
+            }            
+        });
         
         dirChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
         imagedEmbryo = new ImagedEmbryo();
@@ -65,7 +75,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn,ChangeListener  {
         contrastDialog = new DataSetsDialog(this,0,Short.MAX_VALUE);
         contrastDialog.setVisible(true);
         
-        panel = new SynchronizedMultipleSlicePanel(3);
+        panel = new SynchronizedMultipleSlicePanel(this,3);
         panel.setEmbryo(imagedEmbryo);
 //        imagedEmbryo.addListener(panel);
         this.add(panel);
@@ -937,6 +947,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn,ChangeListener  {
     public ImagedEmbryo getEmbryo(){
         return this.imagedEmbryo;
     }
+    
     File sessionXML;
     Properties props = new Properties();
     JMenu dataset;

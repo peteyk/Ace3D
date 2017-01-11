@@ -22,6 +22,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import org.rhwlab.dispim.CompositeTimePointImage;
 import org.rhwlab.dispim.ImagedEmbryo;
+import org.rhwlab.dispim.nucleus.LinkedNucleusFile;
 import org.rhwlab.dispim.nucleus.Nucleus;
 
 /**
@@ -190,7 +191,7 @@ public class SynchronizedMultipleSlicePanel extends JPanel implements ChangeList
     public ImagedEmbryo getEmbryo(){
         return embryo;
     }
-    public CompositeTimePointImage getCuurrentImage(){
+    public CompositeTimePointImage getCurrentImage(){
         return this.timePointImage;
     }
 
@@ -205,8 +206,10 @@ public class SynchronizedMultipleSlicePanel extends JPanel implements ChangeList
     public void changed(ObservableValue observable, Object oldValue, Object newValue) {
         Nucleus sel = embryo.selectedNucleus();
         if (sel != null){
+            if (((LinkedNucleusFile)embryo.getNucleusFile()).selectionChanged()){
             this.changePosition(sel.getCenter());
             this.changeTime(sel.getTime());
+            }
         }
          for (SingleSlicePanel p : panels){
             p.stateChanged(null);

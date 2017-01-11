@@ -19,17 +19,19 @@ public class SelectedNucleus extends javafx.beans.value.ObservableValueBase {
         return ret;
     }
     public void setSelectedNucleus(Nucleus nuc){
-        if (marked.equals(nuc)){
+        if (marked !=null && marked.equals(nuc)){
             marked = null;
         }
         this.selected = nuc;
+        selChanged = true;
         this.fireValueChangedEvent();
     }
     public void setMarked(Nucleus mark){
-        if (selected.equals(mark)){
+        if (selected!=null && selected.equals(mark)){
             this.selected = null;
         }
         this.marked = mark;
+        selChanged=false;
         this.fireValueChangedEvent();
     }
     public Nucleus getMarked(){
@@ -38,6 +40,10 @@ public class SelectedNucleus extends javafx.beans.value.ObservableValueBase {
     public Nucleus getSelected(){
         return selected;
     }
+    public boolean selectedHasChanged(){
+        return selChanged;
+    }
+    boolean selChanged = false;
     Nucleus selected;
     Nucleus marked;  // marked as potential parent for linking to the selected nucleus
 }

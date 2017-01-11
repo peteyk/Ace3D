@@ -657,6 +657,9 @@ public class LinkedNucleusFile implements NucleusFile {
             this.notifyListeners();
         }
     }
+    public boolean selectionChanged(){
+        return selectedNucleus.selectedHasChanged();
+    }
     
     File file;
     TreeMap<Integer,TreeMap<String,Nucleus>> byTime=new TreeMap<>();

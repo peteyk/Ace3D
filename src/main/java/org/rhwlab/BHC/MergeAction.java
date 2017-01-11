@@ -38,7 +38,7 @@ public class MergeAction extends RecursiveAction {
         if (start ==0 && end == 1){
             int jiashdfuis=0;
         }
-        if (end - start < 500){
+        if (end - start < 2000){
 //            Map pairsa = Collections.synchronizedMap(new HashMap<>());
             for (int i=start ; i<=end ; ++i){
                 Node T = clusters.get(i);

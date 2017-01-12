@@ -136,10 +136,13 @@ public class Nuclei_Identification implements Runnable {
         int nPartitions = Math.max(1,(int)Math.ceil(Math.pow(nClusters/1000.0,1.0/3.0)));                
         segSource.kMeansCluster( nClusters, nPartitions).saveAsXML(microClusterFile.getPath());
     }
+    
     private void runBHC(File microClusterFile,File BHCTreeFile)throws Exception {
- //       double alpha = 100000;//1000
-
         MicroClusterDataSource microDataSource = new MicroClusterDataSource(microClusterFile.getPath());
+        runBHC(microDataSource,BHCTreeFile);
+    }
+    
+    public void runBHC(MicroClusterDataSource microDataSource,File BHCTreeFile)throws Exception {
         ThreadedAlgorithm alg;
 //        MicroCluster4DDataSource microDataSource = new MicroCluster4DDataSource(microClusterFile.getPath());
 //        do {
@@ -158,7 +161,29 @@ public class Nuclei_Identification implements Runnable {
   //          alpha = 10.*alpha;
   //      } while (alg.getFinalCluster().getPosterior()!=0.0);
         
-        alg.saveResultAsXML(BHCTreeFile.getPath());
+        alg.saveResultAsXML(BHCTreeFile.getPath());        
+    }
+    private SegmentedTiffDataSource segmentedSource(){
+        SegmentedTiffDataSource segSource;
+        if (segmentedSource.endsWith("h5")){
+            if (segmentedSource.contains("Prob")){
+                segSource = new SegmentedTiffDataSource(lineageTff,new Segmentation(new FloatHDF5DataSource(new File(segmentedSource),"exported_data",100.0,1),segThresh,box));
+            }else {
+                segSource = new SegmentedTiffDataSource(lineageTff,new Segmentation(new ByteHDF5DataSource(new File(segmentedSource),"exported_data"),segThresh,box));
+            }
+        } else {
+            segSource = new SegmentedTiffDataSource(lineageTff,new Segmentation(new TiffDataSource(segmentedSource),segThresh,box));
+        }
+        return segSource;
+    }
+    public void runSampled()throws Exception {
+        // determine the file names
+        File[] xmls = xmlFiles(directory,baseName);
+        File BHCTreeFile = xmls[1];        
+        SegmentedTiffDataSource segSource = segmentedSource();
+        MicroClusterDataSource mcSource = segSource.sample(3000);
+        this.runBHC(mcSource, BHCTreeFile);
+        
     }
     private void runTreeCut(File BHCTreeFile,File gmmFile) throws Exception {
  //       BHCTree tree = new BHCTree(BHCTreeFile.getPath());
@@ -356,7 +381,7 @@ public class Nuclei_Identification implements Runnable {
         } else {
             Nuclei_Identification objectID = new Nuclei_Identification
                 (cli.getBHCDirectory(),cli.getLineTiff(),cli.getSegmentTiff(),cli.getForce(),cli.getAlpha(),cli.getS(),cli.getNu(),cli.getSegThresh(),cli.getBoundingBox());
-            objectID.run();
+            objectID.runSampled();
         }
 /*                
         File dir = new File("/net/waterston/vol2/home/gevirl/rnt-1/segmented");

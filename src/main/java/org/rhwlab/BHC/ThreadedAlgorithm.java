@@ -12,8 +12,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
 import java.util.concurrent.ForkJoinPool;
-import org.apache.commons.math3.dfp.DfpField;
-import org.apache.commons.math3.linear.RealMatrix;
 import org.rhwlab.dispim.datasource.DataSource;
 import org.rhwlab.dispim.datasource.MicroCluster;
 import org.rhwlab.dispim.datasource.MicroClusterDataSource;

@@ -24,6 +24,14 @@ public class MicroClusterDataSource implements DataSource {
     public MicroClusterDataSource(String file)throws Exception {
         this.openFromClusteredDataSourceFile(file);
     }    
+    
+    // construct from an array of microclusters
+    public MicroClusterDataSource(MicroCluster[] mc){
+        this.micros = mc;
+        K = mc.length;
+        N = K;
+        D = mc[0].asRealVector().getDimension();
+    }
     public void openFromClusteredDataSourceFile(String xml)throws Exception {
         SAXBuilder saxBuilder = new SAXBuilder();
         Document doc = saxBuilder.build(new File(xml));

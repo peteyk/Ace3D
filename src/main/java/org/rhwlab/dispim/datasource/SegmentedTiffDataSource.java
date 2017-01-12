@@ -6,6 +6,8 @@
 package org.rhwlab.dispim.datasource;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Random;
 import org.apache.commons.math3.ml.clustering.KMeansPlusPlusClusterer;
 
 
@@ -50,6 +52,36 @@ public class SegmentedTiffDataSource extends TiffDataSource implements Segmented
         
     }
 */
+    public MicroClusterDataSource sample(int nSamples){
+        Random rnd = new Random();
+        MicroCluster[] micros = new MicroCluster[nSamples];
+        HashSet<Integer> indexes = new HashSet<>();
+        
+        while (indexes.size()<nSamples){
+            Integer r = rnd.nextInt(segmentation.getSegmentN());
+            indexes.add(r);
+        }
+        
+        // build the single point microclusters
+        int i = 0;
+        for (Integer index : indexes){
+            Voxel vox = this.getSegmentVoxel(index);
+            double[] v = vox.coords.toArray();
+            short[][] points = new short[1][];
+            points[0] = new short[v.length];
+            for (int d=0 ; d<v.length ; ++d){
+                points[0][d] = (short)v[d];
+            }
+            int[] intensities = new int[1];
+            intensities[0] = vox.getIntensity();
+            double prob = vox.getAdjusted();
+            
+            micros[i] = new MicroCluster(v,points,intensities,prob);
+            ++i;
+        }
+        
+        return new MicroClusterDataSource(micros);
+    }
     @Override
     public ClusteredDataSource kMeansCluster(int nClusters, int nPartitions) throws Exception {
         double[] maxs = segmentation.getMaxs();

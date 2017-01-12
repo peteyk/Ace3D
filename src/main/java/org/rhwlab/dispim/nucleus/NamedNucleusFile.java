@@ -60,8 +60,8 @@ public class NamedNucleusFile extends LinkedNucleusFile{
         String c2Name = c2.getCellName();
         parent.setDaughters(c2, c1);
         
-        parent.getChild1().setCellName(c1Name,true);
-        parent.getChild2().setCellName(c2Name,true);
+        Nucleus.nameCellRecursive(parent.getChild1(), c1Name, true);
+        Nucleus.nameCellRecursive(parent.getChild2(), c2Name, true);
         
         // name the children using the embryo orientation
         nameChildren(c1);
@@ -71,6 +71,7 @@ public class NamedNucleusFile extends LinkedNucleusFile{
             this.notifyListeners();
         }
     }
+
     // name the children of the given nucleus using division file and the embryo orientatation rotation matrix(if confiremed)
     // if the roation matrix has not been confirmed the names are random
     static public void nameChildren(Nucleus nuc){
@@ -102,6 +103,21 @@ public class NamedNucleusFile extends LinkedNucleusFile{
   
     }   
     public RealMatrix orientEmbryo(int time){
+        Nucleus selected = this.getSelected();
+        Nucleus sister = selected.getSister();
+        if (sister == null) return null;
+        Nucleus parent = selected.getParent();
+               
+        Vector3D cellDirection;
+        Division div = divisionMap.get(parent.getCellName());
+        if (div.child1.equals(selected.getCellName())){
+            cellDirection = divisionDirection(selected,sister);
+        }else {
+            cellDirection = divisionDirection(sister,selected);
+        }
+        RealMatrix rotMat =  rotationMatrix(cellDirection,div.getV());
+        return rotMat;
+/*        
         // get all the cells at the given time
         Set<Nucleus> nucs = this.getNuclei(time);
         TreeMap<String,Nucleus> nucMap = new TreeMap<>();
@@ -150,8 +166,9 @@ public class NamedNucleusFile extends LinkedNucleusFile{
            int jasdfuisd=0;
         }
         return rotMat;
+*/        
     }
-
+/*
     // use a nucleus to determine the rotation matrix for the embryo
     public RealMatrix rotationMatrix(Nucleus nuc){
         RealMatrix ret = null;
@@ -168,6 +185,7 @@ public class NamedNucleusFile extends LinkedNucleusFile{
         ret = rotationMatrix(A,B);        
         return ret;
     }
+*/
     // determine the direction of a division, given the two just divided nuclei
     static public Vector3D divisionDirection(Nucleus nuc1,Nucleus nuc2){
         double[] p0 = nuc1.getCenter();

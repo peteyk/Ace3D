@@ -66,5 +66,5 @@ public class Segmentation {
     double thresh;
     double[] mins;  // min coordinates of non-background voxels
     double[] maxs;  // max coordinates of non-background voxels  
-    List<Long> segmentIndex;  // list of voxels in each segment    
+    List<Long> segmentIndex;  // list of voxels in the segment    
 }

@@ -134,6 +134,7 @@ public class Navigation_Frame extends JFrame implements PlugIn,InvalidationListe
 
     @Override
     public void invalidated(Observable observable) {
+        
         nucsRoot.removeAllChildren();
         rootsRoot.removeAllChildren();
         deathsRoot.removeAllChildren();

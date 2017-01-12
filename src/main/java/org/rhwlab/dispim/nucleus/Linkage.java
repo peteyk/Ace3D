@@ -227,7 +227,7 @@ public class Linkage implements Comparable {
          }
          
         // link the polar bodies first
-        this.linkPolarBodies();
+//        this.linkPolarBodies();
         
         List<Nucleus> fromList = noChildren(from);
         List<Nucleus> toList = noParents(to);

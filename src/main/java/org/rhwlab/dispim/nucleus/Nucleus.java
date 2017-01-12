@@ -377,6 +377,7 @@ public class Nucleus implements Comparable {
     // if this nucleus is dividing, then this cannot be done and false is returned
     // if this nucleus is already linked in time then it will result in a division
     public boolean linkTo(Nucleus daughter){
+        daughter.unlink();
         if (child2 != null){
             return false;  // can't link
         }

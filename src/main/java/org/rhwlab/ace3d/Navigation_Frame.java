@@ -23,6 +23,9 @@ import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreeModel;
+import javax.swing.tree.TreeNode;
+import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 import org.rhwlab.dispim.ImagedEmbryo;
 import org.rhwlab.dispim.nucleus.Nucleus;
@@ -139,6 +142,10 @@ public class Navigation_Frame extends JFrame implements PlugIn,InvalidationListe
         if (nucFile == null) { 
             return;
         }
+        int currentTime = Navigation_Frame.this.panel.getTime();
+        Nucleus selectedNucleus = embryo.getNucleusFile().getSelected();
+        DefaultMutableTreeNode currentTimeNode = null;
+        DefaultMutableTreeNode selectedNode = null;
         Set<Integer> times = nucFile.getAllTimes();
         for (Integer time : times){
             Set<Nucleus> nucs = nucFile.getNuclei(time);
@@ -151,10 +158,15 @@ public class Navigation_Frame extends JFrame implements PlugIn,InvalidationListe
             nucsRoot.add(timeNode);
             for (Nucleus nuc : nucs){
                 DefaultMutableTreeNode nucNode = new DefaultMutableTreeNode(nuc);
-                timeNode.add(nucNode);                
+                timeNode.add(nucNode);  
+                if (nuc.equals(selectedNucleus)){
+                    selectedNode = nucNode;
+                }
+            }
+            if (time == currentTime){
+                currentTimeNode = timeNode;
             }
         }
-        
         
         TreeMap<Integer,Set<Nucleus>> rootMap = embryo.getRootNuclei();
         for (Integer t : rootMap.keySet()){
@@ -162,7 +174,6 @@ public class Navigation_Frame extends JFrame implements PlugIn,InvalidationListe
                 addFirstNucToNode(root,rootsRoot);
             }
         }
-        
         
         for (Integer time : times){
             Set<Nucleus> nucs = nucFile.getLeaves(time);
@@ -176,9 +187,25 @@ public class Navigation_Frame extends JFrame implements PlugIn,InvalidationListe
             }
         }        
         rootsTree.setModel(new DefaultTreeModel(rootsRoot));
-        nucsTree.setModel(new DefaultTreeModel(nucsRoot));
+        DefaultTreeModel nucsModel = new DefaultTreeModel(nucsRoot);
+        nucsTree.setModel(nucsModel);
         deathsTree.setModel(new DefaultTreeModel(deathsRoot));
         
+        // make the current time visible
+        TreeNode[] nodes = null;
+        if (selectedNode != null && currentTime==selectedNucleus.getTime()){
+            nodes = nucsModel.getPathToRoot(selectedNode);
+        }        
+        else if (currentTimeNode != null){           
+            nodes = nucsModel.getPathToRoot(currentTimeNode.getFirstChild());
+        }
+        if (nodes != null){
+            TreePath path = new TreePath(nodes);
+            nucsTree.setExpandsSelectedPaths(true);
+            nucsTree.setSelectionPath(path);
+            nucsTree.makeVisible(path);
+            nucsTree.scrollPathToVisible(path);
+        }
         treePanel.stateChanged(new ChangeEvent(rootsTree));
         this.invalidate();
         

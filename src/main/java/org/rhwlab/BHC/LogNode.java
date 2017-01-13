@@ -132,9 +132,9 @@ public class LogNode extends NodeBase implements Node  {
             ret = Utils.elnMult(ret, Gamma.logGamma((nuP+1-i)/2.0));
             ret = Utils.elnMult(ret,-Gamma.logGamma((nu+1-i)/2.0));
         }
- //       if (ThreadedAlgorithm.time < 175){
+        if (ThreadedAlgorithm.time < 175){
             ret = ret + data.size()*logRSDLikelihood();
- //       }
+        }
         return ret;
     }
     public double logDPMLikelihood(int n)throws ArithmeticException {       

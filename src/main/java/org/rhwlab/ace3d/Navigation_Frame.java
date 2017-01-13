@@ -198,7 +198,7 @@ public class Navigation_Frame extends JFrame implements PlugIn,InvalidationListe
             nodes = nucsModel.getPathToRoot(selectedNode);
         }        
         else if (currentTimeNode != null){           
-            nodes = nucsModel.getPathToRoot(currentTimeNode.getFirstChild());
+            nodes = nucsModel.getPathToRoot(currentTimeNode);
         }
         if (nodes != null){
             TreePath path = new TreePath(nodes);

@@ -90,7 +90,8 @@ public class Navigation_Frame extends JFrame implements PlugIn,InvalidationListe
         });
         JScrollPane nucsScroll = new JScrollPane(nucsTree);
         Dimension prefdim = nucsScroll.getPreferredSize();
-        prefdim.setSize(2*prefdim.width, prefdim.height);
+        //prefdim.setSize(2*prefdim.width, prefdim.height);
+        prefdim.setSize(200, 100);
         nucsScroll.setPreferredSize(prefdim);
         
         deathsRoot = new DefaultMutableTreeNode("Terminal Nuclei",true);  
@@ -114,6 +115,7 @@ public class Navigation_Frame extends JFrame implements PlugIn,InvalidationListe
         prefdim = leftPane.getPreferredSize();
         prefdim.setSize(2*prefdim.width, prefdim.height);
         leftPane.setPreferredSize(prefdim);
+        leftPane.setDividerLocation(100);
         
         JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,nucsScroll,leftPane);
         JSplitPane split2 = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,split,treeScroll);
@@ -126,8 +128,8 @@ public class Navigation_Frame extends JFrame implements PlugIn,InvalidationListe
 
     @Override
     public void run(String arg) {
-        this.setSize(800,400);
-        this.setLocationByPlatform(true);
+        this.setSize(1540, 531);
+        this.setLocation(0, 627);
         this.setVisible(true);
     }
 

@@ -36,7 +36,7 @@ public class NavigationHeaderPanel extends JPanel {
         });
         this.add(maxTime);
         
-        labelNodes = new JCheckBox("Label Nodes");
+        labelNodes = new JCheckBox("Label Nodes", true);
         labelNodes.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -45,7 +45,7 @@ public class NavigationHeaderPanel extends JPanel {
         });        
         this.add(labelNodes);
         
-        labelLeaves = new JCheckBox("Label Leaves");
+        labelLeaves = new JCheckBox("Label Leaves", true);
         labelLeaves.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -55,7 +55,7 @@ public class NavigationHeaderPanel extends JPanel {
         this.add(labelLeaves);
         
         this.add(new JLabel("Time Scale:"));
-        timeScale = new JTextField("5.0");
+        timeScale = new JTextField("3.0");
         timeScale.setColumns(10);
         timeScale.addActionListener(new ActionListener(){
             @Override
@@ -66,7 +66,7 @@ public class NavigationHeaderPanel extends JPanel {
         this.add(timeScale);  
         
         this.add(new JLabel("Cell Width:"));
-        cellWidth = new JTextField("30.0");
+        cellWidth = new JTextField("20.0");
         cellWidth.setColumns(10);
         cellWidth.addActionListener(new ActionListener(){
             @Override
@@ -74,7 +74,7 @@ public class NavigationHeaderPanel extends JPanel {
                 treePanel.stateChanged(new ChangeEvent(NavigationHeaderPanel.this));
             }
         });
-        this.add(cellWidth);        
+        this.add(cellWidth);
     }
 
     public void setTreePanel(NavigationTreePanel treePanel){

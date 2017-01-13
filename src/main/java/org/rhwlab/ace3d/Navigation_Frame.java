@@ -154,9 +154,9 @@ public class Navigation_Frame extends JFrame implements PlugIn,InvalidationListe
             Set<Nucleus> nucs = nucFile.getNuclei(time);
             DefaultMutableTreeNode timeNode = null;
             if (nucFile.isCurated(time)){
-                timeNode = new DefaultMutableTreeNode(String.format("Curated:%d (%d)",time,nucs.size()));
+                timeNode = new DefaultMutableTreeNode(String.format("%d: Curated(%d)",time,nucs.size()));
             }else {
-                timeNode = new DefaultMutableTreeNode(String.format("Auto:%d (%d)",time,nucs.size()));
+                timeNode = new DefaultMutableTreeNode(String.format("%d: Auto(%d)",time,nucs.size()));
             }
             nucsRoot.add(timeNode);
             for (Nucleus nuc : nucs){

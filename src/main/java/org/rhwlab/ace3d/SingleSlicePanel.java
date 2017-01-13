@@ -9,11 +9,13 @@ import ij.ImagePlus;
 import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Composite;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.Shape;
+import java.awt.Stroke;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
@@ -40,6 +42,7 @@ import org.rhwlab.dispim.TimePointImage;
 import org.rhwlab.dispim.nucleus.Nucleus;
 import org.rhwlab.dispim.nucleus.NucleusData;
 import org.rhwlab.dispim.nucleus.NucleusFile;
+import spimopener.Rename;
 
 /**
  *
@@ -102,11 +105,14 @@ public class SingleSlicePanel extends JPanel implements ChangeListener {
                     // draw lines showing the current position
                     if (Ace3D_Frame.locationIndicated()){
                         long xPos = screenX(imagePosition);
-                        long yPos = screenY(imagePosition);                        
-                        g2.drawLine(0, (int)(yPos), (int)(bufW),(int)(yPos));
-                        g2.drawLine((int)(xPos), 0,(int)(xPos), (int)(bufH));
-//                        g2.drawLine(0, (int)(yPos), (int)(scale*bufW),(int)(yPos));
-//                        g2.drawLine((int)(xPos), 0,(int)(xPos), (int)(scale*bufH));                        
+                        long yPos = screenY(imagePosition);
+                        Stroke dotted = new BasicStroke(1.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[] {3}, 0);
+                        Graphics2D g2copy = (Graphics2D) g2.create();
+                        g2copy.setStroke(dotted);
+                        g2copy.setColor(new Color(1f,1f,1f,.5f));
+                        g2copy.drawLine(0, (int)(yPos), (int)(bufW),(int)(yPos));
+                        g2copy.drawLine((int)(xPos), 0,(int)(xPos), (int)(bufH));
+                        g2copy.dispose();                      
                     }
                     // add an axis identifyer
                     g2.drawLine(10,5,20,5);  //horizontal

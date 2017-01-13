@@ -37,6 +37,8 @@ public class DataSetsDialog extends JFrame {
         }
         content.add(contrastPanel,BorderLayout.CENTER);
         this.pack();
+        this.setLocation(1544, 495);
+        this.setSize(380, 396);
     }
     public void addDataSet(String dataset){
         DataSetPropertyPanel dspp = new DataSetPropertyPanel(owner,dataset,min,max); 

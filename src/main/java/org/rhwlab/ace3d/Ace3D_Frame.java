@@ -115,7 +115,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn,ChangeListener  {
     }
     @Override
     public void run(String string) {
-        this.setSize(1800,600);
+        this.setSize(1464,627);
         this.setVisible(true);
         navFrame.run(null);
         this.selectedNucFrame.run(null);

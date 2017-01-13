@@ -216,8 +216,9 @@ public class SelectedNucleusFrame extends JFrame implements PlugIn,javafx.beans.
     }
     @Override
     public void run(String arg) {
-  //      this.setSize(800,400);
-        this.setLocationByPlatform(true);
+        this.setSize(456,495);
+        this.setLocationByPlatform(false);
+        this.setLocation(1468, 0);
         this.setVisible(true);
     }    
 

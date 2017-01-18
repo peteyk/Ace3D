@@ -8,6 +8,7 @@ package org.rhwlab.ace3d;
 import ij.plugin.PlugIn;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.util.ArrayList;
 import java.util.Set;
 import java.util.TreeMap;
 import javafx.beans.InvalidationListener;
@@ -137,6 +138,8 @@ public class Navigation_Frame extends JFrame implements PlugIn,InvalidationListe
     @Override
     public void invalidated(Observable observable) {
         
+        // get the selected roots
+        TreePath[] selectedPaths = rootsTree.getSelectionPaths();
         nucsRoot.removeAllChildren();
         rootsRoot.removeAllChildren();
         deathsRoot.removeAllChildren();
@@ -177,6 +180,22 @@ public class Navigation_Frame extends JFrame implements PlugIn,InvalidationListe
                 addFirstNucToNode(root,rootsRoot);
             }
         }
+        rootsTree.setModel(new DefaultTreeModel(rootsRoot));
+        
+        // reselect the previous selected nuclei
+        ArrayList<TreePath> foundList = new ArrayList<>();
+        if (selectedPaths != null){
+            for (TreePath path : selectedPaths){
+                DefaultMutableTreeNode lastNode= (DefaultMutableTreeNode)path.getLastPathComponent();
+                String nucName = ((Nucleus)lastNode.getUserObject()).getName();
+                DefaultMutableTreeNode found = (DefaultMutableTreeNode)this.findNucleus(nucName, rootsRoot);
+                if (found != null){
+                    foundList.add(new TreePath(found.getPath()));
+                }
+            }
+            selectedPaths = foundList.toArray(new TreePath[0]);
+            rootsTree.setSelectionPaths(selectedPaths);
+        }
         
         for (Integer time : times){
             Set<Nucleus> nucs = nucFile.getLeaves(time);
@@ -189,7 +208,7 @@ public class Navigation_Frame extends JFrame implements PlugIn,InvalidationListe
                 }
             }
         }        
-        rootsTree.setModel(new DefaultTreeModel(rootsRoot));
+        
         DefaultTreeModel nucsModel = new DefaultTreeModel(nucsRoot);
         nucsTree.setModel(nucsModel);
         deathsTree.setModel(new DefaultTreeModel(deathsRoot));
@@ -224,6 +243,26 @@ public class Navigation_Frame extends JFrame implements PlugIn,InvalidationListe
         }
 
         
+    }
+    private TreeNode findNucleus(String name,DefaultMutableTreeNode node){
+        Object obj = node.getUserObject();
+        if (obj instanceof Nucleus){
+            String nodeName = ((Nucleus)obj).getName();
+            if (nodeName.equals(name)){
+                return node;
+            }
+        }
+        if (node.isLeaf()){
+            return null;
+        }
+        for (int i=0 ; i<node.getChildCount() ; ++i){
+            DefaultMutableTreeNode child = (DefaultMutableTreeNode)node.getChildAt(i);
+            TreeNode ret = findNucleus(name,child);
+            if (ret != null){
+                return ret;
+            }
+        }
+        return null;
     }
     ImagedEmbryo embryo;
     SynchronizedMultipleSlicePanel panel;

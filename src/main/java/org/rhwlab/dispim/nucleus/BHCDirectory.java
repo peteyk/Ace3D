@@ -58,7 +58,7 @@ public class BHCDirectory {
                 } else {
                     pair.tree = file;
                 }
-                System.out.println(file.getName());
+                //System.out.println(file.getName());
             }
 
         }        

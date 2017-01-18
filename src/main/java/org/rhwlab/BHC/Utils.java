@@ -30,6 +30,7 @@ public class Utils {
         System.exit(3);  // crash for now
         return Double.NaN;
     }
+    // return ln(x+y), given lnX and lnY
     static public Double elnsum(Double lnx,Double lny){
         if (lnx.isNaN()){
             return lny;

@@ -145,7 +145,7 @@ public class Nuclei_IdentificationCLI extends CommandLine {
     }
     public String segThresh(String s){
         try {
-            segThresh = Double.valueOf(s);
+            segThresh = Integer.valueOf(s);
         } catch (Exception exc){
             return String.format("Error in option -segThresh %s", s);
         }
@@ -224,7 +224,7 @@ public class Nuclei_IdentificationCLI extends CommandLine {
     public Double getS(){
         return this.S;
     }
-    public Double getSegThresh(){
+    public Integer getSegThresh(){
         return segThresh;
     }
     public Integer getNu(){
@@ -341,7 +341,7 @@ public class Nuclei_IdentificationCLI extends CommandLine {
     Integer lastTime;
     Double alpha;
     Double S;
-    Double segThresh;
+    Integer segThresh;
     Integer nu;
     String force=null;
     boolean qsub = false;

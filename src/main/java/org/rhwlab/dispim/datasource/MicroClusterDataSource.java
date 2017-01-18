@@ -7,6 +7,7 @@ package org.rhwlab.dispim.datasource;
 
 import java.io.File;
 import java.util.List;
+import java.util.Set;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.RealMatrix;
@@ -19,7 +20,7 @@ import org.jdom2.input.SAXBuilder;
  *
  * @author gevirl
  */
-public class MicroClusterDataSource implements DataSource {
+public class MicroClusterDataSource extends DataSourceBase {
     // construct this from a ClusteredDataSource file
     public MicroClusterDataSource(String file)throws Exception {
         this.openFromClusteredDataSourceFile(file);
@@ -32,6 +33,19 @@ public class MicroClusterDataSource implements DataSource {
         N = K;
         D = mc[0].asRealVector().getDimension();
     }
+    public MicroClusterDataSource(Set<Object> voxelSet){
+        this(fromVoxelSet(voxelSet));
+    }
+    static private MicroCluster[] fromVoxelSet(Set<Object> objs){
+        MicroCluster[] ret = new MicroCluster[objs.size()];
+        int i=0;
+        for (Object obj : objs){
+            ret[i] = (SingleVoxelMicroCluster)obj;
+            ++i;
+        }
+        return ret;
+    }
+   
     public void openFromClusteredDataSourceFile(String xml)throws Exception {
         SAXBuilder saxBuilder = new SAXBuilder();
         Document doc = saxBuilder.build(new File(xml));
@@ -67,10 +81,7 @@ public class MicroClusterDataSource implements DataSource {
             ++k;
         }
     }
-    @Override
-    public int getN() {
-        return N;
-    }
+
 
     @Override
     public int getD() {
@@ -106,7 +117,6 @@ public class MicroClusterDataSource implements DataSource {
         MicroClusterDataSource source = new MicroClusterDataSource("/nfs/waterston/pete/Segmentation/Cherryimg_SimpleSegmentation0075.save");
     }
     int D;
-    int N;
     int K;
     MicroCluster[] micros;
 }

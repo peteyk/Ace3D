@@ -28,7 +28,7 @@ import org.rhwlab.dispim.datasource.TiffDataSource;
  * @author gevirl
  */
 public class Nuclei_Identification implements Runnable {
-    public Nuclei_Identification(String dir,String lineageTiff,String segSource,String force,double alpha,double s,int nu,double segThresh,BoundingBox box){
+    public Nuclei_Identification(String dir,String lineageTiff,String segSource,String force,double alpha,double s,int nu,int thresh,BoundingBox box){
         System.out.println(lineageTiff);
         System.out.println(segSource);
         this.box = box;
@@ -40,7 +40,7 @@ public class Nuclei_Identification implements Runnable {
         this.baseName = baseName(segFile.getName());
         this.force = force;
         this.alpha = alpha;
-        this.segThresh = segThresh;
+        this.segThresh = thresh;
         this.S = s;
         // parse the time from the filename
         this.time = getTime(segFile.getName());
@@ -65,12 +65,14 @@ public class Nuclei_Identification implements Runnable {
         return ret.replace(' ', '_');        
     }
 
-    static File[] xmlFiles(File directory,String baseName){
+    // return the tree and cluster file names for a given base name and threshold
+    static File[] xmlFiles(File directory,String baseName,int thresh){
         File[] ret = new File[2];
-        String microClusterFileName = cleanName(baseName + "Clusters.xml");
+        String s = Integer.toString(thresh);
+        String microClusterFileName = cleanName(baseName +s + "_Clusters.xml");
         
         ret[0] = new File(directory,microClusterFileName);
-        String BHCTreeFileName = cleanName(baseName+"BHCTree.xml");
+        String BHCTreeFileName = cleanName(baseName + s +"_BHCTree.xml");
         ret[1] = new File(directory,BHCTreeFileName);
         
         
@@ -80,7 +82,7 @@ public class Nuclei_Identification implements Runnable {
     public void run() {
 
         // determine the file names
-        File[] xmls = xmlFiles(directory,baseName);
+        File[] xmls = xmlFiles(directory,baseName,segThresh);
         File microClusterFile = xmls[0];
         File BHCTreeFile = xmls[1];
 
@@ -156,7 +158,7 @@ public class Nuclei_Identification implements Runnable {
             alg.setNu(nu); //10
       //      double alpha = Math.pow(2.0*nClusters,2.0);
 
-            alg.init(alpha);
+            alg.setAlpha(alpha);
             alg.run();
   //          alpha = 10.*alpha;
   //      } while (alg.getFinalCluster().getPosterior()!=0.0);
@@ -178,10 +180,10 @@ public class Nuclei_Identification implements Runnable {
     }
     public void runSampled()throws Exception {
         // determine the file names
-        File[] xmls = xmlFiles(directory,baseName);
+        File[] xmls = xmlFiles(directory,baseName,segThresh);
         File BHCTreeFile = xmls[1];        
         SegmentedTiffDataSource segSource = segmentedSource();
-        MicroClusterDataSource mcSource = segSource.sample(3000);
+        MicroClusterDataSource mcSource = segSource.asMicroClusterDataSource();
         this.runBHC(mcSource, BHCTreeFile);
         
     }
@@ -289,7 +291,7 @@ public class Nuclei_Identification implements Runnable {
         Process p = pb.start();        
     }
     */
-    static public void submitTimePoints(boolean water,File directory,TreeMap<Integer,String[]> tiffs,String force,int cores,int memory,double alpha,double S,int nu,double th,BoundingBox box)throws Exception {
+    static public void submitTimePoints(boolean water,File directory,TreeMap<Integer,String[]> tiffs,String force,int cores,int memory,double alpha,double S,int nu,int th,BoundingBox box)throws Exception {
         if (tiffs.isEmpty()) return;
         directory.mkdir();
         directory.setWritable(true, false);
@@ -312,7 +314,7 @@ public class Nuclei_Identification implements Runnable {
             }            
             String fileName = new File(names[1]).getName();
             String baseName = baseName(fileName);
-            File[] xmls = xmlFiles(directory,baseName);
+            File[] xmls = xmlFiles(directory,baseName,th);
 
             if (xmls[0].exists() && xmls[1].exists() && force==null){
                 continue;
@@ -338,7 +340,7 @@ public class Nuclei_Identification implements Runnable {
             qsubStream.println("M2_HOME=/nfs/waterston/apache-maven-3.3.9");
             qsubStream.printf("/nfs/waterston/apache-maven-3.3.9/bin/mvn \"-Dexec.args=-Xms%sG -Xmx%sG  ",cores*memory,cores*memory);
             qsubStream.print(" -classpath %classpath org.rhwlab.BHC.Nuclei_Identification ");
-            qsubStream.printf("-segThresh %f -S %f -nu %d -alpha %f -segTiff \'%s\'  -lineageTiff \'%s\' -bhcDir %s  ",th,S,nu,alpha,names[1],names[0],directory.getPath());
+            qsubStream.printf("-segThresh %d -S %f -nu %d -alpha %f -segTiff \'%s\'  -lineageTiff \'%s\' -bhcDir %s  ",th,S,nu,alpha,names[1],names[0],directory.getPath());
             if (force!=null){
                 qsubStream.printf(" -force %s ",force);
             }
@@ -381,7 +383,7 @@ public class Nuclei_Identification implements Runnable {
         } else {
             Nuclei_Identification objectID = new Nuclei_Identification
                 (cli.getBHCDirectory(),cli.getLineTiff(),cli.getSegmentTiff(),cli.getForce(),cli.getAlpha(),cli.getS(),cli.getNu(),cli.getSegThresh(),cli.getBoundingBox());
-            objectID.runSampled();
+            objectID.run();
         }
 /*                
         File dir = new File("/net/waterston/vol2/home/gevirl/rnt-1/segmented");
@@ -403,7 +405,7 @@ public class Nuclei_Identification implements Runnable {
     double alpha;
     double S;
     int nu;
-    double segThresh;
+    int segThresh;
     int time=-1;
 
     String force;

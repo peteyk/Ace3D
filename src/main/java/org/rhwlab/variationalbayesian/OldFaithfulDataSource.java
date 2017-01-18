@@ -18,13 +18,14 @@ import org.apache.commons.math3.ml.clustering.CentroidCluster;
 import org.apache.commons.math3.ml.clustering.Clusterable;
 import org.apache.commons.math3.ml.clustering.DoublePoint;
 import org.apache.commons.math3.ml.clustering.KMeansPlusPlusClusterer;
+import org.rhwlab.dispim.datasource.DataSourceBase;
 import org.rhwlab.dispim.datasource.VoxelDataSource;
 
 /**
  *
  * @author gevirl
  */
-public class OldFaithfulDataSource implements VoxelDataSource {
+public class OldFaithfulDataSource extends DataSourceBase implements VoxelDataSource {
     public OldFaithfulDataSource(String file) throws Exception {
         super();
         List<double[]> dataList = new ArrayList<>();

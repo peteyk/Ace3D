@@ -27,7 +27,7 @@ import org.rhwlab.variationalbayesian.GaussianMixture;
  *
  * @author gevirl
  */
-public class ClusteredDataSource implements VoxelDataSource {
+public class ClusteredDataSource extends DataSourceBase  implements VoxelDataSource {
     public ClusteredDataSource(String file)throws Exception {
         this.openFromClusters(file);
     }

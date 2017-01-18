@@ -47,7 +47,7 @@ import org.rhwlab.dispim.ImageSource;
 import org.rhwlab.dispim.ImagedEmbryo;
 import org.rhwlab.dispim.TifDirectoryImageSource;
 import org.rhwlab.dispim.TimePointImage;
-import org.rhwlab.dispim.nucleus.BHCTreeDirectory;
+import org.rhwlab.dispim.nucleus.BHCDirectory;
 import org.rhwlab.dispim.nucleus.LinkedNucleusFile;
 import org.rhwlab.dispim.nucleus.Nucleus;
 import org.rhwlab.dispim.nucleus.NucleusFile;
@@ -163,7 +163,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn,ChangeListener  {
                         panel.setTimeRange(Math.max(expSource.getMinTime(),panel.getMinTime())
                             ,Math.min(expSource.getMaxTime(),panel.getMaxTime()) );    
 
-                        bhc  = new BHCTreeDirectory(new File(sel,"BHC"));
+                        bhc  = new BHCDirectory(new File(sel,"BHC"));
                         imagedEmbryo.getNucleusFile().setBHCTreeDirectory(bhc);                    
 
                         imagedEmbryo.notifyListeners();                    
@@ -707,7 +707,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn,ChangeListener  {
             }            
         }
         
-        bhc  = new BHCTreeDirectory(sel);
+        bhc  = new BHCDirectory(sel);
         imagedEmbryo.getNucleusFile().setBHCTreeDirectory(bhc);
 
         props.setProperty("BHC",sel.getPath());            
@@ -802,13 +802,11 @@ public class Ace3D_Frame extends JFrame implements PlugIn,ChangeListener  {
     }
     private void cutTree()throws Exception {
         int time = this.getCurrentTime();
-
-        BHCTreeDirectory bhcTree = imagedEmbryo.getNucleusFile().getTreeDirectory();
-        BHCTree tree = bhcTree.getTree(this.getCurrentTime());
+        BHCDirectory bhcTree = imagedEmbryo.getNucleusFile().getTreeDirectory();
         if (treeCutDialog == null){
             treeCutDialog = new BHCTreeCutDialog(this,this.imagedEmbryo);
         }
-        treeCutDialog.setBHCTree(tree);
+        treeCutDialog.setBHCTrees(bhcTree,time);
         treeCutDialog.setVisible(true);
         if (treeCutDialog.isOK()){
             double nextThresh = treeCutDialog.getThresh();
@@ -966,7 +964,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn,ChangeListener  {
     LookUpTables lookUpTables = new LookUpTables();
     BHCTreeCutDialog treeCutDialog;
     BHCSubmitDialog submitDialog;
-    BHCTreeDirectory bhc;
+    BHCDirectory bhc;
     VolumeIntensityPlot viPlot;
     PanelDisplay viDialog;
     

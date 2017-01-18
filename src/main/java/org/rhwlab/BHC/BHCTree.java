@@ -24,7 +24,7 @@ import org.jdom2.input.SAXBuilder;
 import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
 import org.rhwlab.dispim.nucleus.BHCNucleusData;
-import org.rhwlab.dispim.nucleus.BHCNucleusDirectory;
+import org.rhwlab.dispim.nucleus.BHCDirectory;
 import org.rhwlab.dispim.nucleus.BHCNucleusSet;
 import org.rhwlab.dispim.nucleus.Nucleus;
 
@@ -232,12 +232,12 @@ public class BHCTree {
         TreeSet<NucleusLogNode> ret = new TreeSet<>();
         // find the minimum probability node that can be split
         Iterator<NucleusLogNode> iter = previous.iterator();
-        while(iter.hasNext()){
-            NucleusLogNode node = iter.next();
+        while(iter.hasNext()){  
+            NucleusLogNode node = iter.next();  // search for the lowest probability  node with children - not a leaf
             if (node.getLeft() != null && node.getRight() != null){
                 ret.addAll(previous);
                 ret.remove(node);
-                ret.add((NucleusLogNode)node.getLeft());
+                ret.add((NucleusLogNode)node.getLeft());  // split the node wtih the lowest probability
                 ret.add((NucleusLogNode)node.getRight());
                 break;
             }             

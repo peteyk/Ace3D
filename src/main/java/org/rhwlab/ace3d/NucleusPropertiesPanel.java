@@ -25,7 +25,7 @@ import org.rhwlab.dispim.nucleus.Nucleus;
  */
 public class NucleusPropertiesPanel extends JPanel implements InvalidationListener  {
     public NucleusPropertiesPanel() {
-        this.setLayout(new GridLayout(18,2));
+        this.setLayout(new GridLayout(19,2));
         this.add(new JLabel("Selected Nucleus"));
         this.add(name);
 
@@ -61,6 +61,8 @@ public class NucleusPropertiesPanel extends JPanel implements InvalidationListen
         this.add(root);        
         this.add(new JLabel("BHC Node"));
         this.add(sourceNode);
+        this.add(new JLabel("Log Prob"));
+        this.add(probability);
         cell.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -106,6 +108,7 @@ public class NucleusPropertiesPanel extends JPanel implements InvalidationListen
             intensity.setText(String.format("%f", bhcNuc.getAverageIntensity()));
             intensityRSD.setText(String.format("%f", bhcNuc.getIntensityRSD()));
             intensityDensity.setText(String.format("%f", bhcNuc.getIntensityDensity()));
+            probability.setText(Double.toString(Math.exp(bhcNuc.getPosteriorProb())));
             cell.setText(selected.getCellName());
 
             if (selected.getParent() != null){
@@ -155,4 +158,5 @@ public class NucleusPropertiesPanel extends JPanel implements InvalidationListen
     JLabel intensityRSD = new JLabel(initial);
     JLabel intensityDensity = new JLabel(initial);
     JLabel sourceNode = new JLabel(initial);
+    JLabel probability = new JLabel(initial);
 }

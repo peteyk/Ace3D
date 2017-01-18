@@ -141,7 +141,7 @@ public class LogNode extends NodeBase implements Node  {
         LogNode stdLeft = (LogNode)left;
         LogNode stdRight = (LogNode)right;
         if (left != null && right != null){
-            Double lngn = Gamma.logGamma(n);
+            lngn = Gamma.logGamma(n);
             
             if (!Double.isFinite(lngn))            {
                 System.exit(111);
@@ -205,16 +205,18 @@ public class LogNode extends NodeBase implements Node  {
         List<RealVector> data = new ArrayList<>();
         this.getDataAsRealVector(data);
         stream.printf("Size=%d\n", data.size());
- /*       
+/*        
         for (RealVector vec : data){
             stream.print(vectorAsString(vec));
         }
         stream.println();
-   */     
+ */       
         stream.printf("lnd=%s\n", Double.toString(lnd));
+        stream.printf("lnGammaN=%s\n", Double.toString(this.lngn));
+        stream.printf("ln1MinusPi=%s\n", Double.toString(lnonePi));
+        stream.printf("lnPi=%s\n", Double.toString(lnPi));
         stream.printf("lnLike=%s\n", Double.toString(lnLike));
         stream.printf("lnDPM=%s\n", Double.toString(lnDPM));
-        stream.printf("lnPi=%s\n", Double.toString(lnPi));
         stream.printf("lnR=%s\n", Double.toString(lnR));
         stream.printf("R=%s\n", Double.toString(Math.exp(lnR)));
     }  
@@ -233,11 +235,12 @@ public class LogNode extends NodeBase implements Node  {
         }
         builder.append(")");
         return builder.toString();
-    }    
+    }  
+    Double lngn;
     Double lnd;
     Double lnPi;
     Double lnonePi;
-    Double lnLike;
+    
     Double lnDPM;
 //    Double lnR;                   
     

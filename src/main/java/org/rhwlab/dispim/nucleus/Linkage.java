@@ -129,7 +129,7 @@ public class Linkage implements Comparable {
     }
     */
     // automatic segmentation and linkage to next time point
-    static Nucleus[] autoLinkage(Nucleus[] nucsToLink,int fromTime,BHCTreeDirectory bhcTreeDir)throws Exception {
+    static Nucleus[] autoLinkage(Nucleus[] nucsToLink,int fromTime,BHCDirectory bhcTreeDir)throws Exception {
 
         Nucleus[] currentFrom = cloneNuclei(nucsToLink);
         if (nucsToLink.length == 0)return null;

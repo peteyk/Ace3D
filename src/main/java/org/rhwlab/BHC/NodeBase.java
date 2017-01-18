@@ -243,6 +243,7 @@ abstract public class NodeBase implements Node {
     public int compareTo(Object o) {
         NodeBase other = (NodeBase)o;
         int ret = Double.compare(this.lnR,other.lnR);
+//        int ret = Double.compare(this.lnLike,other.lnLike);        
         if (ret == 0){
             ret = Integer.compare(this.hashCode(), other.hashCode());
         }
@@ -360,6 +361,7 @@ abstract public class NodeBase implements Node {
     int label;
     Node parent;
     double lnR;  // log of the posterior 
+    Double lnLike;
 
 //    Dfp r;   // posterior of the merged hypothesis
 //    double realR;

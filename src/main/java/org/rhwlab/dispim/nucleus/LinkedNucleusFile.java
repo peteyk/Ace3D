@@ -267,7 +267,7 @@ public class LinkedNucleusFile implements NucleusFile {
         }
     }
     @Override
-    public BHCTreeDirectory getTreeDirectory(){
+    public BHCDirectory getTreeDirectory(){
         return this.bhcTreeDir;
     }  
 
@@ -378,7 +378,7 @@ public class LinkedNucleusFile implements NucleusFile {
     }
 
     @Override
-    public void setBHCTreeDirectory(BHCTreeDirectory bhc) {
+    public void setBHCTreeDirectory(BHCDirectory bhc) {
         this.bhcTreeDir = bhc;
     } 
     // unlink all the nuclei at a time point from parents
@@ -669,7 +669,7 @@ public class LinkedNucleusFile implements NucleusFile {
     
     ArrayList<InvalidationListener> listeners = new ArrayList<>();
     SelectedNucleus selectedNucleus = new SelectedNucleus();
-    BHCTreeDirectory bhcTreeDir;
+    BHCDirectory bhcTreeDir;
     
     boolean opening = false;
     static double threshold= 1.0E-11;

@@ -5,6 +5,10 @@
  */
 package org.rhwlab.dispim.datasource;
 
+import java.util.HashSet;
+import java.util.Random;
+import java.util.Set;
+
 /**
  *
  * @author gevirl
@@ -34,6 +38,28 @@ public abstract class DataSourceBase implements DataSource {
         return dims.length;
     }
     
+    // sample the data source
+    // draw a random set of size m from the data source
+    // using Floyd's Algorithm
+    @Override
+    public Set<Object> sample(int m){
+        Random rnd = new Random();
+        HashSet<Object> ret = new HashSet<>();
+        for (long i=N-m ; i<N ; i++ ){
+            long pos = (long)(rnd.nextDouble()*N);
+            Object obj = get(pos);
+            if (ret.contains(obj)){
+                ret.add(get(i));
+            } else {
+                ret.add(obj);
+            }
+        }
+        return ret;
+    }
+    
+    public long[] getDims(){
+        return dims;
+    }
     long[] dims; 
     long N;
 }

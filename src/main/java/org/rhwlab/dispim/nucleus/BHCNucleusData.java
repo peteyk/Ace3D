@@ -42,6 +42,11 @@ public class BHCNucleusData extends NucleusData {
         totalIntensity = Long.valueOf(nucleusEle.getAttributeValue("intensity"));
         intensityRSD = Double.valueOf(nucleusEle.getAttributeValue("intensityRSD"));
         voxels = Integer.valueOf(nucleusEle.getAttributeValue("voxels"));
+        try {
+        posteriorProb = Double.valueOf(nucleusEle.getAttributeValue("posterior"));
+        } catch (Exception exc){
+            posteriorProb=0.;
+        }
         init();        
         
     }
@@ -54,6 +59,11 @@ public class BHCNucleusData extends NucleusData {
         totalIntensity = Long.valueOf(gmm.getAttributeValue("intensity"));
         intensityRSD = Double.valueOf(gmm.getAttributeValue("intensityRSD"));
         voxels = Integer.valueOf(gmm.getAttributeValue("voxels"));
+        try {
+        posteriorProb = Double.valueOf(gmm.getAttributeValue("posterior"));
+        } catch (Exception exc){
+            posteriorProb=0.;
+        }        
         A = precisionFromString(gmm.getAttributeValue("precision"));
         eigenA = new EigenDecomposition(A);
         adjustedA = A.copy();
@@ -187,6 +197,9 @@ public class BHCNucleusData extends NucleusData {
     public double getIntensityDensity(){
         return this.intensityDensity;
     }
+    public double getPosteriorProb(){
+        return this.posteriorProb;
+    }
     // distance weighted by intensity and volume
     public double distance(BHCNucleusData other){
         double v = this.volume/other.volume;
@@ -208,7 +221,8 @@ public class BHCNucleusData extends NucleusData {
     long totalIntensity;        // sum of all voxel intensities
     double intensityDensity;  // intensity per unit volume
     double intensityRSD;  // intensity stadard deviation / mean
-    double segmentedProb;  // average segmented probability of all the microclusters 
+//    double segmentedProb;  // average segmented probability of all the microclusters 
+    double posteriorProb;
     int voxels;  // number of voxels in the nucleus
 }
 

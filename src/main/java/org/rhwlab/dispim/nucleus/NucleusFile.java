@@ -30,8 +30,8 @@ public interface NucleusFile extends javafx.beans.Observable{
     public void setMarked(Nucleus nuc);
     public Nucleus getSelected();
     public Nucleus getMarked();
-    public BHCTreeDirectory getTreeDirectory();
-    public void setBHCTreeDirectory(BHCTreeDirectory bhc);
+    public BHCDirectory getTreeDirectory();
+    public void setBHCTreeDirectory(BHCDirectory bhc);
     public void addNuclei(BHCNucleusSet bhcToAdd,boolean curated);
     public void addSelectionOberver(javafx.beans.value.ChangeListener obs);
     public Element toXML();

@@ -23,39 +23,28 @@ import org.rhwlab.dispim.datasource.MicroClusterDataSource;
 public class ThreadedAlgorithm implements Runnable {
     public ThreadedAlgorithm(){
     }
-    public void init(double alpha)throws Exception {
+    public void init() {
         posteriors = new TreeSet(new NodeComparator());
-/*        
-        field= new DfpField(100);
-        NodeBase.setDfpField(field);
-        MicroCluster.setField(field);
-*/        
+       
         mu = source.getDataMean().toArray();
         NodeBase.maxN = 10000;
         NodeBase.setParameters(nu,beta,mu,s);
-//        DfpNode.setParameters(nu,beta,mu,s);
-//        RealMatrix s0 = source.getDataVariance();
-//        StdNode.setS(s0);
-        
-        CellCounts cc = new CellCounts();
-        this.alpha = alpha;
+//        CellCounts cc = new CellCounts();
         NodeBase.setAlpha(alpha);  // for time point 75
- //       DfpNode.setAlpha(alpha);  // for time point 75
         
-        clusters = new ArrayList<>();
+        nodeList = new ArrayList<>();
         // build the initial clusters with one data point in each standard cluster
         for (int n=0 ; n<source.getK() ; ++n){
             MicroCluster micro = (MicroCluster)source.get(n);
-//           Node cluster= new StdNode(micro);    
             Node cluster= new LogNode(micro); 
-            clusters.add(cluster);
+            nodeList.add(cluster);
         }
         
         // make all possible pairings of initial clusters
         pairs = Collections.synchronizedMap(new HashMap<>());
-        for (int i=0 ; i<clusters.size()-1 ; ++i){
+        for (int i=0 ; i<nodeList.size()-1 ; ++i){
             Map map = Collections.synchronizedMap(new HashMap<>());
-            MergeAction merge = new MergeAction(clusters,i,i+1,map);
+            MergeAction merge = new MergeAction(nodeList,i,i+1,map);
             ForkJoinPool pool = new ForkJoinPool(Runtime.getRuntime().availableProcessors(),
                     ForkJoinPool.defaultForkJoinWorkerThreadFactory,
                     new Thread.UncaughtExceptionHandler() {
@@ -72,16 +61,9 @@ public class ThreadedAlgorithm implements Runnable {
                 System.exit(0);
             }
             for (Object obj : map.values()){
-//                Node node = (Node)obj;
                 posteriors.add((Node)obj);
- /*               
-                if (this.posteriorMap.get(node.getPosterior())!=null){
-                    int aiusdhfuis=0;
-                }
-                this.posteriorMap.put(node.getPosterior(),node);
-*/                
             }            
-            Node clusterI = clusters.get(i);
+            Node clusterI = nodeList.get(i);
             pairs.put(clusterI,map);
             System.out.printf("Cluster %d paired\n",i);
         }
@@ -89,35 +71,17 @@ public class ThreadedAlgorithm implements Runnable {
   
     private Node maximumRCluster(){
         return this.posteriors.last();
-//        return this.posteriorMap.lastEntry().getValue();
-/*        
-        Node ret = null;
-        Dfp  maxR = field.getZero();
-        maxR = field.newDfp(-1.0);
-        for (Object obj : pairs.values()){
-            Map map = (Map)obj;
-            for (Object clObj : map.values()){
-                Node cl = (Node)clObj;
-
-                Dfp dfpR = cl.getPosteriorDfp();
-                if (maxR.lessThan(dfpR)){
-                    maxR = dfpR;
-                    ret = cl;
-                }
-            }
-        }
-        return ret;
-        */
     }  
   
     @Override
     public void run() {
+        init();
         TimeProfile profile = new TimeProfile();
-        while (clusters.size()>1){
-            if (clusters.size()==2){
+        while (nodeList.size()>1){
+            if (nodeList.size()==2){
                 int asdhfuis=0;
             }
-            System.out.printf("\n%d Clusters\n",clusters.size());
+            System.out.printf("\n%d Clusters\n",nodeList.size());
             profile.report(System.out, "Before maximumRCluster");
             T = maximumRCluster();
             profile.report(System.out, "After maximumRCluster");
@@ -134,7 +98,6 @@ public class ThreadedAlgorithm implements Runnable {
             if (leftMap != null){
                 for (Object leftObj : leftMap.values()){
                     this.posteriors.remove(((Node)leftObj));
- //                   this.posteriorMap.remove(((Node)leftObj).getPosterior());
                 }
             }
             
@@ -143,7 +106,6 @@ public class ThreadedAlgorithm implements Runnable {
             if (rightMap != null){
                 for (Object rightObj : rightMap.values()){
                     this.posteriors.remove(((Node)rightObj));
- //                   this.posteriorMap.remove(((Node)rightObj).getPosterior());
                 }  
             }
             
@@ -152,19 +114,17 @@ public class ThreadedAlgorithm implements Runnable {
                 Object nodeObj = map.remove(T.getLeft());
                 if (nodeObj != null){
                     this.posteriors.remove(((Node)nodeObj));
-//                    posteriorMap.remove(((Node)nodeObj).getPosterior());
                 }
                 nodeObj = map.remove(T.getRight());
                 if (nodeObj != null){
                     this.posteriors.remove(((Node)nodeObj));
-//                    posteriorMap.remove(((Node)nodeObj).getPosterior());
                 }
             }
             System.out.println("Removed");
             
            
-            boolean leftRemoved = clusters.remove(T.getLeft());
-            boolean rightRemoved = clusters.remove(T.getRight());
+            boolean leftRemoved = nodeList.remove(T.getLeft());
+            boolean rightRemoved = nodeList.remove(T.getRight());
             
             if (leftRemoved){
  //               T.getLeft().print(System.out);
@@ -181,7 +141,7 @@ public class ThreadedAlgorithm implements Runnable {
             profile.report(System.out,"Starting MergeAction");
             // make new pairs with all the clusters
             Map map = Collections.synchronizedMap(new HashMap<>());
-            MergeAction merge = new MergeAction(clusters,T,0,clusters.size()-1,map);
+            MergeAction merge = new MergeAction(nodeList,T,0,nodeList.size()-1,map);
             ForkJoinPool pool = new ForkJoinPool(Runtime.getRuntime().availableProcessors(),
                     ForkJoinPool.defaultForkJoinWorkerThreadFactory,
                     new Thread.UncaughtExceptionHandler() {
@@ -200,46 +160,40 @@ public class ThreadedAlgorithm implements Runnable {
             profile.report(System.out,"MergeAction complete");
             pairs.put(T,map);
             for (Object obj : map.values()){
-/*                
-                if (this.posteriorMap.get(node.getPosterior())!=null){
-                    int aiusdhfuis=0;
-                }     
-*/
                 this.posteriors.add((Node)obj);
-//                this.posteriorMap.put(node.getPosterior(),node);
             }
-            clusters.add(T);
+            nodeList.add(T);
         }
     }
     public void setSource(DataSource src){
         this.source = (MicroClusterDataSource)src;
     }
-    public void setPrecision(double[] prec){
-        this.s = prec;
+    static public void setPrecision(double[] prec){
+        s = prec;
     }
-    public void setNu(int v){
-        this.nu = v;
+    static public void setNu(int v){
+        nu = v;
     }
-    /*
-    static public void setDfpField(DfpField fld){
-        field = fld;
+    static public void setAlpha(double a){
+        alpha = a;
     }
- */   
+  
     // saves the result as a BHC tree xml
     public BHCTree saveResultAsXML(String file)throws Exception {
-        BHCTree tree = new BHCTree(alpha,s,nu,mu,clusters);
+        BHCTree tree = new BHCTree(alpha,s,nu,mu,nodeList);
         tree.saveAsXML(file);
         return tree; 
     } 
     public BHCTree resultAsBHCTree(){
-        return new BHCTree(alpha, s, nu, mu, clusters);
+        return new BHCTree(alpha, s, nu, mu, nodeList);
     }
     public Node getFinalCluster(){
         return T;
     }
-    public void setTime(int t){
-        this.time = t;
+    static public void setTime(int t){
+        time = t;
     }
+    
     static public void main(String[] args) throws Exception {
         System.out.println("GaussianGIWPrior");
 //        SegmentedTiffDataSource source = new SegmentedTiffDataSource("/nfs/waterston/pete/Segmentation/Cherryimg75.tif",
@@ -256,25 +210,22 @@ public class ThreadedAlgorithm implements Runnable {
 //        Cluster.setAlpha(600);  // for time point 350
         ThreadedAlgorithm alg = new ThreadedAlgorithm();
         alg.setSource(source);
-        alg.init(10000000);
         alg.run();
         alg.saveResultAsXML("/nfs/waterston/pete/Segmentation/350/Cherryimg_SimpleSegmentationBHCTree0350.xml");
 //        NodeBase.saveClusterListAsXML("/nfs/waterston/pete/Segmentation/350/Cherryimg_SimpleSegmentationBHC0350.xml", alg.clusters,0.999);
         int hfuis=0;
     }    
-//    static DfpField field;
     MicroClusterDataSource source;
-    List<Node> clusters;
-//    HashMap<Cluster,HashMap<Cluster,Cluster>> pairs;
-    Map pairs;
-//    TreeMap<Double,Node> posteriorMap = new TreeMap<>();
-    TreeSet<Node> posteriors;
-    int nu = 20;
-//    double s = 100;
-    double[] s;
+    Node T;  // top level node with the maximum posterior probability
+    List<Node> nodeList;  // current list of top level nodes, becomes one node when algorithm completes
+    Map<Node,Map> pairs;  // current pairing of each of the top level nodes with all the other top level nodes (space-time tradeoff for speed)
+    TreeSet<Node> posteriors;  // the top level pairings sorted by posterior probability (space-time tradeoff for speed)
+    
+    static int nu = 20;
+    static double[] s;
     double[] mu;
-    double beta = 0.0000001; 
-    double alpha = 10000000;
-    Node T;
+    static double beta = 0.0000001; 
+    static double alpha = 10000000;
+    
     static public int time;
 }

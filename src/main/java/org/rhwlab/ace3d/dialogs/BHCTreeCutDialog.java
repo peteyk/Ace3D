@@ -11,10 +11,13 @@ import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import javax.swing.BoxLayout;
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JList;
@@ -27,6 +30,7 @@ import org.rhwlab.BHC.BHCTree;
 import org.rhwlab.BHC.NucleusLogNode;
 import org.rhwlab.ace3d.Ace3D_Frame;
 import org.rhwlab.dispim.ImagedEmbryo;
+import org.rhwlab.dispim.nucleus.BHCDirectory;
 import org.rhwlab.dispim.nucleus.BHCNucleusData;
 import org.rhwlab.dispim.nucleus.BHCNucleusSet;
 import org.rhwlab.dispim.nucleus.LinkedNucleusFile;
@@ -78,16 +82,16 @@ public class BHCTreeCutDialog extends JDialog {
         });
         this.getContentPane().add(volumePanel,BorderLayout.NORTH);
         
-        volumePanel.add(new JLabel("Min Seg Prob"));
-        volumePanel.add(minSegProbField);
-        minSegProbField.addActionListener(new ActionListener(){
+        volumePanel.add(new JLabel("Seg Prob"));
+        volumePanel.add(segBox);
+        segBox.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
-                    minSegProb = Integer.valueOf(minSegProbField.getText().trim());
-                    ok();
+                    Integer segthresh = (Integer)segBox.getSelectedItem();
+                    tree = trees.get(segthresh);
+                    buildListModel();
                 }catch (Exception exc){
-                    minSegProbField.setText(Integer.toString(minSegProb));
                 }
             }
         });
@@ -160,9 +164,16 @@ public class BHCTreeCutDialog extends JDialog {
         jList.repaint();
     }
 */
-    public void setBHCTree(BHCTree tree){
+    public void setBHCTrees(BHCDirectory bhcDir,int time)throws Exception {
         
-        this.tree = tree;
+        trees = bhcDir.getTrees(time);
+        DefaultComboBoxModel model = new DefaultComboBoxModel();
+        for (Integer seg : trees.keySet()){
+            model.addElement(seg);
+        }
+        this.segBox.setModel(model);
+        
+        tree = trees.firstEntry().getValue();
         buildListModel();
 
     }
@@ -192,7 +203,7 @@ public class BHCTreeCutDialog extends JDialog {
 
         jList.setModel(model);
         jList.setSelectedValue(selected,true);    
-        
+        ok();
     }
     public boolean isOK(){
         return this.result;
@@ -204,14 +215,15 @@ public class BHCTreeCutDialog extends JDialog {
     double thresh = Math.log(.9);
     Ace3D_Frame owner;
     NucleusFile nucleusFile;
+    TreeMap<Integer,BHCTree> trees;
     BHCTree tree;
     JList jList;
-    JTextField volumeField = new JTextField("1000");;
-    JTextField maxItemsField  = new JTextField("60");;
-    JTextField minSegProbField = new JTextField("50");
+    JTextField volumeField = new JTextField("1000");
+    JTextField maxItemsField  = new JTextField("60");
+    JComboBox segBox = new JComboBox();
+//    JTextField minSegProbField = new JTextField("50");
     int maxItems=60;
     int minVolume=1000;
-    int minSegProb = 50;
     
     class CutDescriptor {
         public CutDescriptor(TreeSet<NucleusLogNode> cut){

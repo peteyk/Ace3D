@@ -13,13 +13,13 @@ import org.apache.commons.math3.linear.RealVector;
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.input.SAXBuilder;
-import org.rhwlab.dispim.datasource.DataSource;
+import org.rhwlab.dispim.datasource.DataSourceBase;
 
 /**
  *
  * @author gevirl
  */
-public class MicroClusterDataSource implements DataSource {
+public class MicroClusterDataSource extends DataSourceBase {
     public MicroClusterDataSource(String file)throws Exception {
         this.openFromClusters(file);
     }    

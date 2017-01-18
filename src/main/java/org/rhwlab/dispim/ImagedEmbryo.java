@@ -457,7 +457,8 @@ public class ImagedEmbryo implements Observable {
             return;
         }
         mark.linkTo(sel);
-        notifyListeners();        
+        notifyListeners();
+        this.setSelectedNucleus(sel);
     }
    
     NucleusFile nucFile;

@@ -131,8 +131,8 @@ public class BHCDirectory {
     }
     static public void main(String[] args)throws Exception {
         
-//        BHCDirectory.convert(new File("/net/waterston/vol9/diSPIM/vab-15Copy/BHC"));
-        BHCDirectory bhc = new BHCDirectory(new File("/net/waterston/vol9/diSPIM/vab-15Copy/BHC"));
+        BHCDirectory.convert(new File("/net/waterston/vol9/diSPIM/20161214_vab-15_XIL099/BHC"));
+        BHCDirectory bhc = new BHCDirectory(new File("/net/waterston/vol9/diSPIM/20161214_vab-15_XIL099/BHC"));
         bhc.open();
         int iusdfui=0;
         

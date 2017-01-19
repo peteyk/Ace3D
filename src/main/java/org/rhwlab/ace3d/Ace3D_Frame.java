@@ -456,7 +456,32 @@ public class Ace3D_Frame extends JFrame implements PlugIn,ChangeListener  {
                imagedEmbryo.notifyListeners();
             }
         });
+        
+        JMenuItem removeRange = new JMenuItem("Remove Nuclei - Time Range");
+        removeRange.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                int timeTo = -1;
+                while (timeTo == -1){
+                    String ans = JOptionPane.showInputDialog("Enter last time to delete");
+                    if (ans == null) return;
+                    try {
+                        timeTo = Integer.valueOf(ans.trim());
+                    } catch (Exception exc){
+                        JOptionPane.showMessageDialog(rootPane,"invalid entry");
+                    }
+                }
+                for (int t=getCurrentTime();t<=timeTo;++t){
+                    Set<Nucleus> nucs = imagedEmbryo.getNuclei(t);
+                    for (Nucleus nuc : nucs){
+                        imagedEmbryo.getNucleusFile().removeNucleus(nuc,false);
+                    }
+                }
+               imagedEmbryo.notifyListeners();
+            }
+        }); 
         segmenting.add(remove);
+        segmenting.add(removeRange);
         JMenuItem removeAll = new JMenuItem("Remove All Nuclei");
         removeAll.addActionListener(new ActionListener(){
             @Override

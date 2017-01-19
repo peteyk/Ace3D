@@ -20,6 +20,7 @@ import javax.json.JsonArrayBuilder;
 import javax.json.JsonObjectBuilder;
 import org.jdom2.Element;
 import org.rhwlab.BHC.BHCTree;
+import org.rhwlab.BHC.NucleusLogNode;
 
 /**
  *
@@ -515,11 +516,51 @@ public class LinkedNucleusFile implements NucleusFile {
                     this.addNucleus(nuc);
                 }
             }
-            Linkage linkage = new Linkage(fromNucs,toNucs);
-            linkage.formLinkage();
-            fromNucs = toNucs;
+            if (toNucs.length < fromNucs.length){
+                // need to go back and relink
+                for (int bt=t-2 ; bt>=fromTime ;--bt){
+                    if (this.isCurated(bt)|| this.getNuclei(bt).size()<=toNucs.length){
+                        fromNucs = autoLinkFlat(bt,t);
+                        break;
+                    }                  
+                }
+            }else {
+                Linkage linkage = new Linkage(fromNucs,toNucs);
+                linkage.formLinkage();
+                fromNucs = toNucs;
+            }
         }
         this.notifyListeners();
+    }
+    // auto links between time point at exactly the number of nuclei at the from time
+    public Nucleus[] autoLinkFlat(int fromTime,int toTime)throws Exception {
+        Nucleus[] fromNucs = this.getNuclei(fromTime).toArray(new Nucleus[0]);
+        Nucleus[] toNucs;
+        for (int t=fromTime+1 ; t<=toTime ; ++t){
+            if (this.isCurated(t)){
+                toNucs=this.getNuclei(toTime).toArray(new Nucleus[0]);
+            } else {
+                BHCTree tree = bhcTreeDir.getTree(t);
+                Set<NucleusLogNode> logNodeSet  = tree.cutToN(fromNucs.length);
+                toNucs = new Nucleus[logNodeSet.size()];
+                int i=0;
+                for (NucleusLogNode logNode : logNodeSet){
+                    BHCNucleusData nucData = BHCNucleusData.factory(logNode,t);
+                    toNucs[i] = new Nucleus(nucData);
+                    ++i;
+                }
+                this.removeNuclei(t, false);
+                for (Nucleus nuc : toNucs){
+                    this.addNucleus(nuc);
+                }                 
+            }
+            
+
+            Linkage linkage = new Linkage(fromNucs,toNucs);
+            linkage.formLinkage();
+            fromNucs = toNucs;            
+        } 
+        return fromNucs;
     }
     public void autoLinkBetweenCuratedTimes(int time)throws Exception {
         Integer[] curatedTimes = curatedTimes(time);

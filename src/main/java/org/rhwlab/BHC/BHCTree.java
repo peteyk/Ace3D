@@ -183,7 +183,6 @@ public class BHCTree {
                 break;
             }
         }
-
         return retList.toArray(new Nucleus[0]);
     }
     
@@ -194,19 +193,7 @@ public class BHCTree {
             cut = nextTreeCut(cut);
         } 
         return cut;
-/*        
-        TreeSet<BHCNucleusData> nucSet = new TreeSet<>();
-        int i = 1;
-        for (NucleusLogNode node : cut){
-            Element ele = node.formElementXML(i);
-            if (ele !=null){
-                BHCNucleusData bhcNuc = new BHCNucleusData(time,ele);
-                nucSet.add(bhcNuc);
-                ++i;
-            }
-        }        
-        return new BHCNucleusSet(time,fileName,nucSet);
-*/        
+        
     }
     
     public TreeSet<NucleusLogNode> firstTreeCut(){

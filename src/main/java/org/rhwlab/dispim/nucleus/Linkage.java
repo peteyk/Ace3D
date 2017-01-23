@@ -11,6 +11,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
@@ -218,8 +219,48 @@ public class Linkage implements Comparable {
         return toNucs;
     }
 */
+    public void formLinkage(){
+         // make sure the to nuclei are unlinked
+         for (Nucleus nuc : this.to){
+             nuc.unlink();
+         }   
+        List<Nucleus> fromList = noChildren(from);
+        List<Nucleus> toList = noParents(to);
+        
+        Nucleus[] fromNucs = fromList.toArray(new Nucleus[0]);
+        Nucleus[] toNucs = toList.toArray(new Nucleus[0]);
+
+        Map<Nucleus,Nucleus> nearestMap = nearestNeighbors(fromNucs,toNucs);
+        
+        // link the nearest neigbors
+        for (Entry<Nucleus,Nucleus> entry : nearestMap.entrySet()){
+            double d = entry.getKey().distance(entry.getValue());
+            if (d < timeLinkDistThresh){
+                entry.getKey().linkTo(entry.getValue());
+
+                // if the from nuc is in a named cell , put child nuc in same cell
+                String cellname = entry.getKey().getCellName();
+                entry.getValue().setCellName(cellname,entry.getKey().isUsernamed());
+            }            
+        }
+        
+        // find unlinked nuclei
+        fromList = noChildren(from);
+        toList = noParents(to);        
+        
+        // link the divisions
+        HashMap<Nucleus,Division> best = Division.bestDivisions(fromList, toList);
+        if (!best.isEmpty()){
+            // link the best divisions, if any
+            for (Division div : best.values()){
+                div.parent.linkTo(div.child1);
+                div.parent.linkTo(div.child2);
+            }
+        }
+        
+    }
     // form the linkage between the two sets of nuclei in this linkage
-     public void formLinkage(){
+     public void formLinkageSave(){
          
          // make sure the to nuclei are unlinked
          for (Nucleus nuc : this.to){
@@ -249,13 +290,8 @@ public class Linkage implements Comparable {
         // compute all pairwise distance between nuclei in the two adjacent time points
         Nucleus[] fromNucs = fromList.toArray(new Nucleus[0]);
         Nucleus[] toNucs = toList.toArray(new Nucleus[0]);
-        double[][] dist = new double[fromNucs.length][];
-        for (int r=0 ; r<dist.length ; ++r){
-            dist[r] = new double[toNucs.length];
-            for (int c=0 ; c<toNucs.length ; ++c){
-                dist[r][c] = fromNucs[r].distance(toNucs[c]);  // this distance is weighted by intensity and volume
-            }
-        }
+        double[][] dist = pairwiseDistance(fromNucs,toNucs);
+
         
         // use Hungarian Algorithm to assign linking
         HungarianAlgorithm hungarian = new HungarianAlgorithm(dist);
@@ -274,6 +310,82 @@ public class Linkage implements Comparable {
                 }
             }
         }        
+    }
+     
+    static public double[][] pairwiseDistance(Nucleus[] fromNucs,Nucleus[] toNucs){
+        double[][] dist = new double[fromNucs.length][];
+        for (int r=0 ; r<dist.length ; ++r){
+            dist[r] = new double[toNucs.length];
+            for (int c=0 ; c<toNucs.length ; ++c){
+                dist[r][c] = fromNucs[r].distance(toNucs[c]);  // this distance is weighted by intensity and volume
+            }
+        }
+        return dist;
+     }
+    
+    static public Map<Nucleus,Nucleus> nearestNeighbors(Nucleus[] t0,Nucleus[] t1){
+        for (int i=0 ; i<t0.length ; ++i){
+            for (int j=0 ; j<t1.length ;++j){
+// System.out.printf("%s - %s %f\n",t0[i].getName(),t1[j].getName(),t0[i].distance(t1[j]));
+            }
+        }
+        HashMap ret = new HashMap<>();
+        for (int f=0 ; f<t0.length ; ++f){
+            Nucleus source = t0[f];
+            Nucleus sourceT0 = nearest(source,t0);
+            Nucleus sourceT1 = nearest(source,t1);
+// System.out.printf("Trying:%s   nearest:%s,%s\n", source.getName(),sourceT0.getName(),sourceT1.getName());
+//            if (source.distance(sourceT1) < source.distance(sourceT0)/2.0){
+//System.out.printf("distance ok %s nearest to %s\n",sourceT1.getName(),nearest(sourceT1,t0))                ;
+                if (nearest(sourceT1,t0) == source){
+//System.out.println("Mutable NN Trying t0 usable")                    ;
+                    boolean usable = true;
+                    for (int ff=0 ; ff<t0.length ; ++ff){
+                        if (ff!=f){
+                            if (nearest(t0[ff],t1) == sourceT1){
+//System.out.printf("Not usable: nearest of %s = %s\n",t0[ff].getName(),sourceT1.getName());
+                                usable =false;
+                                break;
+                            }
+                        }
+                    }
+                    if (usable){
+//System.out.println("Tying t1 usable")                        ;
+                        for (int tt=0 ; tt<t1.length ; ++tt){
+                            if (!t1[tt].getName().equals(sourceT1.getName())){
+                                if (nearest(t1[tt],t0)==source){
+//System.out.printf("Not usable: nearest of %s = %s\n",t1[tt].getName(),source.getName());                                    
+                                    usable = false;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if (usable){
+                        ret.put(source,sourceT1);
+// System.out.printf("NN: %s,%s\n", source.getName(),sourceT1.getName());
+                    }
+ //               }
+            }
+            
+
+        }
+        return ret;
+        
+    }
+    static private Nucleus nearest(Nucleus source,Nucleus[] dest){
+        double dMin = Double.MAX_VALUE;
+        int index = -1;
+        for (int i=0 ; i<dest.length ; ++i){
+            if (source != dest[i]){
+                double d = source.distance(dest[i]);
+                if (d < dMin){
+                    index = i;
+                    dMin = d;
+                }
+            }
+        }
+        return dest[index];
     }
     // make a list of nuclei that have no children
     static public  List<Nucleus> noChildren(Nucleus[] nucs){

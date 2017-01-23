@@ -185,6 +185,17 @@ public class BHCTree {
         }
         return retList.toArray(new Nucleus[0]);
     }
+    public Nucleus[] cutToExactlyN(int n){
+        Set<NucleusLogNode> logNodeSet  = this.cutToN(n);
+        Nucleus[] toNucs = new Nucleus[logNodeSet.size()];
+        int i=0;
+        for (NucleusLogNode logNode : logNodeSet){
+            BHCNucleusData nucData = BHCNucleusData.factory(logNode,time);
+            toNucs[i] = new Nucleus(nucData);
+            ++i;
+        }
+        return toNucs        ;
+    }
     
     // cut tree to exactly n nodes
     public TreeSet<NucleusLogNode> cutToN(int n){

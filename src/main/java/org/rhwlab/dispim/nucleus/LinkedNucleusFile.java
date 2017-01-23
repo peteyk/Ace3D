@@ -506,11 +506,14 @@ public class LinkedNucleusFile implements NucleusFile {
         Nucleus[] fromNucs = this.getNuclei(fromTime).toArray(new Nucleus[0]);
         Nucleus[] toNucs;
         for (int t=fromTime+1 ; t<=toTime ; ++t){
+            System.out.printf("Linking to time %d\n",t);
+            BHCTree tree = bhcTreeDir.getTree(t);
             if (isCurated(t)){
                 toNucs = this.getNuclei(t).toArray(new Nucleus[0]);
             }else {
-                BHCTree tree = bhcTreeDir.getTree(t);
+                
                 toNucs = tree.cutToN(fromNucs.length, Linkage.minVolume(t), 0.9);
+                System.out.printf("Cut to %d\n",toNucs.length);
                 this.removeNuclei(t, false);
                 for (Nucleus nuc : toNucs){
                     this.addNucleus(nuc);
@@ -519,16 +522,22 @@ public class LinkedNucleusFile implements NucleusFile {
             if (toNucs.length < fromNucs.length){
                 // need to go back and relink
                 for (int bt=t-2 ; bt>=fromTime ;--bt){
-                    if (this.isCurated(bt)|| this.getNuclei(bt).size()<=toNucs.length){
-                        fromNucs = autoLinkFlat(bt,t);
+                    Set<Nucleus> btNucs = this.getNuclei(bt);
+                    if (this.isCurated(bt) || btNucs.size()<=toNucs.length){
+                        System.out.printf("Flat cutting %d to %d , %d nuclei\n", bt,t-1,btNucs.size());
+                        fromNucs = autoLinkFlat(bt,t-1); 
+                        if (toNucs.length < btNucs.size() && !isCurated(t)){
+                            // recut the current time
+                            toNucs = tree.cutToExactlyN(btNucs.size());
+                        }
                         break;
                     }                  
                 }
-            }else {
-                Linkage linkage = new Linkage(fromNucs,toNucs);
-                linkage.formLinkage();
-                fromNucs = toNucs;
             }
+            Linkage linkage = new Linkage(fromNucs,toNucs);
+            linkage.formLinkage();
+            fromNucs = toNucs;
+            
         }
         this.notifyListeners();
     }
@@ -562,6 +571,37 @@ public class LinkedNucleusFile implements NucleusFile {
         } 
         return fromNucs;
     }
+    // correct back in time
+    private void correctBack(int toTime,Nucleus[] toNucs)throws Exception {
+        int fromTime = toTime-1;
+        if (!this.isCurated(fromTime)) {  // can only modify previous time if it is not curated
+            BHCTree tree = bhcTreeDir.getTree(fromTime);
+
+            this.removeNuclei(fromTime,false);  // clear the previous time point
+            Nucleus[] fromM1Nucs = this.getNuclei(fromTime-1).toArray(new Nucleus[0]);
+            int minNucsPossible = Math.min(toNucs.length,fromM1Nucs.length);
+            Nucleus[] fromNucs = tree.cutToExactlyN(toNucs.length);
+
+            Linkage link = new Linkage(fromNucs,toNucs);
+            link.formLinkage();
+            
+            // add the best fromNucs to the file
+            for (Nucleus nuc : fromNucs){
+                this.addNucleus(nuc);
+            } 
+            
+            // link in the fromNucs to parents         
+            Linkage linkm1 = new Linkage(fromM1Nucs,fromNucs);
+            linkm1.formLinkage();
+            
+            // continue to correct backwards?
+            if (link.getFrom().length < fromM1Nucs.length){
+                correctBack(fromTime,fromNucs);
+            }
+        } 
+
+    }    
+    
     public void autoLinkBetweenCuratedTimes(int time)throws Exception {
         Integer[] curatedTimes = curatedTimes(time);
         if (curatedTimes[0] == null || curatedTimes[1] == null) return;

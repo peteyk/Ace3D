@@ -206,12 +206,12 @@ public class SingleSlicePanel extends JPanel implements ChangeListener {
                         break;
                     case 'w':
                         pos = parent.getPosition();
-                        pos[dim] = pos[dim] + 1;
+                        pos[dim] = pos[dim] - 1;
                         setPosition(pos);
                         break;  
                     case 's':
                         pos = parent.getPosition();
-                        pos[dim] = pos[dim] - 1;
+                        pos[dim] = pos[dim] + 1;
                         setPosition(pos);
                         break; 
                     case 'a':
@@ -220,17 +220,43 @@ public class SingleSlicePanel extends JPanel implements ChangeListener {
                     case 'd':
                         parent.incrementTime();
                         break;
-                    case 'q':
+                    case 'Q':
                         try {
                             embryo.joinSelectedNucleus();
                         } catch (Exception exc){
                             exc.printStackTrace();
                         }
                         break;
-                    case 'e':
+                    case 'E':
                         try {
                             embryo.splitSelectedNucleus();
                         } catch(Exception exc){
+                            exc.printStackTrace();
+                        }
+                        break;
+                    case 'r':
+                        try {
+                            embryo.setSelectedNucleus(null);
+                        } catch (Exception exc) {
+                            exc.printStackTrace();
+                        }
+                        break;
+                    case 't':
+                        try {
+                            if (embryo.selectedNucleus() != null) {
+                                embryo.getNucleusFile().unlinkNucleus(embryo.selectedNucleus(),true);
+                            }
+                        } catch (Exception exc) {
+                            exc.printStackTrace();
+                        }
+                        break;
+                    case 'f':
+                        try {
+                            if (embryo.selectedNucleus() != null) {
+                                Nucleus sis = embryo.selectedNucleus().getSisterNucleus();
+                                embryo.setSelectedNucleus(sis);
+                            }
+                        } catch (Exception exc) {
                             exc.printStackTrace();
                         }
                         break;

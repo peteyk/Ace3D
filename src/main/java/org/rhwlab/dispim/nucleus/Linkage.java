@@ -509,8 +509,9 @@ public class Linkage implements Comparable {
         if (minVolumes==null){
             minVolumes = new TreeMap<>();
             minVolumes.put(15, 4000.);
-            minVolumes.put(40,4000.);
-            minVolumes.put(100, 3000.);
+            minVolumes.put(80, 3000.);
+            minVolumes.put(125, 1500.);
+            minVolumes.put(150, 750.);
         }
         Entry e = minVolumes.ceilingEntry(time);
         if (e != null){

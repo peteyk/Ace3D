@@ -128,6 +128,9 @@ public class BHCTree {
                 best = match;
             }
         }
+        NucleusLogNode expanded = expandUp(nuc,best.node);
+        expanded.setUsed(true); 
+        best.node = expanded;
         if (dividable){
             // is it possible to divide the best matching node and make a new cell division?
             Nucleus leftNuc = ((NucleusLogNode)best.node.getLeft()).getNucleus(time);
@@ -147,13 +150,26 @@ public class BHCTree {
             // does the given nucleus also match the best's sister very well?
             Node sisterNode = best.node.getSister();
             if (sisterNode != null){
+                Nucleus sisterNuc = ((NucleusLogNode)sisterNode).getNucleus(time);            
+                if (sisterNuc.getCellName().contains("polar")){
+                    // try the next level up
+
+                    NodeBase parent = (NodeBase)best.node.getParent();
+                    sisterNode = parent.getSister();
+                }  
+            }
+            if (sisterNode != null){
                 Nucleus sisterNuc = ((NucleusLogNode)sisterNode).getNucleus(time);
                 if (sisterNuc != null){
-                    double sisterScore = Nucleus.similarityScore(nuc, sisterNuc);        
-                    double ratio = sisterScore/best.score;
+
+                    double sisterScore = Nucleus.similarityScore(nuc, sisterNuc); 
+                    double expandedScore = Nucleus.similarityScore(nuc, expanded.getNucleus(time));
+                    double ratio = sisterScore/expandedScore;
                     if (ratio <1.0) ratio = 1.0/ratio;
+                        
             System.out.printf("%s - %s,%s  ratio= %f\n",nuc.getName(),best.node.getNucleus(time).getName(),sisterNuc.getName(),ratio);
-                    if (ratio <1.05){
+ //                   if (ratio <1.2){
+                    if (Nucleus.match(sisterNuc, expanded.getNucleus(time))){                        
                         Nucleus[] ret = new Nucleus[2];
                         ret[0] = best.node.getNucleus(time);
                         ret[1] = sisterNuc;
@@ -163,8 +179,6 @@ public class BHCTree {
             }
         }
         Nucleus[] ret = new Nucleus[1];
-        NucleusLogNode expanded = expandUp(best.node);
-        expanded.setUsed(true);
         ret[0] = expanded.getNucleus(time);
 //System.out.printf("Best: %s - %s   %f\n",nuc.getName(),ret[0].getName(),minD);
         return ret;
@@ -233,7 +247,7 @@ if (debug) System.out.printf("returning from %d(%f) as best \n",node.label ,node
     }
 
     // expand the given match to the largest possible match
-    public NucleusLogNode expandUp(NucleusLogNode match){
+    public NucleusLogNode expandUp(Nucleus source,NucleusLogNode match){
         NucleusLogNode par = (NucleusLogNode)match.getParent();
         if (par == null){
             return match;
@@ -243,8 +257,8 @@ if (debug) System.out.printf("returning from %d(%f) as best \n",node.label ,node
             return match;
         }
         
-        if (Nucleus.match(match.getNucleus(time), par.getNucleus(time))){
-            return expandUp(par);
+        if (Nucleus.match(source, par.getNucleus(time))){
+            return expandUp(source,par);
         }
         return match;
     }

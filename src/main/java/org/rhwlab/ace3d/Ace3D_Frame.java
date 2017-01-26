@@ -553,36 +553,35 @@ public class Ace3D_Frame extends JFrame implements PlugIn,ChangeListener  {
                 } catch (Exception exc){
                     exc.printStackTrace();
                 }
-/*                
-                String timeStr = JOptionPane.showInputDialog("Enter the last time to link:");
-                if (timeStr != null){
-                    Integer endTime;
-                    try {
-                        endTime = Integer.valueOf(timeStr);
-
-                    } catch (Exception exc){
-                        JOptionPane.showMessageDialog(Ace3D_Frame.this, "Invalid entry");
-                        return;
-                    }
-                    
-                    for (int t=getCurrentTime() ; t<=endTime ; ++t){
-                        try {
-                            if (t == 21){
-                                int uisahdfuis=0;
-                            }
-                            ((LinkedNucleusFile)imagedEmbryo.getNucleusFile()).autoLink(t);
-
- //                           ((Ace3DNucleusFile)nucFile).linkTimePointAdjustable(t,Ace3D_Frame.this.imagedEmbryo.getBHCTree(t+1));
-//                            ((Ace3DNucleusFile)nucFile).linkTimePoint(t);
-                        } catch (Exception exc){
-                            exc.printStackTrace();
-                        }
-                    }
-                    
-                }
-*/                
+                
             }
         });
+
+        JMenuItem searchlinkItem = new JMenuItem("Auto Link - Tree Search");
+        linking.add(searchlinkItem);
+        searchlinkItem.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    int fromTime = -1;
+                    while (fromTime == -1){
+                        try {
+                            String ans = JOptionPane.showInputDialog("Enter time to link back to");
+                            if (ans == null){
+                                return;
+                            }
+                            fromTime = Integer.valueOf(ans);
+                        } catch (Exception exc){}
+                    }
+                    ((LinkedNucleusFile)imagedEmbryo.getNucleusFile()).bestMatchAutoLink(fromTime, getCurrentTime());
+                    
+//                    ((LinkedNucleusFile)imagedEmbryo.getNucleusFile()).autoLinkBetweenCuratedTimes(getCurrentTime());
+                } catch (Exception exc){
+                    exc.printStackTrace();
+                }
+                
+            }
+        });        
         JMenuItem unlink = new JMenuItem("Unlink Current Time");
         linking.add(unlink);
         unlink.addActionListener(new ActionListener(){

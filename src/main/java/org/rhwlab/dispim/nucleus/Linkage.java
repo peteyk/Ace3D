@@ -515,6 +515,7 @@ public class Linkage implements Comparable {
             minVolumes.put(80, 3000.);
             minVolumes.put(125, 1500.);
             minVolumes.put(150, 750.);
+            minVolumes.put(900, 20.);
 
         }
         Entry e = minVolumes.ceilingEntry(time);

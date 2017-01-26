@@ -179,6 +179,8 @@ public class SingleSlicePanel extends JPanel implements ChangeListener {
                     rightClick(mousePosition,true);
                 }else if (kCode == KeyEvent.VK_F4){
                     embryo.formLink();
+                } else if (kCode == KeyEvent.VK_F5){
+                    Nucleus.intersect(embryo.getNucleusFile().getSelected(),embryo.getMarked());
                 }
                 else {
 //                int mask = KeyEvent.SHIFT_DOWN_MASK;
@@ -186,6 +188,7 @@ public class SingleSlicePanel extends JPanel implements ChangeListener {
  //               if ((modifier&mask) == mask){
                     long pos[];
                     switch (k) {
+/*                        
                     case 'z':
                         parent.changeRadiusSelectedNucleus(-1);
                         break;
@@ -204,6 +207,7 @@ public class SingleSlicePanel extends JPanel implements ChangeListener {
                     case 'W':
                         parent.moveSelectedNucleus(imageYDirection(), -1);
                         break;
+*/                        
                     case 'w':
                         pos = parent.getPosition();
                         pos[dim] = pos[dim] + 1;

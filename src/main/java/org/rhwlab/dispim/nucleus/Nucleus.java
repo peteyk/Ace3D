@@ -30,20 +30,7 @@ public class Nucleus implements Comparable {
         this.cellName = data.getName();
     }
 
-    public Nucleus(JsonObject jsonObj){
-        this(new BHCNucleusData(jsonObj));
 
-        JsonObject child1Obj = jsonObj.getJsonObject("child1");
-        if (child1Obj != null){
-            this.child1 = new Nucleus(child1Obj);
-            this.child1.parent = this;
-        }
-        JsonObject child2Obj = jsonObj.getJsonObject("child2");
-        if (child2Obj != null){
-            this.child2 = new Nucleus(child2Obj);
-            this.child2.parent = this;
-        }        
-    }
     public Nucleus clone(){
         Nucleus clone = new Nucleus(this.nucData);
         clone.child1 = this.child1;
@@ -495,6 +482,46 @@ public class Nucleus implements Comparable {
         }
         this.setParent(null);
     }
+    
+    public void setTime(int time){
+        nucData.setTime(time);
+    }
+    
+    public double getVolume(){
+        return ((BHCNucleusData)nucData).getVolume();
+    }
+    public double getAvgIntensity(){
+        return ((BHCNucleusData)nucData).getAverageIntensity();
+    }
+    static public boolean intersect(Nucleus nuc1,Nucleus nuc2){
+        return NucleusData.intersect(nuc1.nucData, nuc2.nucData);
+    }
+    static public double similarityScore(Nucleus nuc1,Nucleus nuc2){
+        return BHCNucleusData.similarityScore((BHCNucleusData)nuc1.nucData, (BHCNucleusData)nuc2.nucData);
+    }
+    // do two nuclei match up well enough
+    static public boolean match(Nucleus nuc1,Nucleus nuc2){
+        double d = nuc1.distance(nuc2);
+        if (d > distThreshold){
+            return false;
+        }
+        
+        double[] ecc1 = nuc1.eccentricity();
+        double[] ecc2 = nuc2.eccentricity();
+        if (ecc2[2] > .95 && ecc2[1] > .95){
+            return false;
+        }
+        
+        double volRatio = nuc1.getVolume()/nuc2.getVolume();
+        if (volRatio < 1.0) volRatio = 1.0/volRatio;
+        if (volRatio > 2.0){
+            return false;
+        }
+        
+        double intRatio = nuc1.getAvgIntensity()/nuc2.getAvgIntensity();
+        if (intRatio < 1.0)  intRatio = 1.0/intRatio;
+        return intRatio <= 2.0;
+    }
 
     private Nucleus child1;
     private Nucleus child2;
@@ -502,5 +529,7 @@ public class Nucleus implements Comparable {
     private String cellName;  // the cell to which this nucleus belongs 
     boolean userNamed = false;  // indicates if the user has named the cell to which this nucleus belongs
     final private NucleusData nucData;
+    
+    static double distThreshold=50;
 
 }

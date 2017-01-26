@@ -8,6 +8,8 @@ package org.rhwlab.BHC;
 import java.util.List;
 import org.jdom2.Element;
 import org.rhwlab.dispim.datasource.MicroCluster;
+import org.rhwlab.dispim.nucleus.BHCNucleusData;
+import org.rhwlab.dispim.nucleus.Nucleus;
 
 /**
  *
@@ -53,7 +55,21 @@ public class NucleusLogNode extends LogNode{
     public double getVolume(){
         return volume;
     }
+    
+    // build a nucleus from this node
+    public Nucleus getNucleus(int time){
+        if (nuc == null){
+            Element ele = this.formElementXML();
+            if (ele == null){
+                return null;
+            }
+            nuc = new Nucleus(new BHCNucleusData(time,ele));  // do not have a time value
+        }
+        return nuc;
+    }
 
+
+    Nucleus nuc;
     double volume;
     double[] eccentricity;
     double avgIntensity;

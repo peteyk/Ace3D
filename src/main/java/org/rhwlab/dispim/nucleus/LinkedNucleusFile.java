@@ -9,7 +9,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -209,19 +208,13 @@ public class LinkedNucleusFile implements NucleusFile {
             byTime.put(t, nucMap);
         }
         nucMap.put(nuc.getName(),nuc);
-//        byName.put(nuc.getName(),nuc);
     }
 
     @Override
     public Set<Integer> getAllTimes() {
         return this.byTime.keySet();
     }
-/*
-    @Override
-    public Nucleus getNucleus(String name) {
-        return byName.get(name);
-    }
-*/
+
     @Override
     public void setSelected(Nucleus nuc) {
         this.selectedNucleus.setSelectedNucleus(nuc);
@@ -497,6 +490,53 @@ public class LinkedNucleusFile implements NucleusFile {
         }
         return ret;
     }
+    public void bestMatchAutoLink(int fromTime, int toTime)throws Exception {
+        Nucleus[] fromNucs = this.getNuclei(fromTime).toArray(new Nucleus[0]);
+        Nucleus[] toNucs;
+        for (int t=fromTime+1 ; t<=toTime ; ++t){
+            BHCTree tree = bhcTreeDir.getTree(t);
+            tree.clearUsed();
+            if (isCurated(t)){
+                toNucs = this.getNuclei(t).toArray(new Nucleus[0]);
+                Linkage linkage = new Linkage(fromNucs,toNucs);
+                linkage.formLinkage();                
+            } else {
+                ArrayList<Nucleus> toList = new ArrayList<>();
+                // separate polar and non-polar
+                ArrayList<Nucleus> polar = new ArrayList<>();
+                ArrayList<Nucleus> nonPolar = new ArrayList<>();
+                for (Nucleus nuc : fromNucs){
+                    if (nuc.getCellName().contains("polar")){
+                        polar.add(nuc);
+                    }else {
+                        nonPolar.add(nuc);
+                    }
+                }
+                for (Nucleus nuc : polar){
+                    Nucleus[] best = tree.bestMatch(nuc,false);
+                    toList.add(best[0]);
+                    this.addNucleus(best[0]);
+                    nuc.linkTo(best[0]);                     
+                }
+                
+                for (Nucleus nuc : nonPolar){
+                    Nucleus[] best = tree.bestMatch(nuc,true);
+                    // can the best match be divided into a new cell division
+                    if (best.length == 2){
+                        toList.add(best[1]);
+                        this.addNucleus(best[1]);
+                        nuc.linkTo(best[1]);
+                    }
+                    toList.add(best[0]);
+                    this.addNucleus(best[0]);
+                    nuc.linkTo(best[0]);                    
+                }
+                toNucs = toList.toArray(new Nucleus[0]);
+            }          
+            fromNucs = toNucs;
+        }
+        this.notifyListeners();
+    }
     // auto link between given times
     // non-curated time points will be segmented
     // curated time point are not resegmented
@@ -512,7 +552,8 @@ public class LinkedNucleusFile implements NucleusFile {
                 toNucs = this.getNuclei(t).toArray(new Nucleus[0]);
             }else {
                 
-                toNucs = tree.cutToN(fromNucs.length, Linkage.minVolume(t), 0.9);
+//                toNucs = tree.cutToN(fromNucs.length, Linkage.minVolume(t), 0.9);
+                toNucs = tree.cutToMinimum(fromNucs.length, Linkage.minVolume(t), 0.999999).toArray(new Nucleus[0]);
                 System.out.printf("Cut to %d\n",toNucs.length);
                 this.removeNuclei(t, false);
                 for (Nucleus nuc : toNucs){
@@ -528,7 +569,7 @@ public class LinkedNucleusFile implements NucleusFile {
                         fromNucs = autoLinkFlat(bt,t-1); 
                         if (toNucs.length < btNucs.size() && !isCurated(t)){
                             // recut the current time
-                            toNucs = tree.cutToExactlyN(btNucs.size());
+                            toNucs = tree.cutToExactlyN_Nuclei(btNucs.size());
                         }
                         break;
                     }                  
@@ -550,7 +591,7 @@ public class LinkedNucleusFile implements NucleusFile {
                 toNucs=this.getNuclei(toTime).toArray(new Nucleus[0]);
             } else {
                 BHCTree tree = bhcTreeDir.getTree(t);
-                Set<NucleusLogNode> logNodeSet  = tree.cutToN(fromNucs.length);
+                Set<NucleusLogNode> logNodeSet  = tree.cutToExactlyN_Nodes(fromNucs.length);
                 toNucs = new Nucleus[logNodeSet.size()];
                 int i=0;
                 for (NucleusLogNode logNode : logNodeSet){
@@ -580,7 +621,7 @@ public class LinkedNucleusFile implements NucleusFile {
             this.removeNuclei(fromTime,false);  // clear the previous time point
             Nucleus[] fromM1Nucs = this.getNuclei(fromTime-1).toArray(new Nucleus[0]);
             int minNucsPossible = Math.min(toNucs.length,fromM1Nucs.length);
-            Nucleus[] fromNucs = tree.cutToExactlyN(toNucs.length);
+            Nucleus[] fromNucs = tree.cutToExactlyN_Nuclei(toNucs.length);
 
             Linkage link = new Linkage(fromNucs,toNucs);
             link.formLinkage();
@@ -601,7 +642,7 @@ public class LinkedNucleusFile implements NucleusFile {
         } 
 
     }    
-    
+/*    
     public void autoLinkBetweenCuratedTimes(int time)throws Exception {
         Integer[] curatedTimes = curatedTimes(time);
         if (curatedTimes[0] == null || curatedTimes[1] == null) return;
@@ -632,7 +673,7 @@ public class LinkedNucleusFile implements NucleusFile {
         // link to the final curated point
         Linkage lastLinkage = new Linkage(from,byTime.get(toTime).values().toArray(new Nucleus[0]));
         lastLinkage.formLinkage();
- /*       
+        
         // make a copy of the curated nuclei and remove them from the file
         TreeMap<String,Nucleus> curatedToNucs = byTime.get(toTime);
         TreeMap<String,Nucleus> clone = (TreeMap<String,Nucleus>)curatedToNucs.clone();
@@ -693,10 +734,11 @@ public class LinkedNucleusFile implements NucleusFile {
                 this.addNucleus(curatedNuc);
             }
         }
- */       
+      
         this.notifyListeners();
         int uihsadfui=0;
     }
+*/
     // remove all the nuclei in the cell containing the given nucleus
     public void removeCell(Nucleus nuc,boolean notify){
         Nucleus last = lastNucleusInCell(nuc);

@@ -18,6 +18,9 @@ import org.apache.commons.math3.linear.RealVector;
  * @author gevirl
  */
 public class Division {
+    public Division(Nucleus parent,Nucleus child1,Nucleus child2){
+        this(parent,child1,parent.distance(child1),child2,parent.distance(child2));
+    }
     public Division(Nucleus parent,Nucleus child1,double d1,Nucleus child2,double d2){
         this.parent = parent;
         this.child1 = child1;
@@ -48,9 +51,17 @@ public class Division {
         
         
         if (parent.getCellName().contains("Polar") || parent.getCellName().contains("polar")) {
-            System.out.println("Polar");
+            System.out.println("Polar parent");
             return false;  // polar bodies do not divide
         }
+        if (child1.getCellName().contains("Polar") || child1.getCellName().contains("polar")) {
+            System.out.println("Polar child1");
+            return false;  // polar bodies do not divide
+        }     
+        if (child2.getCellName().contains("Polar") || child2.getCellName().contains("polar")) {
+            System.out.println("Polar child2");
+            return false;  // polar bodies do not divide
+        }           
         double ratio = dist1/dist2;
         if (ratio < 1.0){
             ratio = 1.0/ratio;
@@ -72,7 +83,7 @@ public class Division {
             ratio = 1.0/ratio;
         }
         if (ratio > volumeThresh){
-            System.out.println("Volume");
+            System.out.printf("Volume ratio %s\n",ratio);
             return false;
         }
         
@@ -283,7 +294,7 @@ public class Division {
     static double eccThresh = 0.6;
     static double divDistanceThresh = 70.0;
     static double cosThresh = .8;
-    static double volumeThresh = 3.0;
+    static double volumeThresh = 4.0;
     static double legRatio = 10.0;
     static double intensityThresh = 5.0;  // ratio of average intensity 
 }

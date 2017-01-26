@@ -129,6 +129,7 @@ public class Linkage implements Comparable {
            
     }
     */
+    /*
     // automatic segmentation and linkage to next time point
     static Nucleus[] autoLinkage(Nucleus[] nucsToLink,int fromTime,BHCDirectory bhcTreeDir)throws Exception {
 
@@ -200,6 +201,7 @@ public class Linkage implements Comparable {
         
         
     }
+    */
     static Nucleus[] cloneNuclei(Nucleus[] nucs){
         Nucleus[] ret = new Nucleus[nucs.length];
         for (int i=0 ; i<nucs.length ; ++i){
@@ -508,8 +510,8 @@ public class Linkage implements Comparable {
     static public double minVolume(int time){
         if (minVolumes==null){
             minVolumes = new TreeMap<>();
-            minVolumes.put(15, 4000.);
-            minVolumes.put(40,4000.);
+            minVolumes.put(15, 3000.);
+            minVolumes.put(40,3000.);
             minVolumes.put(100, 3000.);
         }
         Entry e = minVolumes.ceilingEntry(time);

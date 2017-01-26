@@ -23,6 +23,7 @@ import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.DiagonalMatrix;
 import org.apache.commons.math3.linear.EigenDecomposition;
+import org.apache.commons.math3.linear.LUDecomposition;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.jdom2.Element;
@@ -105,6 +106,11 @@ public class NucleusData implements Comparable {
         NucleusData.Coeff coef = coef(xi,yi,zi,v);
         return ellipse(xi,yi,zi,coef);
     } 
+    
+    // coefficients of the resulting ellipse 
+    // when the ellipsoid is cut at slice = v
+    // xi, yi,zi determine which direction of the ellipsoid is being cut
+    // zi cooresponds to the slice direction
     public Coeff coef(int xi,int yi,int zi,double v){
         Coeff c = new Coeff();
         double[] ce = this.getCenter();
@@ -535,6 +541,73 @@ public class NucleusData implements Comparable {
         double f = axis1/axis2;
         return Math.sqrt((1.0- f*f));        
     }
+    
+    public RealMatrix quadraticSurfaceMatrix(){
+        int D = 4;
+        int Dm1 = 3;
+        
+        RealMatrix T = new Array2DRowRealMatrix(D,D);
+        for (int r=0 ; r<D ; ++r){
+            for (int c=0 ; c<D ; ++c ){
+                if(r == c){
+                    T.setEntry(r,c,1.0);
+                }
+                else {
+                    T.setEntry(r,c,0.0);
+                }
+            }
+        }
+        T.setEntry(Dm1,0, -xC);
+        T.setEntry(Dm1,1, -yC);
+        T.setEntry(Dm1,2, -zC);
+        
+        RealMatrix TT = T.transpose();
+        
+        RealMatrix C = new Array2DRowRealMatrix(D,D);
+        for (int r=0 ; r<adjustedA.getRowDimension() ; ++r){
+            for (int c=0 ; c<adjustedA.getColumnDimension() ; ++c ){
+                C.setEntry(r, c, .8*adjustedA.getEntry(r, c));
+            }
+        }
+        for (int d=0 ; d<Dm1 ; ++d ){
+            C.setEntry(Dm1, d, 0.0);
+            C.setEntry(d, Dm1, 0.0);
+        }
+        C.setEntry(Dm1, Dm1, -1.0);
+        
+        return T.multiply(C.multiply(TT));
+    }
+    
+    static public boolean intersect(NucleusData nuc1,NucleusData nuc2){
+        RealMatrix qs1 = nuc1.quadraticSurfaceMatrix();
+        RealMatrix qs2 = nuc2.quadraticSurfaceMatrix();
+        
+         LUDecomposition lu = new LUDecomposition(qs1);
+         RealMatrix qs1Inv = lu.getSolver().getInverse();
+         
+         EigenDecomposition ed = new EigenDecomposition(qs1Inv.multiply(qs2));
+         double[] realValues = ed.getRealEigenvalues();
+         double[] imagValues = ed.getImagEigenvalues();
+         
+         
+         // are there two distinct negative real eigenvalues
+         
+         for (int i=0 ; i<realValues.length-1 ; ++i){
+            for (int j=i ; j<realValues.length ; ++j){
+                if (realValues[i]<0.0 && realValues[j]<0.0 && imagValues[i]==0.0 && imagValues[j]==0.0 && realValues[i]!=realValues[j]){
+                    return false;
+                }
+            }
+         }
+         int sahdfuihs=0;
+        
+        return true;
+    }
+    public void setTime(int t){
+        this.time = t;
+    }
+    
+    
 
     private int time;
     private String name;

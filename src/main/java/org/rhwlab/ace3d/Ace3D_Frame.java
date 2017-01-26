@@ -549,7 +549,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn,ChangeListener  {
                     }
                     ((LinkedNucleusFile)imagedEmbryo.getNucleusFile()).autoLink(fromTime, getCurrentTime());
                     
- //                   ((LinkedNucleusFile)imagedEmbryo.getNucleusFile()).autoLinkBetweenCuratedTimes(getCurrentTime());
+//                    ((LinkedNucleusFile)imagedEmbryo.getNucleusFile()).autoLinkBetweenCuratedTimes(getCurrentTime());
                 } catch (Exception exc){
                     exc.printStackTrace();
                 }

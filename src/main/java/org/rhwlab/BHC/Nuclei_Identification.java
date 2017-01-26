@@ -328,7 +328,7 @@ public class Nuclei_Identification implements Runnable {
             PrintStream qsubStream = new PrintStream(qsubFile);
             qsubStream.println("#$ -S /bin/bash");
             qsubStream.printf("#$ -l mfree=%sG\n",memory);
-            qsubStream.println("#$ -l h_rt=96:0:0");
+            qsubStream.println("#$ -l h_rt=9:0:0");
      //       qsubStream.println("#$ -l h=w014");
             qsubStream.printf("#$ -pe serial %d\n",cores);
             if (!water){

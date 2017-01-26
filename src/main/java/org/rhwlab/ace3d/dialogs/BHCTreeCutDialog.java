@@ -128,7 +128,7 @@ public class BHCTreeCutDialog extends JDialog {
             int t = tree.getTime();
             LinkedNucleusFile f = (LinkedNucleusFile)this.nucleusFile;
             f.removeNuclei(t, false);
-            TreeSet<NucleusLogNode> cut = tree.cutToN(((CutDescriptor)sel).getNodeCount());
+            TreeSet<NucleusLogNode> cut = tree.cutToExactlyN_Nodes(((CutDescriptor)sel).getNodeCount());
             Set<BHCNucleusData> nucData =  BHCNucleusData.factory(cut, minVolume, t);
             BHCNucleusSet nucSet = new BHCNucleusSet(t,tree.getFileName(),nucData);
             nucleusFile.addNuclei(nucSet,true);
@@ -197,8 +197,14 @@ public class BHCTreeCutDialog extends JDialog {
                 selected = cutDesc;
             }
             TreeSet<NucleusLogNode> current = cutDesc.getCut();
-            TreeSet<NucleusLogNode> next = tree.nextTreeCut(current);
-            cutDesc = new CutDescriptor(next);
+            NucleusLogNode[] next = tree.nextTreeCut(current);
+            
+            TreeSet<NucleusLogNode> nextSet = new TreeSet<>();
+            nextSet.addAll(current);
+            nextSet.remove(next[2]);
+            nextSet.add(next[0]);
+            nextSet.add(next[1]);
+            cutDesc = new CutDescriptor(nextSet);
         }
 
         jList.setModel(model);

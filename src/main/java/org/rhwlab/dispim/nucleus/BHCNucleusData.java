@@ -22,17 +22,10 @@ import org.rhwlab.BHC.NucleusLogNode;
  * @author gevirl
  */
 public class BHCNucleusData extends NucleusData {
-    // construct the nucleus from a GaussianMixtureModel xml element
-    public BHCNucleusData(JsonObject jsonObj){
-        super(jsonObj);
-        this.sourceNode = jsonObj.getString("SourceNode");
-//this.id = super.getName().substring(super.getName().indexOf('_')+1);
-        this.count = jsonObj.getInt("Count");
-        this.voxels = jsonObj.getInt("Voxels");
-        this.totalIntensity = jsonObj.getJsonNumber("Intensity").longValue();
-        init();
+    public BHCNucleusData(NodeBase base,int time){
+        this(time,base.formElementXML());
+        this.nodeBase = base;
     }
-    
     // construct from Nucleus xml element saved in a file
     public BHCNucleusData(Element nucleusEle){
         super(nucleusEle);
@@ -201,21 +194,36 @@ public class BHCNucleusData extends NucleusData {
         return this.posteriorProb;
     }
     // distance weighted by intensity and volume
-    public double distance(BHCNucleusData other){
+    public double weightedDistance(BHCNucleusData other){
         double v = this.volume/other.volume;
         if (v <1.0){
             v = 1.0/v;
         }
-        double ir = this.totalIntensity/other.totalIntensity;
+        double ir = this.getAverageIntensity()/other.getAverageIntensity();
         if (ir<1.0){
             ir = 1.0/ir;
         }
-        return v*ir*super.distance(other);
+        double d = super.distance(other);
+        double ret = 4.0*v+ir+d;
+ /*       
+        System.out.printf("Volumes: %f,%f\n", this.volume,other.volume);
+        System.out.printf("AvgInt: %f,%f\n",this.getAverageIntensity(),other.getAverageIntensity());
+        System.out.printf("distance: %f\n", d);        
+        System.out.printf("score: %f\n\n",ret);
+*/
+        return ret;
+    }
+    public NodeBase getNodeBase(){
+        return this.nodeBase;
+    }
+    static public double similarityScore(BHCNucleusData nuc0,BHCNucleusData nuc1){
+        return nuc0.weightedDistance(nuc1);
     }
     static double vf = 4.0*Math.PI/3.0;
 //    String id;
     int count;  // number of micro clusters in the nucleus
     String sourceNode;  // the BHC tree node from which this nucleus is built
+    NodeBase nodeBase;  // the BHC Tree node that this nucleus was constructed from
     double volume;  // volume of nucleus
     double voxelDensity;  // voxels per unit volume
     long totalIntensity;        // sum of all voxel intensities

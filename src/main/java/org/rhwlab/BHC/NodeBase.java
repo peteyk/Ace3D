@@ -354,6 +354,26 @@ abstract public class NodeBase implements Node {
         
         return this.parent.commonAncestor(other);  // the common ancestor will be this parents common ancestor
     }
+    public void setUsed(boolean u){
+        this.used = u;
+    }
+    public boolean isUsed(){
+        return used;
+    }
+    public boolean isUsedRecursive(){
+        if (this.isUsed()){
+            return true;
+        }
+        
+        if ( left!=null && ((NodeBase)left).isUsedRecursive()  ){
+            return true;
+        }
+        
+        if (right!=null &&  ((NodeBase)right).isUsedRecursive()  ){
+            return true;
+        }
+        return false;
+    }
     Integer N; // number of microclusters assigned to this node  
     MicroCluster micro;  // micro cluster if this is a terminal node 
     Node left;
@@ -362,6 +382,7 @@ abstract public class NodeBase implements Node {
     Node parent;
     double lnR;  // log of the posterior 
     Double lnLike;
+    boolean used = false;
 
 //    Dfp r;   // posterior of the merged hypothesis
 //    double realR;

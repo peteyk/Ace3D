@@ -26,6 +26,7 @@ import org.jdom2.output.XMLOutputter;
 import org.rhwlab.dispim.nucleus.BHCNucleusData;
 import org.rhwlab.dispim.nucleus.BHCDirectory;
 import org.rhwlab.dispim.nucleus.BHCNucleusSet;
+import org.rhwlab.dispim.nucleus.Division;
 import org.rhwlab.dispim.nucleus.Nucleus;
 
 /**
@@ -115,7 +116,138 @@ public class BHCTree {
         stream.close();          
     }   
 
+    public Nucleus[] bestMatch(Nucleus nuc,boolean dividable){
+        Match best = null;
+        double minD = Double.MAX_VALUE;
+        for (Node root : roots){
+            NucleusLogNode node = (NucleusLogNode)root;
+            double score = Nucleus.similarityScore(nuc, node.getNucleus(time));
+            Match match = bestMatch(nuc,node,score);
+            if (match.score < minD){
+                minD = match.score;
+                best = match;
+            }
+        }
+        if (dividable){
+            // is it possible to divide the best matching node and make a new cell division?
+            Nucleus leftNuc = ((NucleusLogNode)best.node.getLeft()).getNucleus(time);
+            Nucleus rightNuc = ((NucleusLogNode)best.node.getRight()).getNucleus(time);
+            if (leftNuc!= null && rightNuc != null){
+                if (!Nucleus.intersect(leftNuc, rightNuc)){
+                    Division div = new Division(nuc,leftNuc,rightNuc);
+                    if (div.isPossible()){
+                        Nucleus[] ret = new Nucleus[2];
+                        ret[0] = leftNuc;
+                        ret[1] = rightNuc;
+                        return ret;
+                    }
+                }
+            }
 
+            // does the given nucleus also match the best's sister very well?
+            Node sisterNode = best.node.getSister();
+            if (sisterNode != null){
+                Nucleus sisterNuc = ((NucleusLogNode)sisterNode).getNucleus(time);
+                if (sisterNuc != null){
+                    double sisterScore = Nucleus.similarityScore(nuc, sisterNuc);        
+                    double ratio = sisterScore/best.score;
+                    if (ratio <1.0) ratio = 1.0/ratio;
+            System.out.printf("%s - %s,%s  ratio= %f\n",nuc.getName(),best.node.getNucleus(time).getName(),sisterNuc.getName(),ratio);
+                    if (ratio <1.05){
+                        Nucleus[] ret = new Nucleus[2];
+                        ret[0] = best.node.getNucleus(time);
+                        ret[1] = sisterNuc;
+                        return ret;            
+                    }
+                }
+            }
+        }
+        Nucleus[] ret = new Nucleus[1];
+        NucleusLogNode expanded = expandUp(best.node);
+        expanded.setUsed(true);
+        ret[0] = expanded.getNucleus(time);
+//System.out.printf("Best: %s - %s   %f\n",nuc.getName(),ret[0].getName(),minD);
+        return ret;
+    }
+    // find the best nucleus to match in the subtree root at the given node
+    public Match bestMatch(Nucleus nuc,NucleusLogNode node,double nodeScore){
+
+        boolean debug = false;
+ //       if (nuc.getCellName().equals("polar2")) debug = true;
+ /*
+if (debug) System.out.printf("Matching nuc= %s(%.2f,%.2f,%.2f) V%.2f I%.2f to node =%d(%.2f) (%.2f,%.2f,%.2f) V%.2f I%.2f dist=%f\n", 
+        nuc.getName(),c[0],c[1],c[2],nuc.getVolume(),nuc.getAvgIntensity(),
+        node.label,nodeScore,p[0],p[1],p[2],node.volume,node.avgIntensity,dd);
+ */
+        if (node.isLeaf()){
+if (debug) System.out.printf("Leaf returning from %d(%f) as best \n",node.label ,nodeScore);             
+            return new Match(node,nodeScore);
+        }
+        
+        if (nuc.getVolume() > 2.0*node.getVolume()){
+if (debug) System.out.printf("Volume returning from %d(%f) as best \n",node.label ,nodeScore);             
+            return new Match(node,nodeScore);  // nodes beyond here will be too small, so stop
+        }
+        
+        Nucleus leftNuc = null;
+        if (!node.getLeft().isUsed()){
+            leftNuc = ((NucleusLogNode)node.getLeft()).getNucleus(time);
+        }
+ 
+        Nucleus rightNuc=null;
+        if (!node.getRight().isUsed()){
+            rightNuc = ((NucleusLogNode)node.getRight()).getNucleus(time);
+        }
+
+        double leftScore = Double.MAX_VALUE;
+        if (leftNuc != null){
+            leftScore = Nucleus.similarityScore(nuc,leftNuc);
+        }
+
+        double rightScore = Double.MAX_VALUE;
+        if (rightNuc != null){
+            rightScore = Nucleus.similarityScore(nuc,rightNuc); 
+        }
+        
+        Match leftMatch = bestMatch(nuc,(NucleusLogNode)node.getLeft(),leftScore);
+        Match rightMatch = bestMatch(nuc,(NucleusLogNode)node.getRight(),rightScore);
+
+        if (node.isUsedRecursive()){
+            if (leftMatch.score < rightMatch.score){
+if (debug) System.out.printf("Recursive returning from %d best score left %d(%f) \n",node.label,leftMatch.node.label,leftMatch.score);                
+                return leftMatch;
+            } else { 
+if (debug) System.out.printf("Recursive returning from %d best score right %d(%f) \n",node.label ,rightMatch.node.label,rightMatch.score);                  
+                return rightMatch;
+            }
+        }
+        if (leftMatch.score < rightMatch.score && leftMatch.score < nodeScore){
+if (debug) System.out.printf("returning from %d best score left %d(%f) \n",node.label,leftMatch.node.label,leftMatch.score);
+            return leftMatch;
+        } else if (rightMatch.score < leftMatch.score && rightMatch.score< nodeScore){
+if (debug) System.out.printf("returning from %d best score right %d(%f) \n",node.label ,rightMatch.node.label,rightMatch.score);            
+            return rightMatch;
+        }
+if (debug) System.out.printf("returning from %d(%f) as best \n",node.label ,nodeScore);        
+        return new Match(node,nodeScore);
+    }
+
+    // expand the given match to the largest possible match
+    public NucleusLogNode expandUp(NucleusLogNode match){
+        NucleusLogNode par = (NucleusLogNode)match.getParent();
+        if (par == null){
+            return match;
+        }
+        NodeBase sister = (NodeBase)match.getSister();
+        if (sister.isUsedRecursive()){
+            return match;
+        }
+        
+        if (Nucleus.match(match.getNucleus(time), par.getNucleus(time))){
+            return expandUp(par);
+        }
+        return match;
+    }
     
     public static void saveXML(String file,Element root)throws Exception {
         File f = new File(file);
@@ -156,7 +288,52 @@ public class BHCTree {
         Element el = this.cutTreeAtThreshold(thresh);
         return el.getChildren("GaussianMixtureModel").size();
     }
-   */ 
+   */
+    
+    // find a minimum number of nuclei that exceed the minimum volume and are not overlapping
+    // the max probability is supplied to stop search if minimum number can't be reached with the given minimum volume
+    // max prob is just a safety net, 
+    // should open nodes until a maximal set of non-overlapping nodes are found that meet the volume criteria
+    public Set<Nucleus> cutToMinimum(int minNucs,double minVolume,double maxProb){
+        double logProb = Math.log(maxProb);
+        TreeSet<NucleusLogNode> cut = firstTreeCut();
+        while (true){
+            NucleusLogNode[] next = nextTreeCut(cut);
+            if (cut.size() >= minNucs){
+                // are the next nuclei overlapping
+                Nucleus nuc0 = next[0].getNucleus(time);
+                Nucleus nuc1 = next[1].getNucleus(time);
+                
+                if (nuc0==null || nuc1==null || Nucleus.intersect(nuc0, nuc1)){
+                    break;
+                }
+            }
+
+            if (next[0].getVolume() > minVolume){
+                cut.add(next[0]);
+            }
+            if (next[1].getVolume() > minVolume){
+                cut.add(next[1]);
+            }
+            if (next[0].getVolume() > minVolume || next[1].getVolume() > minVolume){
+                cut.remove(next[2]);
+            }
+            System.out.printf("logProb[0]=%f\n",next[0].getLogPosterior());
+            System.out.printf("logProb[1]=%f\n",next[1].getLogPosterior());
+            System.out.printf("logProb[2]=%f\n",next[2].getLogPosterior());
+            if (next[0].getLogPosterior()==0.0 && next[1].getLogPosterior()==0.0){
+                break;
+            }
+        }
+        Set<Nucleus> ret = new TreeSet<>();
+        for (NucleusLogNode node : cut){
+            Nucleus nuc = node.getNucleus(time);
+            nuc.setTime(time);
+            ret.add(nuc);  
+        }
+        return ret;
+    }
+
     // cut the tree to at least N given a minimum volume and a maximum probability
     // may have to return less than N nuclei to meet volume and prob criteria
     public Nucleus[] cutToN(int n,double minVolume,double maxProb){
@@ -164,7 +341,7 @@ public class BHCTree {
         TreeSet<NucleusLogNode>  volReducedCut;
         ArrayList<Nucleus> retList = new ArrayList<>();
         while(true){
-            TreeSet<NucleusLogNode> cut = cutToN(cutN);  // cuts to exactly cutN
+            TreeSet<NucleusLogNode> cut = cutToExactlyN_Nodes(cutN);  // cuts to exactly cutN
             volReducedCut = new TreeSet<>();
             int i=1;
             retList.clear();
@@ -185,8 +362,8 @@ public class BHCTree {
         }
         return retList.toArray(new Nucleus[0]);
     }
-    public Nucleus[] cutToExactlyN(int n){
-        Set<NucleusLogNode> logNodeSet  = this.cutToN(n);
+    public Nucleus[] cutToExactlyN_Nuclei(int n){
+        Set<NucleusLogNode> logNodeSet  = this.cutToExactlyN_Nodes(n);
         Nucleus[] toNucs = new Nucleus[logNodeSet.size()];
         int i=0;
         for (NucleusLogNode logNode : logNodeSet){
@@ -198,10 +375,14 @@ public class BHCTree {
     }
     
     // cut tree to exactly n nodes
-    public TreeSet<NucleusLogNode> cutToN(int n){
+    public TreeSet<NucleusLogNode> cutToExactlyN_Nodes(int n){
         TreeSet<NucleusLogNode> cut = firstTreeCut();
         while (cut.size()<n) {
-            cut = nextTreeCut(cut);
+            NucleusLogNode[] next = nextTreeCut(cut);
+            if (next == null) return cut;
+            cut.remove(next[2]);
+            cut.add(next[0]);
+            cut.add(next[1]);
         } 
         return cut;
         
@@ -220,27 +401,36 @@ public class BHCTree {
         TreeSet<NucleusLogNode> cut = firstTreeCut();
         ret.put(cut.size(),cut);       
         while (cut.size()<maxNodes) {
-            cut = nextTreeCut(cut);
-            ret.put(cut.size(), cut);
+            NucleusLogNode[] next  = nextTreeCut(cut);
+            if (next == null){
+                return ret;
+            }
+            TreeSet<NucleusLogNode> nextSet = new TreeSet<>();
+            nextSet.addAll(cut);
+            nextSet.remove(next[2]);
+            nextSet.add(next[0]);
+            nextSet.add(next[1]);
+            ret.put(nextSet.size(), nextSet);
+            cut = nextSet;
         }
         return ret;
     }
     // cuts the tree at the next level - produce one more node than previous cut
-    public TreeSet<NucleusLogNode> nextTreeCut(TreeSet<NucleusLogNode> previous){
-        TreeSet<NucleusLogNode> ret = new TreeSet<>();
+    public NucleusLogNode[] nextTreeCut(TreeSet<NucleusLogNode> previous){
+        NucleusLogNode[] ret = new NucleusLogNode[3];
         // find the minimum probability node that can be split
         Iterator<NucleusLogNode> iter = previous.iterator();
         while(iter.hasNext()){  
             NucleusLogNode node = iter.next();  // search for the lowest probability  node with children - not a leaf
             if (node.getLeft() != null && node.getRight() != null){
-                ret.addAll(previous);
-                ret.remove(node);
-                ret.add((NucleusLogNode)node.getLeft());  // split the node wtih the lowest probability
-                ret.add((NucleusLogNode)node.getRight());
-                break;
+
+                ret[0] = (NucleusLogNode)node.getLeft();  // split the node wtih the lowest probability
+                ret[1] = (NucleusLogNode)node.getRight();
+                ret[2] = node;
+                return ret;
             }             
         }     
-        return ret;
+        return null;
     }
        public TreeMap<Integer,Double> allPosteriorProb( int maxProbs){
         TreeMap<Integer,TreeSet<NucleusLogNode>> allCuts = allTreeCuts(maxProbs);
@@ -520,7 +710,18 @@ public class BHCTree {
     public String getFileName(){
         return fileName;
     }
-   String fileName;
+    public void clearUsed() {
+        for (Node root : roots){
+            clearUsed(root);
+        }
+    }
+    public static void clearUsed(Node node){
+        if (node == null)  return;
+        node.setUsed(false);
+        clearUsed(node.getLeft());
+        clearUsed(node.getRight());
+    }
+    String fileName;
     int time;
     List<Node> roots;
     double alpha;
@@ -528,11 +729,21 @@ public class BHCTree {
     int nu;
     double[] mu;
     TreeSet<Double> allPosts = null;
-    
+
             
     public class TreeCut{
         public double posterior;
         public double volume;
+        
+    }
+    
+    public class Match{
+        public Match(NucleusLogNode node,double score){
+            this.node = node;
+            this.score = score;
+        }
+        NucleusLogNode node;
+        double score;
         
     }
 }

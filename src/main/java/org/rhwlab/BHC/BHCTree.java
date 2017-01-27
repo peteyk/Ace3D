@@ -116,7 +116,63 @@ public class BHCTree {
         out.output(root, stream);
         stream.close();          
     }   
+    public Nucleus[] divideBySplit(Nucleus nuc,NucleusLogNode best){
+            // is it possible to divide the best matching node and make a new cell division?
+            Nucleus leftNuc = ((NucleusLogNode)best.getLeft()).getNucleus(time);
+            Nucleus rightNuc = ((NucleusLogNode)best.getRight()).getNucleus(time);
+            if (leftNuc!= null && rightNuc != null){
+                if (!Nucleus.intersect(leftNuc, rightNuc)){
+                    Division div = new Division(nuc,leftNuc,rightNuc);
+                    if (div.isPossible()){
+                        Nucleus[] ret = new Nucleus[2];
+                        ret[0] = leftNuc;
+                        ret[1] = rightNuc;
+                        return ret;
+                    }
+                }
+            }
+            return null;
+    }
+    
 
+    
+        public Nucleus divideBySister(Nucleus nuc,NucleusLogNode expanded){
+            // does the given nucleus also match the best's sister very well?
+            NodeBase sisterNode = (NodeBase)expanded.getSister();
+            if (sisterNode != null){
+                Nucleus sisterNuc = ((NucleusLogNode)sisterNode).getNucleus(time);            
+                if (sisterNuc.getCellName().contains("polar")){
+                    // try the next level up
+
+                    NodeBase parent = (NodeBase)expanded.getParent();
+                    sisterNode = (NodeBase)parent.getSister();
+                }  
+            }
+            if (sisterNode != null){
+                Nucleus sisterNuc = ((NucleusLogNode)sisterNode).getNucleus(time);
+                if (sisterNuc != null){
+
+                    double sisterScore = Nucleus.similarityScore(nuc, sisterNuc); 
+                    double expandedScore = Nucleus.similarityScore(nuc, expanded.getNucleus(time));
+                    double ratio = sisterScore/expandedScore;
+                    if (ratio <1.0) ratio = 1.0/ratio;
+                        
+            System.out.printf("%s - %s,%s  ratio= %f\n",nuc.getName(),expanded.getNucleus(time).getName(),sisterNuc.getName(),ratio);
+ //                   if (ratio <1.2){
+                    if (Nucleus.match(sisterNuc, expanded.getNucleus(time))){       
+                        Division div = new Division(nuc,expanded.getNucleus(time),sisterNuc);
+                        if (div.isPossible()){
+                            Nucleus[] ret = new Nucleus[2];
+                            ret[0] = expanded.getNucleus(time);
+                            ret[1] = sisterNuc;
+                            sisterNode.markedAsUsed();
+                            return sisterNuc;    
+                        }
+                    }
+                }
+            }
+            return null;
+    }
     public Nucleus[] bestMatch(Nucleus nuc,boolean dividable){
         Match best = this.bestMatchInAvailableNodes(nuc);
 /*        
@@ -134,7 +190,9 @@ public class BHCTree {
         NucleusLogNode expanded = expandUp(nuc,best.node);
         expanded.markedAsUsed(); 
         best.node = expanded;
+        
         if (dividable){
+            
             // is it possible to divide the best matching node and make a new cell division?
             Nucleus leftNuc = ((NucleusLogNode)best.node.getLeft()).getNucleus(time);
             Nucleus rightNuc = ((NucleusLogNode)best.node.getRight()).getNucleus(time);
@@ -185,6 +243,7 @@ public class BHCTree {
                 }
             }
         }
+        
         Nucleus[] ret = new Nucleus[1];
         ret[0] = expanded.getNucleus(time);
 //System.out.printf("Best: %s - %s   %f\n",nuc.getName(),ret[0].getName(),minD);
@@ -808,6 +867,9 @@ if (debug) System.out.printf("returning from %d(%f) as best \n",node.label ,node
         public Match(NucleusLogNode node,double score){
             this.node = node;
             this.score = score;
+        }
+        public NucleusLogNode getNode (){
+            return this.node;
         }
         NucleusLogNode node;
         double score;

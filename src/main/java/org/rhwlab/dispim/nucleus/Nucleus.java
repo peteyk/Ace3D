@@ -514,7 +514,7 @@ public class Nucleus implements Comparable {
         
         double volRatio = nuc1.getVolume()/nuc2.getVolume();
         if (volRatio < 1.0) volRatio = 1.0/volRatio;
-        if (volRatio > 2.0){
+        if (volRatio > 3.25){
             return false;
         }
         

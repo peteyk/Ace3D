@@ -8,6 +8,7 @@ package org.rhwlab.dispim.nucleus;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeMap;
@@ -19,6 +20,7 @@ import javax.json.JsonArrayBuilder;
 import javax.json.JsonObjectBuilder;
 import org.jdom2.Element;
 import org.rhwlab.BHC.BHCTree;
+import org.rhwlab.BHC.BHCTree.Match;
 import org.rhwlab.BHC.NucleusLogNode;
 
 /**
@@ -512,13 +514,19 @@ public class LinkedNucleusFile implements NucleusFile {
                         nonPolar.add(nuc);
                     }
                 }
+                // do the polar bodies - no division considered
                 for (Nucleus nuc : polar){
-                    Nucleus[] best = tree.bestMatch(nuc,false);
-                    toList.add(best[0]);
-                    this.addNucleus(best[0]);
-                    nuc.linkTo(best[0]);                     
+                    NucleusLogNode best = tree.bestMatchInAvailableNodes(nuc).getNode();
+                    NucleusLogNode expand = tree.expandUp(nuc, best);
+                    Nucleus bestNuc = best.getNucleus(toTime);
+                    if (bestNuc != null){
+                        expand.markedAsUsed();
+                        toList.add(bestNuc);
+                        this.addNucleus(bestNuc);
+                        nuc.linkTo(bestNuc);  
+                    }
                 }
-                
+ /*               
                 for (Nucleus nuc : nonPolar){
                     Nucleus[] best = tree.bestMatch(nuc,true);
                     // can the best match be divided into a new cell division
@@ -532,6 +540,47 @@ public class LinkedNucleusFile implements NucleusFile {
                     nuc.linkTo(best[0]);       
                    
                 }
+*/                
+                // find the best matches to all the nonpolar
+                HashMap<Nucleus,NucleusLogNode> matches = new HashMap<>();
+                HashMap<Nucleus,NucleusLogNode> expands = new HashMap<>();
+                for (Nucleus nuc : nonPolar){
+                    Match best = tree.bestMatchInAvailableNodes(nuc);
+                    matches.put(nuc,best.getNode());
+                    NucleusLogNode expand = tree.expandUp(nuc, best.getNode());
+                    expands.put(nuc,expand);
+                    expand.markedAsUsed();
+                }
+                
+                // try to make some divisions
+                for (Nucleus nuc : nonPolar){
+                    NucleusLogNode matchNode = matches.get(nuc);   
+                    Nucleus[] divided = tree.divideBySplit(nuc, matchNode);
+                    if (divided != null){
+                        // best match divids
+                        toList.add(divided[0]);
+                        this.addNucleus(divided[0]);
+                        nuc.linkTo(divided[0]);   
+                        toList.add(divided[1]);
+                        this.addNucleus(divided[1]);
+                        nuc.linkTo(divided[1]);                         
+                        
+                    } else {
+                        NucleusLogNode expanded = expands.get(nuc);
+                        Nucleus sisterNuc = tree.divideBySister(nuc,expanded);
+                        if (sisterNuc != null){
+                            // best match divids
+                            toList.add(sisterNuc);
+                            this.addNucleus(sisterNuc);
+                            nuc.linkTo(sisterNuc);   
+                        }
+                        Nucleus expandedNuc = expanded.getNucleus(toTime);
+                        toList.add(expandedNuc);
+                        this.addNucleus(expandedNuc);
+                        nuc.linkTo(expandedNuc);                         
+                    }
+                }
+                
                 // try to make divisions with any remaining unused nodes
                 Set<NucleusLogNode> avails =tree.availableNodes();
                 for (NucleusLogNode avail : avails){
@@ -561,6 +610,7 @@ public class LinkedNucleusFile implements NucleusFile {
         }
         this.notifyListeners();
     }
+
     // auto link between given times
     // non-curated time points will be segmented
     // curated time point are not resegmented

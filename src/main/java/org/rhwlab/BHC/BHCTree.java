@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -117,7 +118,8 @@ public class BHCTree {
     }   
 
     public Nucleus[] bestMatch(Nucleus nuc,boolean dividable){
-        Match best = null;
+        Match best = this.bestMatchInAvailableNodes(nuc);
+/*        
         double minD = Double.MAX_VALUE;
         for (Node root : roots){
             NucleusLogNode node = (NucleusLogNode)root;
@@ -128,8 +130,9 @@ public class BHCTree {
                 best = match;
             }
         }
+*/        
         NucleusLogNode expanded = expandUp(nuc,best.node);
-        expanded.setUsed(true); 
+        expanded.markedAsUsed(); 
         best.node = expanded;
         if (dividable){
             // is it possible to divide the best matching node and make a new cell division?
@@ -148,14 +151,14 @@ public class BHCTree {
             }
 
             // does the given nucleus also match the best's sister very well?
-            Node sisterNode = best.node.getSister();
+            NodeBase sisterNode = (NodeBase)best.node.getSister();
             if (sisterNode != null){
                 Nucleus sisterNuc = ((NucleusLogNode)sisterNode).getNucleus(time);            
                 if (sisterNuc.getCellName().contains("polar")){
                     // try the next level up
 
                     NodeBase parent = (NodeBase)best.node.getParent();
-                    sisterNode = parent.getSister();
+                    sisterNode = (NodeBase)parent.getSister();
                 }  
             }
             if (sisterNode != null){
@@ -169,11 +172,15 @@ public class BHCTree {
                         
             System.out.printf("%s - %s,%s  ratio= %f\n",nuc.getName(),best.node.getNucleus(time).getName(),sisterNuc.getName(),ratio);
  //                   if (ratio <1.2){
-                    if (Nucleus.match(sisterNuc, expanded.getNucleus(time))){                        
-                        Nucleus[] ret = new Nucleus[2];
-                        ret[0] = best.node.getNucleus(time);
-                        ret[1] = sisterNuc;
-                        return ret;            
+                    if (Nucleus.match(sisterNuc, expanded.getNucleus(time))){       
+                        Division div = new Division(nuc,best.node.getNucleus(time),sisterNuc);
+                        if (div.isPossible()){
+                            Nucleus[] ret = new Nucleus[2];
+                            ret[0] = best.node.getNucleus(time);
+                            ret[1] = sisterNuc;
+                            sisterNode.markedAsUsed();
+                            return ret;    
+                        }
                     }
                 }
             }
@@ -183,9 +190,28 @@ public class BHCTree {
 //System.out.printf("Best: %s - %s   %f\n",nuc.getName(),ret[0].getName(),minD);
         return ret;
     }
+    public Match bestMatchInAvailableNodes(Nucleus nuc){
+        Match veryBest = null;
+        Set<NucleusLogNode> availableNodes = this.availableNodes();
+        for (NucleusLogNode availableNode : availableNodes){
+            Nucleus availNuc = availableNode.getNucleus(time);
+            if (availNuc != null) {
+                double score = Nucleus.similarityScore(nuc,availNuc);
+                Match match = bestMatch(nuc,availableNode,score);
+                if (veryBest == null){
+                    veryBest = match;
+                }else {
+                    if (match.score < veryBest.score){
+                        veryBest = match;
+                    }
+                }
+            }
+        }
+        return veryBest;
+    }
     // find the best nucleus to match in the subtree root at the given node
     public Match bestMatch(Nucleus nuc,NucleusLogNode node,double nodeScore){
-
+        Match ret = new Match(node,nodeScore);
         boolean debug = false;
  //       if (nuc.getCellName().equals("polar2")) debug = true;
  /*
@@ -195,37 +221,45 @@ if (debug) System.out.printf("Matching nuc= %s(%.2f,%.2f,%.2f) V%.2f I%.2f to no
  */
         if (node.isLeaf()){
 if (debug) System.out.printf("Leaf returning from %d(%f) as best \n",node.label ,nodeScore);             
-            return new Match(node,nodeScore);
+            return ret;
         }
         
         if (nuc.getVolume() > 2.0*node.getVolume()){
 if (debug) System.out.printf("Volume returning from %d(%f) as best \n",node.label ,nodeScore);             
-            return new Match(node,nodeScore);  // nodes beyond here will be too small, so stop
+            return ret;  // nodes beyond here will be too small, so stop
         }
         
         Nucleus leftNuc = null;
+        double leftScore = Double.MAX_VALUE;
+        Match leftMatch = null;
         if (!node.getLeft().isUsed()){
             leftNuc = ((NucleusLogNode)node.getLeft()).getNucleus(time);
+            if (leftNuc != null){
+                leftScore = Nucleus.similarityScore(nuc,leftNuc);
+            }
+            leftMatch = bestMatch(nuc,(NucleusLogNode)node.getLeft(),leftScore);  
+            if (leftMatch.score < ret.score){
+                ret = leftMatch;
+            }
         }
  
         Nucleus rightNuc=null;
+        double rightScore = Double.MAX_VALUE;
+        Match rightMatch = null;
         if (!node.getRight().isUsed()){
             rightNuc = ((NucleusLogNode)node.getRight()).getNucleus(time);
-        }
-
-        double leftScore = Double.MAX_VALUE;
-        if (leftNuc != null){
-            leftScore = Nucleus.similarityScore(nuc,leftNuc);
-        }
-
-        double rightScore = Double.MAX_VALUE;
-        if (rightNuc != null){
-            rightScore = Nucleus.similarityScore(nuc,rightNuc); 
+            if (rightNuc != null){
+                rightScore = Nucleus.similarityScore(nuc,rightNuc);
+            }
+            rightMatch = bestMatch(nuc,(NucleusLogNode)node.getRight(),rightScore);
+            if (rightMatch.score < ret.score){
+                ret = rightMatch;
+            }
         }
         
-        Match leftMatch = bestMatch(nuc,(NucleusLogNode)node.getLeft(),leftScore);
-        Match rightMatch = bestMatch(nuc,(NucleusLogNode)node.getRight(),rightScore);
+        return ret;
 
+/*
         if (node.isUsedRecursive()){
             if (leftMatch.score < rightMatch.score){
 if (debug) System.out.printf("Recursive returning from %d best score left %d(%f) \n",node.label,leftMatch.node.label,leftMatch.score);                
@@ -244,6 +278,7 @@ if (debug) System.out.printf("returning from %d best score right %d(%f) \n",node
         }
 if (debug) System.out.printf("returning from %d(%f) as best \n",node.label ,nodeScore);        
         return new Match(node,nodeScore);
+*/        
     }
 
     // expand the given match to the largest possible match
@@ -253,7 +288,7 @@ if (debug) System.out.printf("returning from %d(%f) as best \n",node.label ,node
             return match;
         }
         NodeBase sister = (NodeBase)match.getSister();
-        if (sister.isUsedRecursive()){
+        if (sister.isUsedRecursive()){   // cannot go up if any part of the sister has already been used
             return match;
         }
         
@@ -261,6 +296,28 @@ if (debug) System.out.printf("returning from %d(%f) as best \n",node.label ,node
             return expandUp(source,par);
         }
         return match;
+    }
+    public Set<NucleusLogNode> availableNodes(){
+        HashSet<NucleusLogNode> ret = new HashSet<>();
+        for (Node root : roots){
+            availableNodes((NucleusLogNode)root,ret);
+        }
+        return ret;
+    }
+    
+    static public void availableNodes(NucleusLogNode root,HashSet<NucleusLogNode> availNodes){
+        if (!root.isUsedRecursive()){
+            availNodes.add(root);
+            return;
+        }
+        if (root.isLeaf()){
+            return;  // nothing to add - the root is a leaf that has already been used
+        }
+        if (root.isUsed()){
+            return;
+        }
+        availableNodes((NucleusLogNode)root.getLeft(),availNodes);
+        availableNodes((NucleusLogNode)root.getRight(),availNodes);
     }
     
     public static void saveXML(String file,Element root)throws Exception {
@@ -726,15 +783,11 @@ if (debug) System.out.printf("returning from %d(%f) as best \n",node.label ,node
     }
     public void clearUsed() {
         for (Node root : roots){
-            clearUsed(root);
+            NodeBase base = (NodeBase)root;
+            base.clearUsedMarks();
         }
     }
-    public static void clearUsed(Node node){
-        if (node == null)  return;
-        node.setUsed(false);
-        clearUsed(node.getLeft());
-        clearUsed(node.getRight());
-    }
+
     String fileName;
     int time;
     List<Node> roots;

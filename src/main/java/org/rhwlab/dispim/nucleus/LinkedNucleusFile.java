@@ -529,11 +529,35 @@ public class LinkedNucleusFile implements NucleusFile {
                     }
                     toList.add(best[0]);
                     this.addNucleus(best[0]);
-                    nuc.linkTo(best[0]);                    
+                    nuc.linkTo(best[0]);       
+                   
                 }
+                // try to make divisions with any remaining unused nodes
+                Set<NucleusLogNode> avails =tree.availableNodes();
+                for (NucleusLogNode avail : avails){
+                    Nucleus availNuc = avail.getNucleus(toTime);
+                    if (availNuc != null){
+                        for (Nucleus nuc : nonPolar){
+                            if (!nuc.isDividing()){
+                                Nucleus[] next = nuc.nextNuclei();
+                                Division div = new Division(nuc,next[0],availNuc);
+                                if (div.isPossible()){
+                                    toList.add(availNuc);
+                                    this.addNucleus(availNuc);
+                                    nuc.linkTo(availNuc);
+                                    
+                                }
+                            }
+                        }
+                    }
+                }
+                
                 toNucs = toList.toArray(new Nucleus[0]);
+                fromNucs = toNucs; 
+                
+                int iusahdfuis=0;                 
             }          
-            fromNucs = toNucs;
+           
         }
         this.notifyListeners();
     }

@@ -354,12 +354,39 @@ abstract public class NodeBase implements Node {
         
         return this.parent.commonAncestor(other);  // the common ancestor will be this parents common ancestor
     }
-    public void setUsed(boolean u){
+    private void setUsed(boolean u){
         this.used = u;
     }
+    // mark this node as used, this will propagate up if sister is also been marked used
+    public void markedAsUsed(){
+        this.setUsed(true);
+        Node sister = this.getSister();
+        if (sister == null){
+            return;
+        }
+        if (sister.isUsed()){
+            NodeBase parent = (NodeBase)this.getParent();        
+            parent.markedAsUsed();
+        }
+    }
+    
+    // clear the subtree rooted at this node of marked status
+    public void clearUsedMarks(){
+        this.setUsed(false);
+        if (!this.isLeaf()){
+            NodeBase leftBase = (NodeBase)this.getLeft();
+            leftBase.clearUsedMarks();
+            NodeBase rightBase = (NodeBase)this.getRight();
+            rightBase.clearUsedMarks();
+        }
+    }
+    
+    // is this node only marked as used
     public boolean isUsed(){
         return used;
     }
+    
+    // is any node in the subtree of this node marked as used
     public boolean isUsedRecursive(){
         if (this.isUsed()){
             return true;
@@ -374,6 +401,7 @@ abstract public class NodeBase implements Node {
         }
         return false;
     }
+
     Integer N; // number of microclusters assigned to this node  
     MicroCluster micro;  // micro cluster if this is a terminal node 
     Node left;

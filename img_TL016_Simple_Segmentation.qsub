@@ -1,0 +1,9 @@
+#$ -S /bin/bash
+#$ -l mfree=46G
+#$ -l h_rt=96:0:0
+#$ -l h=w014
+#$ -pe serial 1-10
+cd /nfs/waterston/Ace3D
+JAVA_HOME=/nfs/waterston/jdk1.8.0_102
+M2_HOME=/nfs/waterston/apache-maven-3.3.9
+/nfs/waterston/apache-maven-3.3.9/bin/mvn "-Dexec.args=-classpath %classpath org.rhwlab.BHC.Nuclei_Identification /net/waterston/vol2/home/gevirl/rnt-1/segmented/img_TL016_Simple_Segmentation.tiff" -Dexec.executable=/nfs/waterston/jdk1.8.0_102/bin/java -Dexec.classpathScope=runtime org.codehaus.mojo:exec-maven-plugin:1.2.1:exec

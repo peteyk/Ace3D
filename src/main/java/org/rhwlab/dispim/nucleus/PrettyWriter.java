@@ -46,6 +46,7 @@ public class PrettyWriter {
     }
     // output the json value in pretty 
     public void write(JsonValue jsonValue,int indent){
+        
         if (jsonValue instanceof JsonArray){
             writeArray((JsonArray)jsonValue,indent);
         } else if (jsonValue instanceof JsonObject){
@@ -54,8 +55,13 @@ public class PrettyWriter {
             writeString((JsonString)jsonValue);
         } else if (jsonValue instanceof JsonNumber){
             writeNumber((JsonNumber)jsonValue);
+        } else if (jsonValue == JsonValue.TRUE){
+            builder.append("true");
+        } else if (jsonValue == JsonValue.FALSE){
+            builder.append("false");
         }
     }
+ 
     public void writeString(JsonString jsonString){
         builder.append('"');
         builder.append(jsonString.getString());
@@ -64,6 +70,8 @@ public class PrettyWriter {
     public void writeNumber(JsonNumber jsonNumber){
         builder.append(Double.toString(jsonNumber.doubleValue()));
     }
+
+
     public void writeObject(JsonObject jsonObject,int indent){
         writeIndent(indent);
         builder.append("{");

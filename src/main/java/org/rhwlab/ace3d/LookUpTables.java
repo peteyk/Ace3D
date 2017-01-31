@@ -75,12 +75,15 @@ public class LookUpTables {
     public Set<String> getLutNames(){
         return this.luts.keySet();
     }
-    public LUT getLUT(String lutName){
+    static public LUT getLUT(String lutName){
         return luts.get(lutName);
+    }
+    static public ColorTable getColorTable(String lutName){
+        return new ColorTable8(luts.get(lutName).getBytes());
     }
     static public void main(String[] args){
         new ImageJ();
         LookUpTables luts = new LookUpTables();
     }
-    TreeMap<String,LUT> luts = new TreeMap<>();
+    static TreeMap<String,LUT> luts = new TreeMap<>();
 }

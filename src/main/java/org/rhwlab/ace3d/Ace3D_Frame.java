@@ -431,7 +431,15 @@ public class Ace3D_Frame extends JFrame implements PlugIn,ChangeListener  {
                 try {
                     
                     int time = getCurrentTime();
-                    BHCTree tree = bhc.getTree(time);
+                    TreeMap<Integer,BHCTree> trees = bhc.getTrees(time);
+                    BHCTree tree = null;
+                    if (trees.size() > 1){
+                        Object resp = JOptionPane.showInputDialog(null,"Choose segmentation threshold","thresholds ",JOptionPane.INFORMATION_MESSAGE,
+                            null, trees.keySet().toArray(),trees.firstKey());
+                        tree = trees.get(resp);
+                    } else {
+                        tree = trees.firstEntry().getValue();
+                    }
                     SegmentationLinePlot plot = new SegmentationLinePlot();
                     plot.setTree(tree);
                     PanelDisplay dialog = new PanelDisplay(plot);
@@ -531,6 +539,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn,ChangeListener  {
         
         JMenu linking = new JMenu("Linking");
         menuBar.add(linking);
+/*        
         JMenuItem linkItem = new JMenuItem("Auto Link");
         linking.add(linkItem);
         linkItem.addActionListener(new ActionListener(){
@@ -556,7 +565,7 @@ public class Ace3D_Frame extends JFrame implements PlugIn,ChangeListener  {
                 
             }
         });
-
+*/
         JMenuItem searchlinkItem = new JMenuItem("Auto Link - Tree Search");
         linking.add(searchlinkItem);
         searchlinkItem.addActionListener(new ActionListener(){
@@ -573,7 +582,14 @@ public class Ace3D_Frame extends JFrame implements PlugIn,ChangeListener  {
                             fromTime = Integer.valueOf(ans);
                         } catch (Exception exc){}
                     }
-                    ((LinkedNucleusFile)imagedEmbryo.getNucleusFile()).bestMatchAutoLink(fromTime, getCurrentTime());
+                    TreeMap<Integer,Integer> probMap = mapTimesToThreshProbs(fromTime,getCurrentTime());
+                    Set<Integer> timesSet = probMap.navigableKeySet();
+                    Integer[] timesArray = timesSet.toArray(new Integer[0]);
+                    Integer[] probsArray = new Integer[timesArray.length];
+                    for (int i=0 ; i<timesArray.length;++i){
+                        probsArray[i] = probMap.get(timesArray[i]);
+                    }
+                    ((LinkedNucleusFile)imagedEmbryo.getNucleusFile()).bestMatchAutoLink(timesArray,probsArray);
                     
 //                    ((LinkedNucleusFile)imagedEmbryo.getNucleusFile()).autoLinkBetweenCuratedTimes(getCurrentTime());
                 } catch (Exception exc){
@@ -660,7 +676,24 @@ public class Ace3D_Frame extends JFrame implements PlugIn,ChangeListener  {
         view.add(nucleiLabeled);
         this.setJMenuBar(menuBar);        
     }
-   
+    private TreeMap<Integer,Integer> mapTimesToThreshProbs(int fromTime,int toTime){
+        // determine which probabilities to use for each time point
+        TreeMap<Integer,Integer> map = new TreeMap();
+        for (int t=fromTime ; t<=toTime ; ++t){
+            Set<Integer> probs = bhc.getThresholdProbs(t);
+            Integer[] probArray = probs.toArray(new Integer[0]);
+            if (probs.size()==1){
+                map.put(t,probArray[0]);
+            } else {
+                // prompt for which to use
+                Object resp = JOptionPane.showInputDialog(null,
+                        String.format("For time = %d", t),"Choose probability threshold", JOptionPane.INFORMATION_MESSAGE, null, probArray, probArray[0]);
+                if (resp == null) return null;
+                map.put(t, (Integer)resp);
+            }
+        }   
+        return map;
+    }
 
     private void moveToTime(){
         boolean valid = false;

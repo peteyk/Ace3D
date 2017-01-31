@@ -499,6 +499,28 @@ public class Nucleus implements Comparable {
     static public double similarityScore(Nucleus nuc1,Nucleus nuc2){
         return BHCNucleusData.similarityScore((BHCNucleusData)nuc1.nucData, (BHCNucleusData)nuc2.nucData);
     }
+    static public boolean matchForExpansion(Nucleus nuc1,Nucleus nuc2){
+        double d = nuc1.distance(nuc2);
+        if (d > expansionDistanceThresh){
+            return false;
+        }
+        
+        double[] ecc1 = nuc1.eccentricity();
+        double[] ecc2 = nuc2.eccentricity();
+        if (ecc2[2] > .95 && ecc2[1] > .95){
+            return false;
+        }
+        
+        double volRatio = nuc1.getVolume()/nuc2.getVolume();
+        if (volRatio < 1.0) volRatio = 1.0/volRatio;
+        if (volRatio > 1.5){
+            return false;
+        }
+        
+        double intRatio = nuc1.getAvgIntensity()/nuc2.getAvgIntensity();
+        if (intRatio < 1.0)  intRatio = 1.0/intRatio;
+        return intRatio <= 2.0;      
+    }
     // do two nuclei match up well enough
     static public boolean match(Nucleus nuc1,Nucleus nuc2){
         double d = nuc1.distance(nuc2);
@@ -514,7 +536,7 @@ public class Nucleus implements Comparable {
         
         double volRatio = nuc1.getVolume()/nuc2.getVolume();
         if (volRatio < 1.0) volRatio = 1.0/volRatio;
-        if (volRatio > 3.25){
+        if (volRatio > 2.0){
             return false;
         }
         
@@ -531,5 +553,6 @@ public class Nucleus implements Comparable {
     final private NucleusData nucData;
     
     static double distThreshold=50;
+    static double expansionDistanceThresh = 25;
 
 }

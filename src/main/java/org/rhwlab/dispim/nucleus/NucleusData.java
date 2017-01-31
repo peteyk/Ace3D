@@ -566,7 +566,7 @@ public class NucleusData implements Comparable {
         RealMatrix C = new Array2DRowRealMatrix(D,D);
         for (int r=0 ; r<adjustedA.getRowDimension() ; ++r){
             for (int c=0 ; c<adjustedA.getColumnDimension() ; ++c ){
-                C.setEntry(r, c, .8*adjustedA.getEntry(r, c));
+                C.setEntry(r, c, .8*adjustedA.getEntry(r, c));  // make the effective radii bigger to get separation of the nuclei
             }
         }
         for (int d=0 ; d<Dm1 ; ++d ){

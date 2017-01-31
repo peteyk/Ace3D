@@ -8,7 +8,7 @@ package org.rhwlab.dispim.nucleus;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.TreeMap;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeMap;
@@ -44,6 +44,10 @@ public class LinkedNucleusFile implements NucleusFile {
             Element timeEle = timeEleMap.get(t);
             if (Boolean.valueOf(timeEle.getAttributeValue("curated"))){
                 this.curatedSet.add(t);
+            }
+            String prob = timeEle.getAttributeValue("segmentedProb");
+            if (prob != null){
+                this.thresholdProbs.put(t, Integer.valueOf(prob));
             }
 
             for (Element nucEle : timeEle.getChildren("Nucleus")){
@@ -84,6 +88,10 @@ public class LinkedNucleusFile implements NucleusFile {
             ret.setAttribute("curated", Boolean.toString(true));
         }else {
             ret.setAttribute("curated", Boolean.toString(false));
+        }
+        Integer prob = this.thresholdProbs.get(time);
+        if (prob != null){
+            ret.setAttribute("segmentedProb", prob.toString());
         }
         
         for (Nucleus nuc : byTime.get(time).values()){
@@ -492,11 +500,13 @@ public class LinkedNucleusFile implements NucleusFile {
         }
         return ret;
     }
-    public void bestMatchAutoLink(int fromTime, int toTime)throws Exception {
-        Nucleus[] fromNucs = this.getNuclei(fromTime).toArray(new Nucleus[0]);
+    public void bestMatchAutoLink(Integer[] times,Integer[] threshs)throws Exception {
+       
+        Nucleus[] fromNucs = this.getNuclei(times[0]).toArray(new Nucleus[0]);
         Nucleus[] toNucs;
-        for (int t=fromTime+1 ; t<=toTime ; ++t){
-            BHCTree tree = bhcTreeDir.getTree(t);
+        for (int i=1 ; i<times.length ; ++i){
+            int t = times[i];
+            BHCTree tree = bhcTreeDir.getTree(t,threshs[i]);
             tree.clearUsed();
             if (isCurated(t)){
                 toNucs = this.getNuclei(t).toArray(new Nucleus[0]);
@@ -518,7 +528,7 @@ public class LinkedNucleusFile implements NucleusFile {
                 for (Nucleus nuc : polar){
                     NucleusLogNode best = tree.bestMatchInAvailableNodes(nuc).getNode();
                     NucleusLogNode expand = tree.expandUp(nuc, best);
-                    Nucleus bestNuc = best.getNucleus(toTime);
+                    Nucleus bestNuc = best.getNucleus(t);
                     if (bestNuc != null){
                         expand.markedAsUsed();
                         toList.add(bestNuc);
@@ -542,14 +552,18 @@ public class LinkedNucleusFile implements NucleusFile {
                 }
 */                
                 // find the best matches to all the nonpolar
-                HashMap<Nucleus,NucleusLogNode> matches = new HashMap<>();
-                HashMap<Nucleus,NucleusLogNode> expands = new HashMap<>();
+                TreeMap<Nucleus,NucleusLogNode> matches = new TreeMap<>();
+                TreeMap<Nucleus,NucleusLogNode> expands = new TreeMap<>();
                 for (Nucleus nuc : nonPolar){
                     Match best = tree.bestMatchInAvailableNodes(nuc);
-                    matches.put(nuc,best.getNode());
-                    NucleusLogNode expand = tree.expandUp(nuc, best.getNode());
-                    expands.put(nuc,expand);
-                    expand.markedAsUsed();
+                    if (best != null){
+                        matches.put(nuc,best.getNode());
+                        NucleusLogNode expand = tree.expandUp(nuc, best.getNode());
+                        expands.put(nuc,expand);
+                        expand.markedAsUsed();
+ //                       expands.put(nuc,best.getNode());
+ //                       best.getNode().markedAsUsed();
+                    }
                 }
                 
                 // try to make some divisions
@@ -558,6 +572,7 @@ public class LinkedNucleusFile implements NucleusFile {
                     Nucleus[] divided = tree.divideBySplit(nuc, matchNode);
                     if (divided != null){
                         // best match divids
+System.out.println("Division by split")                        ;
                         toList.add(divided[0]);
                         this.addNucleus(divided[0]);
                         nuc.linkTo(divided[0]);   
@@ -570,31 +585,37 @@ public class LinkedNucleusFile implements NucleusFile {
                         Nucleus sisterNuc = tree.divideBySister(nuc,expanded);
                         if (sisterNuc != null){
                             // best match divids
+System.out.println("Division by sister")                            ;
                             toList.add(sisterNuc);
                             this.addNucleus(sisterNuc);
                             nuc.linkTo(sisterNuc);   
                         }
-                        Nucleus expandedNuc = expanded.getNucleus(toTime);
-                        toList.add(expandedNuc);
-                        this.addNucleus(expandedNuc);
-                        nuc.linkTo(expandedNuc);                         
+                        if (expanded != null){
+                            Nucleus expandedNuc = expanded.getNucleus(t);
+                            toList.add(expandedNuc);
+                            this.addNucleus(expandedNuc);
+                            nuc.linkTo(expandedNuc);   
+                        }
                     }
                 }
                 
                 // try to make divisions with any remaining unused nodes
                 Set<NucleusLogNode> avails =tree.availableNodes();
                 for (NucleusLogNode avail : avails){
-                    Nucleus availNuc = avail.getNucleus(toTime);
+                    Nucleus availNuc = avail.getNucleus(t);
                     if (availNuc != null){
                         for (Nucleus nuc : nonPolar){
                             if (!nuc.isDividing()){
                                 Nucleus[] next = nuc.nextNuclei();
-                                Division div = new Division(nuc,next[0],availNuc);
-                                if (div.isPossible()){
-                                    toList.add(availNuc);
-                                    this.addNucleus(availNuc);
-                                    nuc.linkTo(availNuc);
-                                    
+                                if (next.length >0 && next[0] != null){
+                                    Division div = new Division(nuc,next[0],availNuc);
+                                    if (div.isPossible()){
+System.out.println("Division by available");
+                                        toList.add(availNuc);
+                                        this.addNucleus(availNuc);
+                                        nuc.linkTo(availNuc);
+
+                                    }
                                 }
                             }
                         }
@@ -610,7 +631,7 @@ public class LinkedNucleusFile implements NucleusFile {
         }
         this.notifyListeners();
     }
-
+/*
     // auto link between given times
     // non-curated time points will be segmented
     // curated time point are not resegmented
@@ -716,7 +737,7 @@ public class LinkedNucleusFile implements NucleusFile {
         } 
 
     }    
-/*    
+    
     public void autoLinkBetweenCuratedTimes(int time)throws Exception {
         Integer[] curatedTimes = curatedTimes(time);
         if (curatedTimes[0] == null || curatedTimes[1] == null) return;
@@ -857,12 +878,15 @@ public class LinkedNucleusFile implements NucleusFile {
     public boolean selectionChanged(){
         return selectedNucleus.selectedHasChanged();
     }
+    public Integer getThresholdProb(int time){
+        return thresholdProbs.get(time);
+    }
     
     File file;
-    TreeMap<Integer,TreeMap<String,Nucleus>> byTime=new TreeMap<>();
-    TreeSet<Integer> curatedSet = new TreeSet<>();
-//    TreeMap<Integer,Boolean> curatedMap = new TreeMap<>();
-//    TreeMap<Integer,Boolean> autoLinkedMap = new TreeMap<>();
+    TreeMap<Integer,TreeMap<String,Nucleus>> byTime=new TreeMap<>();  // all the nuclei indexed by time and name
+    TreeSet<Integer> curatedSet = new TreeSet<>();  //curated times
+    TreeMap<Integer,Integer> thresholdProbs = new TreeMap<>();  // the thresholds probs for each time used to construct nuclei from bhc trees
+
     
     ArrayList<InvalidationListener> listeners = new ArrayList<>();
     SelectedNucleus selectedNucleus = new SelectedNucleus();

@@ -117,6 +117,7 @@ public class BHCTree {
         stream.close();          
     }   
     public Nucleus[] divideBySplit(Nucleus nuc,NucleusLogNode best){
+        if (best==null || best.isLeaf()) return null;
             // is it possible to divide the best matching node and make a new cell division?
             Nucleus leftNuc = ((NucleusLogNode)best.getLeft()).getNucleus(time);
             Nucleus rightNuc = ((NucleusLogNode)best.getRight()).getNucleus(time);
@@ -137,11 +138,12 @@ public class BHCTree {
 
     
         public Nucleus divideBySister(Nucleus nuc,NucleusLogNode expanded){
+            if (expanded==null) return null;
             // does the given nucleus also match the best's sister very well?
             NodeBase sisterNode = (NodeBase)expanded.getSister();
             if (sisterNode != null){
                 Nucleus sisterNuc = ((NucleusLogNode)sisterNode).getNucleus(time);            
-                if (sisterNuc.getCellName().contains("polar")){
+                if (sisterNuc!=null && sisterNuc.getCellName().contains("polar")){
                     // try the next level up
 
                     NodeBase parent = (NodeBase)expanded.getParent();
@@ -151,22 +153,26 @@ public class BHCTree {
             if (sisterNode != null){
                 Nucleus sisterNuc = ((NucleusLogNode)sisterNode).getNucleus(time);
                 if (sisterNuc != null){
+                    if (!sisterNode.isUsedRecursive()){
+                        double sisterScore = Nucleus.similarityScore(nuc, sisterNuc); 
+                        double expandedScore = Nucleus.similarityScore(nuc, expanded.getNucleus(time));
+                        double ratio = sisterScore/expandedScore;
+                        if (ratio <1.0) ratio = 1.0/ratio;
 
-                    double sisterScore = Nucleus.similarityScore(nuc, sisterNuc); 
-                    double expandedScore = Nucleus.similarityScore(nuc, expanded.getNucleus(time));
-                    double ratio = sisterScore/expandedScore;
-                    if (ratio <1.0) ratio = 1.0/ratio;
-                        
-            System.out.printf("%s - %s,%s  ratio= %f\n",nuc.getName(),expanded.getNucleus(time).getName(),sisterNuc.getName(),ratio);
- //                   if (ratio <1.2){
-                    if (Nucleus.match(sisterNuc, expanded.getNucleus(time))){       
-                        Division div = new Division(nuc,expanded.getNucleus(time),sisterNuc);
-                        if (div.isPossible()){
-                            Nucleus[] ret = new Nucleus[2];
-                            ret[0] = expanded.getNucleus(time);
-                            ret[1] = sisterNuc;
-                            sisterNode.markedAsUsed();
-                            return sisterNuc;    
+                System.out.printf("%s - %s,%s  ratio= %f\n",nuc.getName(),expanded.getNucleus(time).getName(),sisterNuc.getName(),ratio);
+     //                   if (ratio <1.2){
+                        Nucleus expandedNuc = expanded.getNucleus(time);
+                        if (!Nucleus.intersect(expandedNuc,sisterNuc)){
+                            if (Nucleus.match(sisterNuc, expanded.getNucleus(time))){       
+                                Division div = new Division(nuc,expanded.getNucleus(time),sisterNuc);
+                                if (div.isPossible()){
+                                    Nucleus[] ret = new Nucleus[2];
+                                    ret[0] = expanded.getNucleus(time);
+                                    ret[1] = sisterNuc;
+                                    sisterNode.markedAsUsed();
+                                    return sisterNuc;    
+                                }
+                            }
                         }
                     }
                 }
@@ -252,6 +258,9 @@ public class BHCTree {
     public Match bestMatchInAvailableNodes(Nucleus nuc){
         Match veryBest = null;
         Set<NucleusLogNode> availableNodes = this.availableNodes();
+        if (this.isAvailable(availableNodes, 7036)){
+            int hasfuih=0;
+        }
         for (NucleusLogNode availableNode : availableNodes){
             Nucleus availNuc = availableNode.getNucleus(time);
             if (availNuc != null) {
@@ -351,10 +360,19 @@ if (debug) System.out.printf("returning from %d(%f) as best \n",node.label ,node
             return match;
         }
         
-        if (Nucleus.match(source, par.getNucleus(time))){
+        if (Nucleus.matchForExpansion(source, par.getNucleus(time))){
             return expandUp(source,par);
         }
         return match;
+    }
+    public boolean isAvailable(Set<NucleusLogNode> avails,int lab){
+        for (NucleusLogNode avail : avails){
+            Node found = avail.findNodeWithlabel(lab);
+            if (found != null){
+                return true;
+            }
+        }
+        return false;
     }
     public Set<NucleusLogNode> availableNodes(){
         HashSet<NucleusLogNode> ret = new HashSet<>();

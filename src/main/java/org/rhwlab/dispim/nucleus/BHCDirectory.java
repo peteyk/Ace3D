@@ -8,7 +8,9 @@ package org.rhwlab.dispim.nucleus;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.jdom2.Element;
@@ -41,48 +43,60 @@ public class BHCDirectory {
                 int thresh = Integer.valueOf(mat.group(2));
                 String type = mat.group(3);
                 
-                TreeMap<Integer,FilePair> pairs = filePairs.get(time);
-                if (pairs == null){
-                    pairs = new TreeMap<>();
-                    filePairs.put(time, pairs);
-                }
-                
-                FilePair pair = pairs.get(thresh);
-                if (pair == null){
-                    pair = new FilePair(null,null);
-                    pairs.put(thresh, pair);
-                }
-                
                 if (type.equals("Clusters")){
-                    pair.cluster = file;
-                } else {
-                    pair.tree = file;
+                    TreeMap<Integer,File> clusterFileMap = this.clusterFiles.get(time);
+                    if (clusterFileMap == null){
+                        clusterFileMap = new TreeMap<>();
+                        this.clusterFiles.put(time, clusterFileMap);
+                    }
+                    clusterFileMap.put(thresh,file);
+                } else if (type.equals("BHCTree")){
+                    TreeMap<Integer,File> treeFilesMap = this.treeFiles.get(time);
+                    if (treeFilesMap == null){
+                        treeFilesMap = new TreeMap<>();
+                        this.treeFiles.put(time,treeFilesMap);
+                    }
+                    treeFilesMap.put(thresh, file);
                 }
                 //System.out.println(file.getName());
             }
 
         }        
     }
-    public BHCTree getTree(int time) throws Exception{
-        return getTrees(time).firstEntry().getValue();
+    public Set<Integer> getThresholdProbs(int time){
+        return  treeFiles.get(time).keySet();
     }
+
     public TreeMap<Integer,BHCTree> getTrees(int time)throws Exception {
+        TreeMap<Integer,BHCTree> ret = new TreeMap<>();
+        for (Integer p : this.getThresholdProbs(time)){
+            ret.put(p,this.getTree(time, p));
+        }
+        return ret;
+    }
+
+    // get all the trees for a given time
+    public BHCTree getTree(int time,int thresh)throws Exception {
         TreeMap<Integer,BHCTree> treesAtTime = this.bhcTrees.get(time);
         
         if (treesAtTime == null){
-            TreeMap<Integer,FilePair> filesAtTime = this.filePairs.get(time);
+            // no cached trees for the given time, create an empty cache
+            treesAtTime = new TreeMap<>();
+            bhcTrees.put(time,treesAtTime);             
+        }
+        
+        BHCTree tree = treesAtTime.get(thresh);
+        if (tree == null){
+            // no tree in cache, build tree from file
+            TreeMap<Integer,File> filesAtTime = this.treeFiles.get(time);
             if (filesAtTime != null){
-                treesAtTime = new TreeMap<>();
-                bhcTrees.put(time,treesAtTime);                
-                for (int thresh : filesAtTime.keySet()){
-                    FilePair pair = filesAtTime.get(thresh);
-                    BHCTree tree = new BHCTree(pair.tree.getPath(),time);
-                    treesAtTime.put(thresh, tree);
+                File file = filesAtTime.get(thresh);
+                if (file != null){  // is there a file for the given threshold
+                    tree = new BHCTree(file.getPath(),time);  
                 }
             }
         }
-        
-        return treesAtTime;
+        return tree;
     }
     public File getDirectory(){
         return this.dir;
@@ -94,6 +108,7 @@ public class BHCDirectory {
     }
 
     // convert file names to include segmentation threshold
+    // this is one time use only
     static public void convert(File dir)throws Exception {
         Pattern pat = Pattern.compile("TP\\d{1,4}_.+ProbabilitiesClusters.xml");
         File[] files = dir.listFiles();
@@ -151,10 +166,13 @@ public class BHCDirectory {
         int ouahsdfuis=0;
 */
     }
-    File dir;
-    TreeMap<Integer,TreeMap<Integer,FilePair>> filePairs = new TreeMap<>(); // files indexed by time and segmentation threshold
-    TreeMap<Integer,TreeMap<Integer,BHCTree>> bhcTrees = new TreeMap<>(); // trees read indexed by time and threshold
 
+    File dir;
+//    TreeMap<Integer,TreeMap<Integer,FilePair>> filePairs = new TreeMap<>(); // files indexed by time and segmentation threshold
+    TreeMap<Integer,TreeMap<Integer,File>> clusterFiles = new TreeMap<>();
+    TreeMap<Integer,TreeMap<Integer,File>> treeFiles = new TreeMap<>();
+    TreeMap<Integer,TreeMap<Integer,BHCTree>> bhcTrees = new TreeMap<>(); // trees read indexed by time and threshold
+/*
     public class FilePair{
         public FilePair(File clusterFile,File treeFile){
             this.cluster = clusterFile;
@@ -163,4 +181,5 @@ public class BHCDirectory {
         File cluster;
         File tree;
     }
+*/
 }

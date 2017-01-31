@@ -361,7 +361,8 @@ public class ImagedEmbryo implements Observable {
         
         // make a Nucleus from the selected nucleus' parent node
         BHCNucleusData bhcNuc = (BHCNucleusData)nuc.getNucleusData();
-        BHCTree tree = nf.getTreeDirectory().getTree(time);
+        int prob = nf.getThresholdProb(time);
+        BHCTree tree = nf.getTreeDirectory().getTree(time,prob);
         NodeBase node = (NodeBase)tree.findNode(Integer.valueOf(bhcNuc.getSourceNode()));
         LogNode parent = (LogNode)node.getParent();
  //       BHCNucleusData joinedNuc = new BHCNucleusData(nuc.getTime(),parent.formElementXML(Integer.valueOf(bhcNuc.getID())));
@@ -381,7 +382,8 @@ public class ImagedEmbryo implements Observable {
         int time = selected.getTime();
         LinkedNucleusFile nf = ((LinkedNucleusFile)nucFile);
         
-        BHCTree tree = nf.getTreeDirectory().getTree(time);
+        int prob = nf.getThresholdProb(time);
+        BHCTree tree = nf.getTreeDirectory().getTree(time,prob);
         LogNode selNode = (LogNode)tree.findNode(Integer.valueOf(((BHCNucleusData)selected.getNucleusData()).getSourceNode()));
         LogNode markNode = (LogNode)tree.findNode(Integer.valueOf(((BHCNucleusData)other.getNucleusData()).getSourceNode()));
         
@@ -430,8 +432,8 @@ public class ImagedEmbryo implements Observable {
                 n = i;
             }
         }
-        
-        BHCTree tree = nf.getTreeDirectory().getTree(time);    
+        int prob = nf.getThresholdProb(time);
+        BHCTree tree = nf.getTreeDirectory().getTree(time,prob);    
         LogNode selNode = (LogNode)tree.findNode(Integer.valueOf(((BHCNucleusData)selected.getNucleusData()).getSourceNode()));
         
  //       BHCNucleusData leftNuc = new BHCNucleusData(time,((NodeBase)selNode.getLeft()).formElementXML(n+1));

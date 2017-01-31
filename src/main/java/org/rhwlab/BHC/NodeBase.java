@@ -355,7 +355,38 @@ abstract public class NodeBase implements Node {
         return this.parent.commonAncestor(other);  // the common ancestor will be this parents common ancestor
     }
     private void setUsed(boolean u){
+        NodeBase desc = findAncestor(7036);
+        if (u && desc != null){
+            int iousadfuihs=0;
+        }
         this.used = u;
+    }
+    private NodeBase findDescendent(int lab){
+        if (this.label == lab){
+            return this;
+        }
+        if (this.isLeaf()) return null;
+        
+        NodeBase desc = ((NodeBase)this.getLeft()).findDescendent(lab);
+        if (desc != null){
+            return desc;
+        }
+        
+        desc = ((NodeBase)this.getRight()).findDescendent(lab);
+        if (desc != null){
+            return desc;
+        }  
+        return null;
+    }
+    private NodeBase findAncestor(int label){
+        if (this.getParent()==null){
+            return null;
+        }
+        NodeBase par = (NodeBase)this.getParent();
+        if (par.label == label ){
+            return par;
+        }
+        return par.findAncestor(label);
     }
     // mark this node as used, this will propagate up if sister is also been marked used
     public void markedAsUsed(){

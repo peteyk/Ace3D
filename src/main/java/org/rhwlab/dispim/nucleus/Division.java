@@ -40,6 +40,7 @@ public class Division {
     }
     */
     public boolean isDistancePossible(){
+        
         if (dist > divDistanceThresh){
             System.out.printf("Distance: %f\n",dist);
             return false;  // daughters are to far from parent
@@ -48,18 +49,23 @@ public class Division {
     }
     // determine if this is a possible division
     public boolean isPossible(){
-        
+        boolean debug = true;
+        if (debug) System.out.printf("%s - %s,%s\n",this.parent.getName(),this.child1.getName(),this.child2.getName());
+        if (dist1 >parentToChildDistance || dist2 > parentToChildDistance){
+            if (debug) System.out.printf("parent to children: %f  %f\n",dist1,dist2);
+            return false;  // children too far from parent            
+        }
         
         if (parent.getCellName().contains("Polar") || parent.getCellName().contains("polar")) {
-            System.out.println("Polar parent");
+            if (debug) System.out.println("Polar parent");
             return false;  // polar bodies do not divide
         }
         if (child1.getCellName().contains("Polar") || child1.getCellName().contains("polar")) {
-            System.out.println("Polar child1");
+            if (debug) System.out.println("Polar child1");
             return false;  // polar bodies do not divide
         }     
         if (child2.getCellName().contains("Polar") || child2.getCellName().contains("polar")) {
-            System.out.println("Polar child2");
+            if (debug) System.out.println("Polar child2");
             return false;  // polar bodies do not divide
         }           
         double ratio = dist1/dist2;
@@ -67,14 +73,14 @@ public class Division {
             ratio = 1.0/ratio;
         }
         if (ratio >legRatio){
-            System.out.printf("Leg Ratio: %f\n", ratio);
+            if (debug) System.out.printf("Leg Ratio: %f\n", ratio);
             return false;
         }
  
         
         double childDist = child1.distance(child2);
         if (childDist> divDistanceThresh){
-            System.out.printf("Child distnce: %f\n",childDist);
+            if (debug) System.out.printf("Child distnce: %f\n",childDist);
             return false;
         }
         
@@ -83,7 +89,7 @@ public class Division {
             ratio = 1.0/ratio;
         }
         if (ratio > volumeThresh){
-            System.out.printf("Volume ratio %s\n",ratio);
+            if (debug) System.out.printf("Volume ratio %s\n",ratio);
             return false;
         }
         
@@ -92,7 +98,7 @@ public class Division {
             intensityRatio = 1.0/intensityRatio;
         }
         if (intensityRatio > intensityThresh){
-            System.out.println("Intensity child1");
+            if (debug) System.out.println("Intensity child1");
             return false;
         }
         intensityRatio = ((BHCNucleusData)parent.getNucleusData()).getAverageIntensity()/((BHCNucleusData)child2.getNucleusData()).getAverageIntensity();
@@ -100,29 +106,43 @@ public class Division {
             intensityRatio = 1.0/intensityRatio;
         }
         if (intensityRatio > intensityThresh){
-            System.out.println("Intensity child2");
+            if (debug) System.out.println("Intensity child2");
             return false;
         }        
 
         int lastDiv = parent.timeSinceDivsion();
         if ( lastDiv != -1 && lastDiv < timeThresh){
-            System.out.println("Time");
+            if (debug) System.out.println("Time");
             return false;  // lifetime of cell is too short for another division
         }
         double[] ecc = parent.eccentricity();
-        if (ecc[1] < eccThresh){
-            System.out.println("Parent Eccentricity");
-            return false;  // nuclei are not eccentric enough            
+        if (ecc[1] < parentEccThresh){
+            if (parent.getParent() == null){
+                if (debug) System.out.println("Parent Eccentricity");
+                return false;
+            }
+            double[] parEcc = parent.getParent().eccentricity();
+            if (parEcc[1] < parentEccThresh){
+                if (debug) System.out.println("Parent Eccentricity");
+                return false;
+            }
         }
+
+
         ecc = child1.eccentricity();
         if (ecc[1] < eccThresh){
-            System.out.println("Child1 Eccentricity");
+            if (debug) System.out.println("Child1 Eccentricity");
             return false;  // nuclei are not eccentric enough            
         }        
         ecc = child2.eccentricity();
         if (ecc[1] < eccThresh){
-            System.out.println("Child2 Eccentricity");
+            if (debug) System.out.println("Child2 Eccentricity");
             return false;  // nuclei are not eccentric enough            
+        }
+        
+        if (Nucleus.intersect(child1, child2)){
+            if (debug) System.out.println("Daughters intersect");
+            return false;  // nuclei are not eccentric enough                
         }
 /*        
         RealVector[] parentAxes = parent.getAxes();
@@ -130,7 +150,7 @@ public class Division {
         RealVector[] child2Axes = child2.getAxes();
         // the children's major axes must be close
         if (!related(child1Axes[0],child2Axes[0])){
-            System.out.println("Axes");
+            if (debug) System.out.println("Axes");
             return false;
         }
         
@@ -140,7 +160,7 @@ public class Division {
             return false;
         }
  */     
-        System.out.printf("Accepted: distance=%f\n",dist);
+        if (debug) System.out.printf("Accepted: distance=%f\n",dist);
         return true;
     }
     private boolean related(RealVector axis1,RealVector axis2){
@@ -291,8 +311,10 @@ public class Division {
     double dist2;
     
     static int timeThresh = 10;
-    static double eccThresh = 0.6;
+    static double eccThresh = 0.5;
+    static double parentEccThresh = .85;
     static double divDistanceThresh = 70.0;
+    static double parentToChildDistance = 25;
     static double cosThresh = .8;
     static double volumeThresh = 4.0;
     static double legRatio = 10.0;

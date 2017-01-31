@@ -7,6 +7,8 @@ package org.rhwlab.ace3d;
 
 import ij.plugin.PlugIn;
 import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.util.ArrayList;
 import java.util.Set;
@@ -23,6 +25,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreeNode;
@@ -69,6 +72,7 @@ public class Navigation_Frame extends JFrame implements PlugIn,InvalidationListe
        
         nucsRoot = new DefaultMutableTreeNode("All Nuclei",true);
         nucsTree = new JTree(nucsRoot);
+        nucsTree.setCellRenderer(new NucleusRenderer());
         nucsTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);    
         nucsTree.addTreeSelectionListener(new TreeSelectionListener(){
             @Override
@@ -276,4 +280,26 @@ public class Navigation_Frame extends JFrame implements PlugIn,InvalidationListe
     JTree rootsTree;
     JTree nucsTree;
     JTree deathsTree;
+    
+    public class NucleusRenderer extends DefaultTreeCellRenderer {
+        public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel, boolean expanded, boolean leaf, int row, boolean hasFocus){
+
+            NucleusRenderer comp = (NucleusRenderer)super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
+            Object obj = ((DefaultMutableTreeNode)value).getUserObject();
+            if (leaf && obj instanceof Nucleus){
+                nuc = (Nucleus)obj;
+                if (nuc.isDividing()){
+                    comp.setForeground(Color.red);
+                } else if (nuc.isLeaf()){
+                    comp.setForeground(Color.blue);
+                } else {
+                    comp.setForeground(Color.black);
+                } 
+                int asjdfui=0;
+            }            
+            return comp;
+        }
+        
+        Nucleus nuc;
+    }
 }
